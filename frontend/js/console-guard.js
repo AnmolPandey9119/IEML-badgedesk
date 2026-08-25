@@ -67,21 +67,4 @@
     //    above can't see those) — reprint periodically so the banner is
     //    never more than ~30s stale in the console.
     setInterval(printAll, 30000);
-  
-    // Small extra friction (not real protection, just raises the bar
-    // for casual right-click -> Inspect / F12 users).
-    document.addEventListener("contextmenu", function (e) {
-      e.preventDefault();
-    });
-  
-    document.addEventListener("keydown", function (e) {
-      var k = e.key;
-      var blocked =
-        k === "F12" ||
-        (e.ctrlKey && e.shiftKey && (k === "I" || k === "J" || k === "C")) ||
-        (e.ctrlKey && k === "U");
-      if (blocked) {
-        e.preventDefault();
-      }
-    });
   })();
