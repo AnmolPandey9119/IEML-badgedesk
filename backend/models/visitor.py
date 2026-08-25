@@ -35,6 +35,9 @@ class Visitor(BaseModel):
     # NEW — total times this visitor has been scanned at entry gates,
     # across every scanner combined. Same optional/defaulted pattern.
     scan_count: Optional[int] = 0
+    # NEW — timestamp of this visitor's most recent entry-gate scan.
+    # None until their first scan.
+    last_scanned_at: Optional[datetime] = None
 
 
 class SearchResponse(BaseModel):
@@ -146,6 +149,7 @@ class MasterVisitor(BaseModel):
     organization: Optional[str] = None
     print_count: int = 0
     scan_count: int = 0
+    last_scanned_at: Optional[datetime] = None
 
 
 class MasterVisitorListResponse(BaseModel):

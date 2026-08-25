@@ -282,6 +282,17 @@
   .scanner-name-edit:hover {
     background: var(--bg);
   }
+
+  .gate-counter-chip {
+    margin-left: auto;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--success-bg);
+    border: 1px solid var(--success-border);
+    padding: 3px 12px;
+    border-radius: 20px;
+  }
   
   /* ---------------- Camera / scan area ---------------- */
   .scan-container {

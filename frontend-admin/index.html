@@ -443,15 +443,21 @@
 
       <section class="card" id="scan-section">
         <div class="section-header-row">
-          <h2>Recent Scans</h2>
-          <span id="recent-scans-total" class="status count-badge">0 shown</span>
+          <h2>Scanned Visitors</h2>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <span id="scanned-total" class="status count-badge">0 total</span>
+            <button id="export-scanned-btn" class="btn btn-outline btn-small">⬇️ Export Excel</button>
+          </div>
         </div>
-        <p class="section-caption">Most recent entrance-gate scans, newest first — refreshes automatically every few seconds.</p>
-        <div class="table-scroll table-scroll-spaced">
-          <table class="activity-table" id="recent-scans-table">
-            <thead><tr><th>Scanner / Gate</th><th>Visitor</th><th>URN</th><th>Category</th><th>Scan Time</th></tr></thead>
-            <tbody id="recent-scans-body">
-              <tr><td colspan="5" class="search-empty">Loading...</td></tr>
+        <p class="section-caption">Everyone whose badge has been scanned at least once. Repeat scans just raise the count below — no duplicate rows.</p>
+        <input type="text" id="scanned-search" class="table-search" placeholder="Filter by URN, name, mobile, organization..." />
+        <div class="table-scroll">
+          <table class="activity-table" id="scanned-table">
+            <thead>
+              <tr><th>URN</th><th>Name</th><th>Organization</th><th>Mobile</th><th>Category</th><th>Scans</th><th>Last Scanned</th></tr>
+            </thead>
+            <tbody id="scanned-table-body">
+              <tr><td colspan="7" class="search-empty">Loading...</td></tr>
             </tbody>
           </table>
         </div>

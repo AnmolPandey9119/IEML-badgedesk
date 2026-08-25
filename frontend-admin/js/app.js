@@ -23,6 +23,7 @@
      wireViewActions();
      wireSearch();
      wirePrintedSearch();
+     wireScannedSearch();
      wireTableRowClicks();
      wireFindAndPrint();
      wireExports();
@@ -110,14 +111,15 @@
       Polls every 5s so scans show up live, same idea as startHealthCheck() — a
       fixed interval kicked off once on load, no manual refresh needed. Kept
       running even when the tab isn't the active one (cheap enough at this
-      volume) so the numbers are already current the moment the sir switches to it. */
+      volume) so the numbers are already current the moment the sir switches to it.
+      The per-scanner/gate breakdown here counts EVERY scan, repeats included —
+      that's the true gate footfall. The Scanned Visitors table (rendered from
+      loadVisitors(), which startVisitorAutoRefresh() already polls every 5s)
+      shows one row per person with a running scan count instead — repeat scans
+      raise the count, they never add a new row. */
    function startScanMonitoring() {
      loadScanStats();
-     loadRecentScans();
-     setInterval(() => {
-       loadScanStats();
-       loadRecentScans();
-     }, 5000);
+     setInterval(loadScanStats, 5000);
    }
 
    async function loadScanStats() {
@@ -143,62 +145,25 @@
        .join("");
    }
 
-   async function loadRecentScans() {
-     const bodyEl = document.getElementById("recent-scans-body");
-     const totalEl = document.getElementById("recent-scans-total");
-
-     const result = await API.getRecentScans(100);
-     if (!result.ok) {
-       bodyEl.innerHTML = `<tr><td colspan="5" class="search-empty">${escapeHtml(result.error || "Failed to load")}</td></tr>`;
-       return;
-     }
-
-     const scans = result.data.scans || [];
-     totalEl.textContent = `${scans.length} shown`;
-
-     if (scans.length === 0) {
-       bodyEl.innerHTML = `<tr><td colspan="5" class="search-empty">No entrance scans yet</td></tr>`;
-       return;
-     }
-
-     bodyEl.innerHTML = scans
-       .map(
-         (s) => `
-         <tr>
-           <td>${escapeHtml(s.scanner_name)}</td>
-           <td>${escapeHtml(s.name)}${s.organization ? ` — ${escapeHtml(s.organization)}` : ""}</td>
-           <td>${escapeHtml(s.urn)}</td>
-           <td>${escapeHtml(s.category || "")}</td>
-           <td>${formatScanTime(s.scanned_at)}</td>
-         </tr>`
-       )
-       .join("");
-   }
-
-   function formatScanTime(isoString) {
-     try {
-       return new Date(isoString).toLocaleString();
-     } catch {
-       return isoString;
-     }
-   }
-
-   /* ---------------- Visitors: fetch once, render two filtered views ---------------- */
+   /* ---------------- Visitors: fetch once, render three filtered views ---------------- */
    async function loadVisitors() {
      const visitorsBody = document.getElementById("visitors-table-body");
      const printedBody = document.getElementById("printed-table-body");
+     const scannedBody = document.getElementById("scanned-table-body");
    
      const result = await API.listAllVisitors();
      if (!result.ok) {
        const msg = `<tr><td colspan="8" class="search-empty">${escapeHtml(result.error || "Failed to load")}</td></tr>`;
        visitorsBody.innerHTML = msg;
        printedBody.innerHTML = `<tr><td colspan="8" class="search-empty">${escapeHtml(result.error || "Failed to load")}</td></tr>`;
+       if (scannedBody) scannedBody.innerHTML = `<tr><td colspan="7" class="search-empty">${escapeHtml(result.error || "Failed to load")}</td></tr>`;
        return;
      }
    
      allVisitors = result.data.visitors || [];
      renderOnsiteTable(onlyOnsite(allVisitors));
      renderPrintedTable(onlyPrinted(allVisitors));
+     renderScannedTable(currentScannedFiltered());
    }
 
    /* ---------------- Auto-refresh (Onsite/Printed tables) ----------------
@@ -277,6 +242,12 @@
        .filter((v) => (v.print_count || 0) > 0)
        .sort((a, b) => (b.print_count || 0) - (a.print_count || 0));
    }
+
+   function onlyScanned(list) {
+     return list
+       .filter((v) => (v.scan_count || 0) > 0)
+       .sort((a, b) => new Date(b.last_scanned_at || 0) - new Date(a.last_scanned_at || 0));
+   }
    
    function renderOnsiteTable(visitors) {
      const bodyEl = document.getElementById("visitors-table-body");
@@ -333,6 +304,41 @@
        )
        .join("");
    }
+
+   function renderScannedTable(visitors) {
+     const bodyEl = document.getElementById("scanned-table-body");
+     if (!bodyEl) return;
+     document.getElementById("scanned-total").textContent = `${visitors.length} total`;
+
+     if (visitors.length === 0) {
+       bodyEl.innerHTML = `<tr><td colspan="7" class="search-empty">No entrance scans yet</td></tr>`;
+       return;
+     }
+
+     bodyEl.innerHTML = visitors
+       .map(
+         (v) => `
+         <tr>
+           <td>${escapeHtml(v.urn)}</td>
+           <td>${escapeHtml(v.name)}</td>
+           <td>${escapeHtml(v.organization || "")}</td>
+           <td>${escapeHtml(v.mobile || "")}</td>
+           <td>${escapeHtml(v.category || "")}</td>
+           <td><span class="print-count-pill">${v.scan_count || 0}</span></td>
+           <td>${formatScanTime(v.last_scanned_at)}</td>
+         </tr>`
+       )
+       .join("");
+   }
+
+   function formatScanTime(isoString) {
+     if (!isoString) return "—";
+     try {
+       return new Date(isoString).toLocaleString();
+     } catch {
+       return isoString;
+     }
+   }
    
    /* ---------------- Client-side filters ---------------- */
    function matchesQuery(v, q) {
@@ -360,6 +366,21 @@
        const q = input.value.trim().toLowerCase();
        const base = onlyPrinted(allVisitors);
        renderPrintedTable(q ? base.filter((v) => matchesQuery(v, q)) : base);
+     });
+   }
+
+   function currentScannedFiltered() {
+     const input = document.getElementById("scanned-search");
+     const q = input ? input.value.trim().toLowerCase() : "";
+     const base = onlyScanned(allVisitors);
+     return q ? base.filter((v) => matchesQuery(v, q)) : base;
+   }
+
+   function wireScannedSearch() {
+     const input = document.getElementById("scanned-search");
+     if (!input) return;
+     input.addEventListener("input", () => {
+       renderScannedTable(currentScannedFiltered());
      });
    }
    
@@ -733,6 +754,32 @@
      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
      XLSX.writeFile(workbook, `${filenamePrefix}-${stamp}.xlsx`);
    }
+
+   function exportScannedToExcel(visitors, filenamePrefix, emptyMessage) {
+     if (visitors.length === 0) {
+       alert(emptyMessage);
+       return;
+     }
+
+     const header = ["URN", "Name", "Organization", "Mobile", "Category", "Scans", "Last Scanned"];
+     const rows = visitors.map((v) => [
+       v.urn || "", v.name || "", v.organization || "",
+       v.mobile || "", v.category || "", v.scan_count || 0,
+       v.last_scanned_at ? new Date(v.last_scanned_at).toLocaleString() : "",
+     ]);
+
+     const worksheet = XLSX.utils.aoa_to_sheet([header, ...rows]);
+     worksheet["!cols"] = [
+       { wch: 10 }, { wch: 22 }, { wch: 22 },
+       { wch: 14 }, { wch: 16 }, { wch: 8 }, { wch: 20 },
+     ];
+
+     const workbook = XLSX.utils.book_new();
+     XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+
+     const stamp2 = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+     XLSX.writeFile(workbook, `${filenamePrefix}-${stamp2}.xlsx`);
+   }
    
    function wireExports() {
      document.getElementById("export-onsite-btn").addEventListener("click", () => {
@@ -745,6 +792,13 @@
        const list = q ? base.filter((v) => matchesQuery(v, q)) : base;
        exportToExcel(list, "ieml-printed-badges", "No printed badges to export yet.");
      });
+
+     const exportScannedBtn = document.getElementById("export-scanned-btn");
+     if (exportScannedBtn) {
+       exportScannedBtn.addEventListener("click", () => {
+         exportScannedToExcel(currentScannedFiltered(), "ieml-scanned-visitors", "No entrance scans to export yet.");
+       });
+     }
    }
    
    /* ---------------- Small helper ---------------- */

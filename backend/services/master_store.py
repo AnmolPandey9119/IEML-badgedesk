@@ -73,6 +73,11 @@ def _row_to_visitor(row: dict) -> dict:
     visitor["urn"] = row["urn"]
     visitor["print_count"] = row.get("print_count", 0) or 0
     visitor["scan_count"] = row.get("scan_count", 0) or 0
+    # NEW: timestamp of this visitor's most recent entry-gate scan,
+    # kept directly on the visitors row (alongside scan_count) so the
+    # master console's Scanned Visitors table can show "last scanned"
+    # without a separate scan_log lookup per row.
+    visitor["last_scanned_at"] = row.get("last_scanned_at")
     # NEW: was stored in the DB but never surfaced before — the master
     # console needs this to tell onsite walk-in registrations apart
     # from the bulk Google Sheet sync. Existing callers that don't
@@ -138,6 +143,13 @@ def init_db() -> None:
             )
             cur.execute(
                 "ALTER TABLE visitors ADD COLUMN IF NOT EXISTS scan_count INTEGER NOT NULL DEFAULT 0"
+            )
+            # NEW: last time this visitor was scanned at any entry gate —
+            # updated by log_scan() alongside scan_count. Lets the master
+            # console show "last scanned" per visitor without joining
+            # scan_log.
+            cur.execute(
+                "ALTER TABLE visitors ADD COLUMN IF NOT EXISTS last_scanned_at TIMESTAMPTZ"
             )
             cur.execute(
                 "CREATE UNIQUE INDEX IF NOT EXISTS idx_visitors_source_hash "
@@ -387,7 +399,7 @@ def log_scan(urn: str, scanner_name: str) -> Optional[dict]:
     """
     with _connection() as conn, conn.cursor() as cur:
         cur.execute(
-            "UPDATE visitors SET scan_count = scan_count + 1 WHERE urn = %s",
+            "UPDATE visitors SET scan_count = scan_count + 1, last_scanned_at = NOW() WHERE urn = %s",
             (urn.strip(),),
         )
         if cur.rowcount == 0:
