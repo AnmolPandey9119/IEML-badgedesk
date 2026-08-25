@@ -11,7 +11,6 @@
       eventName: document.getElementById("event-name"),
       connectionStatus: document.getElementById("connection-status"),
       syncNowBtn: document.getElementById("sync-now-btn"),
-      exportExcelBtn: document.getElementById("export-excel-btn"),
       exportPrintLogBtn: document.getElementById("export-print-log-btn"),
       logoutBtn: document.getElementById("logout-btn"),
   
@@ -327,27 +326,6 @@
         msg += `\n\nℹ️ ${noName} row(s) had no Full Name — registered anyway with a fallback name (their email/mobile/org).`;
       }
       alert(msg);
-    });
-
-    /* ---------------- Export Excel ----------------
-       Downloads the URN-first master Excel file — every visitor
-       currently in the master store, sheet-synced + onsite combined.
-       This is the file the manager sends URNs from via message. */
-    els.exportExcelBtn.addEventListener("click", async () => {
-      els.exportExcelBtn.disabled = true;
-      els.exportExcelBtn.textContent = "Exporting...";
-
-      const result = await API.exportExcel();
-
-      els.exportExcelBtn.disabled = false;
-      els.exportExcelBtn.textContent = "⬇️ Export Excel";
-
-      if (!result.ok) {
-        alert(`Export failed: ${result.error}`);
-        return;
-      }
-
-      addActivity({ name: "--", urn: "--", action: "Export Excel", status: "success" });
     });
   
     /* ---------------- Search ---------------- */
