@@ -130,3 +130,30 @@ async def get_current_master(
             detail="Master console access only",
         )
     return payload["sub"]
+
+
+async def get_current_staff(
+    credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
+) -> str:
+    """
+    NEW. Add `Depends(get_current_staff)` to any route that operator
+    OR master should reach, but a scanner-role token must NOT — e.g.
+    exporting the full visitor database, or creating/editing visitor
+    records. get_current_admin (above) accepts ANY valid role
+    including "scanner", which is correct for search/print-log/
+    scan-log (the scanner app genuinely needs those), but wrong for
+    routes a gate-staff login was never meant to reach. This is that
+    narrower check: valid token AND role in {"operator", "master"}.
+    """
+    if credentials is None or not credentials.credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated — please log in",
+        )
+    payload = _decode_token(credentials.credentials)
+    if payload.get("role") not in ("operator", "master"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Operator or master access only",
+        )
+    return payload["sub"]

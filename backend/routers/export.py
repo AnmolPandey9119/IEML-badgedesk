@@ -1,20 +1,19 @@
 """
 routers/export.py
 Single endpoint: GET /api/export/excel
-This is what the dashboard's "Export Excel" button calls. Since the
-route is login-gated (needs the Authorization header), the frontend
-fetches it with the admin token attached and turns the response into
-a downloadable file — same pattern used for the other authenticated
-API calls in api.js, not a plain <a href> link.
+MASTER ONLY. Only the master console (frontend-admin) exposes an
+Export Excel button that calls this — the operator app's own export
+button/handler was removed, and this route now rejects an operator
+or scanner token with a 403, same pattern as the delete-visitor route.
 """
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
 from services import export_service
-from utils.auth import get_current_admin
+from utils.auth import get_current_master
 
-router = APIRouter(dependencies=[Depends(get_current_admin)])
+router = APIRouter(dependencies=[Depends(get_current_master)])
 
 
 @router.get("/excel")

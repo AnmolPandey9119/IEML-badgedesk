@@ -37,7 +37,7 @@ from models.visitor import (
     VisitorUpdateResponse,
 )
 from services import master_store
-from utils.auth import get_current_admin, get_current_master
+from utils.auth import get_current_admin, get_current_master, get_current_staff
 from utils.urn import generate_urn
 
 # Every route in this router requires a valid login token — see
@@ -74,26 +74,30 @@ async def search_visitors(q: str = Query(..., min_length=1, description="URN, QR
     return SearchResponse(query=q, results=[_row_to_visitor(r) for r in results])
 
 
-@router.post("/register", response_model=VisitorRegisterResponse)
+@router.post("/register", response_model=VisitorRegisterResponse, dependencies=[Depends(get_current_staff)])
 async def register_visitor(payload: VisitorRegisterRequest):
     """
     New onsite registration. Assigns a fresh URN (unique across the
     whole store — sheet-synced or onsite, doesn't matter), saves it
     into the master store with source="onsite", and returns the
     visitor so the frontend can immediately trigger a badge print.
+    OPERATOR/MASTER ONLY — extra Depends(get_current_staff) on top of
+    the router-level Depends(get_current_admin) rejects a scanner
+    token here, same pattern as the delete route's get_current_master.
     """
     urn = generate_urn()
     row = master_store.insert_visitor(urn, _payload_to_row(payload.model_dump()), source="onsite")
     return VisitorRegisterResponse(visitor=_row_to_visitor(row))
 
 
-@router.put("/{urn}", response_model=VisitorUpdateResponse)
+@router.put("/{urn}", response_model=VisitorUpdateResponse, dependencies=[Depends(get_current_staff)])
 async def update_visitor(urn: str, payload: VisitorUpdateRequest):
     """
     Edits an already-registered visitor's details (operator fixing a
     typo before printing, etc). URN itself comes from the path and
     is never editable — it's the permanent identifier already used
-    as the QR value.
+    as the QR value. OPERATOR/MASTER ONLY — same
+    Depends(get_current_staff) reasoning as /register above.
     """
     row = master_store.update_visitor(urn, _payload_to_row(payload.model_dump()))
     if row is None:
