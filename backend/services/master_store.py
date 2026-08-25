@@ -426,6 +426,29 @@ def scan_stats() -> dict:
     return {"overall_total": overall_total, "by_scanner": by_scanner}
 
 
+def recent_scans(limit: int = 100) -> list[dict]:
+    """
+    NEW — powers the master console's Scan Monitoring live feed.
+    Returns the most recent scan_log rows (newest first), each
+    joined with that visitor's current name/organization/category so
+    the frontend can render a live "who / where / when" table with
+    zero extra lookups. Mirrors search()/get_all()'s read-only style.
+    """
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT sl.id, sl.scanner_name, sl.scanned_at,
+                   v.urn, v.name, v.org AS organization, v.category
+            FROM scan_log sl
+            JOIN visitors v ON v.urn = sl.urn
+            ORDER BY sl.scanned_at DESC
+            LIMIT %s
+            """,
+            (limit,),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
 def get_by_urn(urn: str) -> Optional[dict]:
     with _connection() as conn, conn.cursor() as cur:
         cur.execute("SELECT * FROM visitors WHERE urn = %s", (urn.strip(),))

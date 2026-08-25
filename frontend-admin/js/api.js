@@ -97,6 +97,17 @@
       getPrintStats() {
         return request("/api/master/print-stats", { method: "GET" });
       },
+
+      /** Overall scan total + per-scanner breakdown. Master-only endpoint. */
+      getScanStats() {
+        return request("/api/master/scan-stats", { method: "GET" });
+      },
+
+      /** Most recent entrance-gate scans, newest first, with visitor details. Master-only endpoint. */
+      getRecentScans(limit = 100) {
+        const params = new URLSearchParams({ limit: String(limit) });
+        return request(`/api/master/recent-scans?${params.toString()}`, { method: "GET" });
+      },
   
       /** New registration — same endpoint the counter app uses. */
       registerVisitor(payload) {

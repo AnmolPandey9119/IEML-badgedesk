@@ -17,13 +17,15 @@ with counter operators; delete is master-only but lives there next
 to the other URN-keyed actions for consistency).
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from models.visitor import (
     DeviceCount,
     MasterVisitor,
     MasterVisitorListResponse,
     PrintStatsResponse,
+    RecentScanEntry,
+    RecentScansResponse,
     ScannerCount,
     ScanStatsResponse,
 )
@@ -76,3 +78,16 @@ async def get_scan_stats():
         overall_total=stats["overall_total"],
         by_scanner=[ScannerCount(**s) for s in stats["by_scanner"]],
     )
+
+
+@router.get("/recent-scans", response_model=RecentScansResponse)
+async def get_recent_scans(limit: int = Query(100, ge=1, le=500)):
+    """
+    NEW. Most recent entrance-gate scans, newest first, each with the
+    visitor's current name/organization/category — this is what the
+    master console's Scan Monitoring tab polls to show scans as they
+    happen. Default 100 rows is plenty for a live feed; capped at 500
+    so a runaway poll interval can never pull the whole table.
+    """
+    rows = master_store.recent_scans(limit=limit)
+    return RecentScansResponse(scans=[RecentScanEntry(**row) for row in rows])

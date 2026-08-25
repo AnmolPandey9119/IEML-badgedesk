@@ -417,18 +417,38 @@
 
     <!-- ================= SCAN MONITORING TAB ================= -->
     <div class="tab-panel hidden" id="panel-scan">
-      <section class="card" id="scan-section">
-        <h2>Entrance Scan Monitoring</h2>
-        <p class="placeholder-note">
-          Every scanner/counter will have its own Scanner ID. When the QR scanning app or an RFID reader is connected,
-          each entrance scan will show up here tagged with the Scanner ID that captured it, alongside the visitor's details and scan time.
-          <span class="coming-soon-pill">Coming soon</span>
-        </p>
+      <section class="card" id="scan-stats-section">
+        <div class="section-header-row">
+          <h2>Entrance Scan Stats</h2>
+          <span id="scan-live-indicator" class="status status-online">Live</span>
+        </div>
+        <div class="stats-row">
+          <div class="stat-box">
+            <div class="stat-label">Overall Entries</div>
+            <div class="stat-value" id="overall-scan-total">—</div>
+          </div>
+        </div>
         <div class="table-scroll table-scroll-spaced">
-          <table class="activity-table">
-            <thead><tr><th>Scanner ID</th><th>Visitor</th><th>Scan Time</th></tr></thead>
-            <tbody>
-              <tr><td colspan="3" class="search-empty">No entrance scans yet — not connected to this platform</td></tr>
+          <table class="activity-table" id="scanner-stats-table">
+            <thead><tr><th>Scanner / Gate</th><th>Entries</th></tr></thead>
+            <tbody id="scanner-stats-body">
+              <tr><td colspan="2" class="search-empty">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" id="scan-section">
+        <div class="section-header-row">
+          <h2>Recent Scans</h2>
+          <span id="recent-scans-total" class="status count-badge">0 shown</span>
+        </div>
+        <p class="section-caption">Most recent entrance-gate scans, newest first — refreshes automatically every few seconds.</p>
+        <div class="table-scroll table-scroll-spaced">
+          <table class="activity-table" id="recent-scans-table">
+            <thead><tr><th>Scanner / Gate</th><th>Visitor</th><th>URN</th><th>Category</th><th>Scan Time</th></tr></thead>
+            <tbody id="recent-scans-body">
+              <tr><td colspan="5" class="search-empty">Loading...</td></tr>
             </tbody>
           </table>
         </div>

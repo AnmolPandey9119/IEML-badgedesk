@@ -6,6 +6,7 @@ so the frontend's expectations and the backend's actual behavior
 can't silently drift apart.
 """
 
+from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -173,3 +174,24 @@ class ScanStatsResponse(BaseModel):
     """Returned by GET /api/master/scan-stats"""
     overall_total: int
     by_scanner: list[ScannerCount] = Field(default_factory=list)
+
+
+class RecentScanEntry(BaseModel):
+    """
+    One row in the master console's live Scan Monitoring feed — a
+    single scan_log entry joined with that visitor's current details,
+    so the frontend can render "who / where / when" without a second
+    lookup per row.
+    """
+    id: int
+    urn: str
+    name: str
+    organization: Optional[str] = None
+    category: Optional[str] = None
+    scanner_name: str
+    scanned_at: datetime
+
+
+class RecentScansResponse(BaseModel):
+    """Returned by GET /api/master/recent-scans"""
+    scans: list[RecentScanEntry] = Field(default_factory=list)

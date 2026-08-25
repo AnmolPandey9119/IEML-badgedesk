@@ -26,6 +26,7 @@
      wireTableRowClicks();
      wireFindAndPrint();
      wireExports();
+     startScanMonitoring();
    });
    
    /* ---------------- Tabs ---------------- */
@@ -102,6 +103,83 @@
        .join("");
    }
    
+   /* ---------------- Scan Monitoring (Entrance Scan Monitoring tab) ----------------
+      Polls every 5s so scans show up live, same idea as startHealthCheck() — a
+      fixed interval kicked off once on load, no manual refresh needed. Kept
+      running even when the tab isn't the active one (cheap enough at this
+      volume) so the numbers are already current the moment the sir switches to it. */
+   function startScanMonitoring() {
+     loadScanStats();
+     loadRecentScans();
+     setInterval(() => {
+       loadScanStats();
+       loadRecentScans();
+     }, 5000);
+   }
+
+   async function loadScanStats() {
+     const totalEl = document.getElementById("overall-scan-total");
+     const bodyEl = document.getElementById("scanner-stats-body");
+
+     const result = await API.getScanStats();
+     if (!result.ok) {
+       bodyEl.innerHTML = `<tr><td colspan="2" class="search-empty">${escapeHtml(result.error || "Failed to load")}</td></tr>`;
+       return;
+     }
+
+     totalEl.textContent = result.data.overall_total;
+
+     const byScanner = result.data.by_scanner || [];
+     if (byScanner.length === 0) {
+       bodyEl.innerHTML = `<tr><td colspan="2" class="search-empty">No entrance scans yet</td></tr>`;
+       return;
+     }
+
+     bodyEl.innerHTML = byScanner
+       .map((s) => `<tr><td>${escapeHtml(s.scanner_name)}</td><td>${s.count}</td></tr>`)
+       .join("");
+   }
+
+   async function loadRecentScans() {
+     const bodyEl = document.getElementById("recent-scans-body");
+     const totalEl = document.getElementById("recent-scans-total");
+
+     const result = await API.getRecentScans(100);
+     if (!result.ok) {
+       bodyEl.innerHTML = `<tr><td colspan="5" class="search-empty">${escapeHtml(result.error || "Failed to load")}</td></tr>`;
+       return;
+     }
+
+     const scans = result.data.scans || [];
+     totalEl.textContent = `${scans.length} shown`;
+
+     if (scans.length === 0) {
+       bodyEl.innerHTML = `<tr><td colspan="5" class="search-empty">No entrance scans yet</td></tr>`;
+       return;
+     }
+
+     bodyEl.innerHTML = scans
+       .map(
+         (s) => `
+         <tr>
+           <td>${escapeHtml(s.scanner_name)}</td>
+           <td>${escapeHtml(s.name)}${s.organization ? ` — ${escapeHtml(s.organization)}` : ""}</td>
+           <td>${escapeHtml(s.urn)}</td>
+           <td>${escapeHtml(s.category || "")}</td>
+           <td>${formatScanTime(s.scanned_at)}</td>
+         </tr>`
+       )
+       .join("");
+   }
+
+   function formatScanTime(isoString) {
+     try {
+       return new Date(isoString).toLocaleString();
+     } catch {
+       return isoString;
+     }
+   }
+
    /* ---------------- Visitors: fetch once, render two filtered views ---------------- */
    async function loadVisitors() {
      const visitorsBody = document.getElementById("visitors-table-body");
