@@ -1,0 +1,429 @@
+/* ==========================================================
+   IEML BadgeDesk - Entrance Scanner Styles
+   Same brand tokens as the operator/master apps (navy + gold),
+   kept as its own file since this app is a separate deployment.
+   ========================================================== */
+
+   :root {
+    --primary: #14335e;       /* IEML navy */
+    --primary-dark: #0c223f;
+    --secondary: #c8952e;     /* IEML gold accent */
+    --success: #1e9e5a;
+    --danger: #d64545;
+    --bg: #f5f6fa;
+    --card-bg: #ffffff;
+    --border: #e1e3ea;
+    --text-main: #1a1c22;
+    --text-muted: #6b7280;
+    --radius: 10px;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  
+    --error-bg: #fdeaea;
+    --error-border: #f3c6c6;
+    --success-bg: #e3f7ea;
+    --success-border: #bfe8cf;
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+  
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text-main);
+  }
+  
+  .hidden {
+    display: none !important;
+  }
+  
+  /* ---------------- Login page ---------------- */
+  .login-wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  .login-card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 32px 28px;
+    text-align: center;
+  }
+  
+  .login-logo {
+    display: block;
+    height: 56px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    margin: 0 auto 16px;
+  }
+  
+  .scanner-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    background: var(--secondary);
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+  }
+  
+  .login-card h1 {
+    font-size: 19px;
+    margin: 0 0 4px;
+    text-align: center;
+  }
+  
+  .login-card .subtitle {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin: 0 0 20px;
+    text-align: center;
+  }
+  
+  .login-error-box {
+    background: var(--error-bg);
+    color: var(--danger);
+    border: 1px solid var(--error-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    text-align: left;
+  }
+  
+  #login-form {
+    text-align: left;
+  }
+  
+  .form-group {
+    margin-bottom: 14px;
+  }
+  
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 6px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  
+  .form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    outline: none;
+    font-family: inherit;
+  }
+  
+  .form-group input:focus {
+    border-color: var(--primary);
+  }
+  
+  .login-submit-btn {
+    width: 100%;
+    margin-top: 6px;
+    padding: 11px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    background: var(--primary);
+    color: #fff;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.05s;
+  }
+  
+  .login-submit-btn:active {
+    transform: scale(0.98);
+  }
+  
+  .login-submit-btn:hover {
+    opacity: 0.9;
+  }
+  
+  .login-submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  /* ---------------- Top bar (scanner main page) ---------------- */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    background: linear-gradient(90deg, var(--primary-dark), var(--primary));
+    color: #fff;
+    box-shadow: var(--shadow);
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  
+  .topbar-logo {
+    height: 36px;
+    width: auto;
+    object-fit: contain;
+  }
+  
+  .topbar-title {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .topbar-title h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  
+  .event-name {
+    font-size: 12px;
+    opacity: 0.85;
+    letter-spacing: 0.5px;
+  }
+  
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .status {
+    font-size: 12.5px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  
+  .status-checking {
+    background: rgba(255, 255, 255, 0.2);
+  }
+  
+  .status-online {
+    background: var(--success);
+  }
+  
+  .status-offline {
+    background: var(--danger);
+  }
+  
+  .btn-topbar {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1.5px solid rgba(255, 255, 255, 0.55);
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  
+  .btn-topbar:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #fff;
+  }
+  
+  /* ---------------- Scanner name row ---------------- */
+  .scanner-name-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+    color: var(--text-muted);
+  }
+  
+  .scanner-name-chip {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 20px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    font-weight: 600;
+  }
+  
+  .scanner-name-edit {
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--primary);
+    cursor: pointer;
+  }
+  
+  .scanner-name-edit:hover {
+    background: var(--bg);
+  }
+  
+  /* ---------------- Camera / scan area ---------------- */
+  .scan-container {
+    max-width: 480px;
+    margin: 20px auto;
+    padding: 0 16px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  
+  #qr-reader {
+    width: 100%;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    background: #000;
+  }
+  
+  .scan-placeholder {
+    color: var(--text-muted);
+    font-size: 14px;
+    text-align: center;
+    margin: 0;
+  }
+  
+  #result-area {
+    width: 100%;
+  }
+  
+  /* ---------------- Result card ---------------- */
+  .result-card {
+    width: 100%;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  
+  .result-header {
+    padding: 14px 20px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+  }
+  
+  .result-header.success {
+    background: var(--success);
+  }
+  
+  .result-header.error {
+    background: var(--danger);
+  }
+  
+  .result-body {
+    padding: 18px 20px;
+  }
+  
+  .result-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-main);
+  }
+  
+  .result-org {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    margin-bottom: 14px;
+  }
+  
+  .result-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px 16px;
+    margin-bottom: 16px;
+  }
+  
+  .result-field-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-muted);
+    margin-bottom: 3px;
+  }
+  
+  .result-field-value {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--text-main);
+    word-break: break-word;
+  }
+  
+  .entry-count-badge {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--success-bg);
+    color: var(--success);
+    border: 1px solid var(--success-border);
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+  }
+  
+  .error-text {
+    color: var(--danger);
+    font-size: 14px;
+    margin: 0 0 14px;
+  }
+  
+  .scan-next-btn {
+    display: block;
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 14.5px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    background: var(--primary);
+    color: #fff;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.05s;
+  }
+  
+  .scan-next-btn:active {
+    transform: scale(0.98);
+  }
+  
+  .scan-next-btn:hover {
+    opacity: 0.9;
+  }
+  
+  @media (max-width: 480px) {
+    .topbar {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .result-grid {
+      grid-template-columns: 1fr;
+    }
+  }
