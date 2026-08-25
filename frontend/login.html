@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — IEML BadgeDesk</title>
+  <link rel="icon" type="image/png" href="assets/ieml-logo.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* Small page-specific layout, kept out of style.css since
+       nothing else on the site needs a centered single card. */
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 380px;
+    }
+    .login-card h1 {
+      font-size: 19px;
+      margin: 0 0 4px;
+    }
+    .login-card .subtitle {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin: 0 0 20px;
+    }
+    #login-error {
+      background: var(--error-bg);
+      color: var(--danger);
+      border: 1px solid var(--error-border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+    .login-logo {
+      display: block;
+      height: 56px;
+      width: auto;
+      max-width: 100%;
+      object-fit: contain;
+      margin: 0 auto 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-wrap">
+    <section class="card login-card">
+      <img src="assets/ieml-logo.png" alt="IEML" class="login-logo" onerror="this.style.display='none'" />
+      <h1>IEML BadgeDesk</h1>
+      <p class="subtitle">Counter operator login — required before searching, registering, or printing badges.</p>
+
+      <div id="login-error" class="hidden"></div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-username">Username</label>
+          <input type="text" id="login-username" name="username" required autofocus autocomplete="username" />
+        </div>
+        <div class="form-group" style="margin-top: 12px;">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" name="password" required autocomplete="current-password" />
+        </div>
+
+        <button type="submit" id="login-btn" class="btn btn-primary" style="width: 100%; margin-top: 18px;">
+          Login
+        </button>
+      </form>
+    </section>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

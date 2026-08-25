@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Master Console — IEML BadgeDesk</title>
+  <link rel="icon" type="image/png" href="assets/ieml-logo.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="js/theme.js"></script>
+  <script>
+    if (!sessionStorage.getItem("ieml_master_token")) {
+      window.location.href = "master-login.html";
+    }
+  </script>
+  <style>
+    /* ---------------- Tabs ---------------- */
+    .tabs-nav {
+      display: flex;
+      gap: 4px;
+      padding: 0 24px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    .tab-btn {
+      padding: 14px 18px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+      transition: color 0.15s;
+    }
+    .tab-btn:hover { color: var(--text-main); }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab-panel.hidden { display: none; }
+
+    /* ---------------- Home: stat strip ---------------- */
+    .stat-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--primary);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 20px;
+    }
+    .stat-card-clickable {
+      cursor: pointer;
+      transition: transform 0.12s, box-shadow 0.12s;
+    }
+    .stat-card-clickable:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+    }
+    .stat-card .stat-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .stat-card .stat-value {
+      font-size: 30px;
+      font-weight: 700;
+      color: var(--primary);
+      line-height: 1;
+    }
+    .stat-card .stat-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+    .stat-box {
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--primary);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      background: var(--bg);
+    }
+    .stat-box .stat-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .stat-box .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--primary);
+      line-height: 1;
+    }
+
+    /* ---------------- Shared bits ---------------- */
+    .section-caption {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin: -8px 0 16px;
+      line-height: 1.5;
+    }
+    .table-scroll { overflow-x: auto; }
+    .table-scroll-spaced { overflow-x: auto; margin-top: 16px; }
+    .table-search {
+      display: block;
+      width: 100%;
+      max-width: 360px;
+      padding: 10px 14px;
+      font-size: 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      outline: none;
+      margin-bottom: 16px;
+      background: var(--card-bg);
+      color: var(--text-main);
+      transition: border-color 0.15s;
+    }
+    .table-search:focus { border-color: var(--primary); }
+    .print-count-pill {
+      display: inline-block;
+      min-width: 22px;
+      text-align: center;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 12.5px;
+      font-weight: 600;
+      background: var(--tag-success-bg);
+      color: var(--tag-success-text);
+    }
+    .placeholder-note {
+      color: var(--text-muted);
+      font-size: 13.5px;
+      line-height: 1.6;
+      padding: 4px 2px;
+    }
+    .coming-soon-pill {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      background: var(--tag-pending-bg);
+      color: var(--tag-pending-text);
+      padding: 2px 9px;
+      border-radius: 20px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .activity-table td.search-empty {
+      text-align: center;
+      padding: 22px 8px;
+      color: var(--text-muted);
+    }
+    .count-badge { background: var(--hover-bg); color: var(--text-main); }
+    .error-box {
+      background: var(--error-bg);
+      color: var(--danger);
+      border: 1px solid var(--error-border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+
+    /* ---------------- Find & Print ---------------- */
+    .print-search-row { display: flex; gap: 10px; margin-bottom: 16px; }
+    .print-search-input { margin-bottom: 0; max-width: 480px; }
+
+    /* ---------------- Onsite table: click a row to open its details ---------------- */
+    #visitors-table-body tr {
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    #visitors-table-body tr:hover { background: var(--hover-bg); }
+    #visitors-table-body tr.row-active { background: var(--hover-bg); }
+
+    .form-meta-row {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--text-muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 14px;
+      margin-bottom: 16px;
+    }
+    .form-meta-row strong { color: var(--text-main); }
+
+    /* Read-only (view mode) fields — visually distinct from editable ones */
+    .form-grid input:disabled,
+    .form-grid select:disabled {
+      background: var(--bg);
+      color: var(--text-main);
+      cursor: default;
+      opacity: 1;
+    }
+
+    /* ---------------- Scan monitoring placeholder ---------------- */
+    .scanner-id-tag {
+      display: inline-block;
+      font-family: monospace;
+      font-size: 12px;
+      background: var(--hover-bg);
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-right: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <img src="assets/ieml-logo.png" alt="IEML" class="topbar-logo" onerror="this.style.display='none'" />
+      <div class="topbar-title">
+        <h1>IEML BadgeDesk — Master Console</h1>
+        <span id="event-name" class="event-name">Loading event...</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span id="connection-status" class="status status-checking">Checking connection...</span>
+      <button id="theme-toggle-btn" class="btn btn-outline btn-small" title="Toggle light/dark theme">🌙 Dark</button>
+      <button id="logout-btn" class="btn btn-outline btn-small">Logout</button>
+    </div>
+  </header>
+
+  <nav class="tabs-nav">
+    <button class="tab-btn active" data-tab="home">Home</button>
+    <button class="tab-btn" data-tab="print-count">Print Count</button>
+    <button class="tab-btn" data-tab="scan">Scan Monitoring</button>
+  </nav>
+
+  <main class="container">
+
+    <!-- ================= HOME TAB ================= -->
+    <div class="tab-panel" id="panel-home">
+
+      <div class="stat-strip">
+        <div class="stat-card stat-card-clickable" data-goto="print-count">
+          <div class="stat-label">Total Prints</div>
+          <div class="stat-value" id="home-print-total">—</div>
+          <div class="stat-hint">Tap for counter-wise breakdown →</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Onsite Registrations</div>
+          <div class="stat-value" id="home-onsite-total">—</div>
+          <div class="stat-hint">Manual walk-in registrations</div>
+        </div>
+      </div>
+
+      <!-- FIND & PRINT -->
+      <section class="card" id="print-section">
+        <h2>Find &amp; Print a Badge</h2>
+        <p class="section-caption">Search by URN, name, mobile, or organization — works for sheet-synced and onsite registrations both.</p>
+        <div class="print-search-row">
+          <input type="text" id="print-search-input" class="table-search print-search-input" placeholder="Search URN, name, mobile, organization..." />
+          <button id="print-search-btn" class="btn btn-primary btn-small">Search</button>
+        </div>
+        <div id="print-search-results" class="search-results"></div>
+      </section>
+
+      <!-- REGISTRATION DETAILS / ADD / EDIT — shared panel, opened either by
+           "+ Add Registration" below, a row click in Onsite Registrations,
+           or a Find & Print search result. Kept neutral/standalone on
+           purpose — it shouldn't visually look "owned" by any one section,
+           since a Find & Print result can be a sheet-synced person who
+           isn't an onsite registration at all. -->
+      <section class="card hidden" id="detail-panel-section">
+        <form id="registration-form">
+          <input type="hidden" id="form-urn" value="" />
+          <h3 id="panel-form-title" style="margin: 0 0 14px; font-size: 15px;">Add New Registration</h3>
+          <div id="form-error" class="error-box hidden"></div>
+
+          <div id="form-meta-row" class="form-meta-row hidden">
+            <span><strong>URN:</strong> <span id="meta-urn">—</span></span>
+            <span><strong>Prints so far:</strong> <span id="meta-print-count">—</span></span>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="form-name">Name *</label>
+              <input type="text" id="form-name" required />
+            </div>
+            <div class="form-group">
+              <label for="form-organization">Organization *</label>
+              <input type="text" id="form-organization" required />
+            </div>
+            <div class="form-group">
+              <label for="form-designation">Designation</label>
+              <input type="text" id="form-designation" />
+            </div>
+            <div class="form-group">
+              <label for="form-mobile">Mobile *</label>
+              <input type="text" id="form-mobile" required />
+            </div>
+            <div class="form-group">
+              <label for="form-email">Email</label>
+              <input type="email" id="form-email" />
+            </div>
+            <div class="form-group">
+              <label for="form-category">Category</label>
+              <select id="form-category">
+                <option value="visitor">Visitor</option>
+                <option value="exhibitor">Exhibitor</option>
+                <option value="delegate">Delegate</option>
+                <option value="media">Media</option>
+                <option value="vip">VIP</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="submit-actions" class="action-row">
+            <button type="submit" id="form-submit-btn" class="btn btn-primary">Add Registration</button>
+            <button type="button" id="cancel-edit-btn" class="btn btn-outline hidden">Cancel</button>
+          </div>
+
+          <div id="view-actions" class="action-row hidden">
+            <button type="button" id="view-print-btn" class="btn btn-success">Print Badge</button>
+            <button type="button" id="view-edit-btn" class="btn btn-secondary">Edit Details</button>
+            <button type="button" id="view-delete-btn" class="btn btn-outline" style="color: var(--danger); border-color: var(--danger);">Delete</button>
+            <button type="button" id="view-cancel-btn" class="btn btn-outline">Cancel</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ONSITE REGISTRATIONS -->
+      <section class="card" id="visitors-section">
+        <div class="section-header-row">
+          <h2>Onsite Registrations</h2>
+          <button id="toggle-add-form-btn" class="btn btn-outline btn-small">+ Add Registration</button>
+        </div>
+        <p class="section-caption">Manual walk-in registrations only — bulk Google Sheet imports aren't shown here.</p>
+
+        <div class="section-header-row">
+          <span id="visitors-total" class="status count-badge">0 total</span>
+          <button id="export-onsite-btn" class="btn btn-outline btn-small">⬇️ Export Excel</button>
+        </div>
+        <input type="text" id="visitors-search" class="table-search" placeholder="Filter by URN, name, mobile, organization..." />
+        <div class="table-scroll">
+          <table class="activity-table" id="visitors-table">
+            <thead>
+              <tr>
+                <th>URN</th><th>Name</th><th>Organization</th><th>Designation</th>
+                <th>Mobile</th><th>Email</th><th>Category</th><th>Prints</th>
+              </tr>
+            </thead>
+            <tbody id="visitors-table-body">
+              <tr><td colspan="8" class="search-empty">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ================= PRINT COUNT TAB ================= -->
+    <div class="tab-panel hidden" id="panel-print-count">
+
+      <section class="card" id="print-stats-section">
+        <h2>Print Stats</h2>
+        <div class="stats-row">
+          <div class="stat-box">
+            <div class="stat-label">Overall Prints</div>
+            <div class="stat-value" id="overall-print-total">—</div>
+          </div>
+        </div>
+        <div class="table-scroll table-scroll-spaced">
+          <table class="activity-table" id="device-stats-table">
+            <thead><tr><th>Device</th><th>Prints</th></tr></thead>
+            <tbody id="device-stats-body">
+              <tr><td colspan="2" class="search-empty">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" id="printed-section">
+        <div class="section-header-row">
+          <h2>Printed Badges</h2>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <span id="printed-total" class="status count-badge">0 total</span>
+            <button id="export-printed-btn" class="btn btn-outline btn-small">⬇️ Export Excel</button>
+          </div>
+        </div>
+        <p class="section-caption">Everyone whose badge has been printed at least once, regardless of source.</p>
+        <input type="text" id="printed-search" class="table-search" placeholder="Filter by URN, name, mobile, organization..." />
+        <div class="table-scroll">
+          <table class="activity-table" id="printed-table">
+            <thead>
+              <tr><th>URN</th><th>Name</th><th>Organization</th><th>Designation</th><th>Mobile</th><th>Email</th><th>Category</th><th>Prints</th></tr>
+            </thead>
+            <tbody id="printed-table-body">
+              <tr><td colspan="8" class="search-empty">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ================= SCAN MONITORING TAB ================= -->
+    <div class="tab-panel hidden" id="panel-scan">
+      <section class="card" id="scan-section">
+        <h2>Entrance Scan Monitoring</h2>
+        <p class="placeholder-note">
+          Every scanner/counter will have its own Scanner ID. When the QR scanning app or an RFID reader is connected,
+          each entrance scan will show up here tagged with the Scanner ID that captured it, alongside the visitor's details and scan time.
+          <span class="coming-soon-pill">Coming soon</span>
+        </p>
+        <div class="table-scroll table-scroll-spaced">
+          <table class="activity-table">
+            <thead><tr><th>Scanner ID</th><th>Visitor</th><th>Scan Time</th></tr></thead>
+            <tbody>
+              <tr><td colspan="3" class="search-empty">No entrance scans yet — not connected to this platform</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <iframe id="print-frame" name="print-frame" class="print-frame-hidden"></iframe>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/print.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+"""
+config.py
+Centralized settings, loaded from .env via pydantic-settings.
+
+Every other module in this backend imports `settings` from here
+instead of reading os.environ directly or hardcoding any URL / key.
+This is the single source of truth for config.
+"""
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    # ---------- Server ----------
+    app_host: str = "0.0.0.0"
+    app_port: int = 8000
+    app_env: str = "development"
+    allowed_origins: str = "*"
+
+    # ---------- Database ----------
+    # Postgres connection string (from Neon, or any Postgres host) —
+    # e.g. postgresql://user:password@host/dbname?sslmode=require
+    # This is now REQUIRED — services/master_store.py no longer uses
+    # a local SQLite file, since a local file gets wiped every time
+    # the hosting platform's container restarts/redeploys/spins down.
+    # A real Postgres database survives all of that, independently.
+    database_url: str = ""
+
+    # ---------- Google Sheet Sync (current primary data source) ----------
+    # The real-time registration spreadsheet. GOOGLE_SHEET_URL is
+    # pasted in .env — the normal Google Sheets URL you get from the
+    # browser address bar (share access must be "Anyone with the
+    # link: Viewer"). Nothing here is ever hardcoded in the code.
+    google_sheet_url: str = ""
+    sheet_sync_interval_minutes: int = 1
+    sheet_sync_enabled: bool = True
+
+    # ---------- Legacy: Organization REST API (kept, OFF by default) ----------
+    # Original design before we confirmed the real source of truth is
+    # a Google Sheet, not a REST API. Code for this is untouched and
+    # still here (services/org_api_client.py) in case IEML exposes a
+    # real org API later — just flip USE_LEGACY_ORG_API to true.
+    use_legacy_org_api: bool = False
+    demo_mode: bool = True
+    org_api_base_url: str = ""
+    org_api_key: str = ""
+    org_api_timeout_seconds: float = 8.0
+
+    # ---------- Event Info ----------
+    # Reused across every IEML event — this is the one thing that
+    # changes between events, everything else stays generic.
+    event_name: str = "Event"
+
+    # ---------- Admin Auth (counter operators) ----------
+    # Every counter operator must log in with these before they can
+    # search/register/print. Password is stored as a bcrypt HASH,
+    # never plaintext — generate one with generate_password_hash.py.
+    admin_username: str = "admin"
+    admin_password_hash: str = ""
+    jwt_secret: str = ""
+    jwt_expiry_hours: int = 12
+
+    # ---------- Master Auth (master console — you + your manager) ----------
+    # Completely separate credentials from ADMIN_USERNAME above.
+    # Logging in with these (via master-login.html) issues a JWT with
+    # role="master" instead of role="operator" — that's what unlocks
+    # the master console's add/edit/delete + stats endpoints.
+    # Generate the hash the exact same way as ADMIN_PASSWORD_HASH,
+    # using generate_password_hash.py.
+    master_username: str = ""
+    master_password_hash: str = ""
+
+    # ---------- Scanner Auth (entrance-scanning app — gate staff) ----------
+    # Completely separate credentials from ADMIN_USERNAME and
+    # MASTER_USERNAME above. Logging in with these (via the new
+    # frontend-scan app) issues a JWT with role="scanner" — a
+    # distinct role from "operator" and "master", so gate staff get
+    # their own login without touching registration/printing or the
+    # master console. Generate the hash the exact same way as the
+    # other password hashes, using generate_password_hash.py.
+    scanner_username: str = ""
+    scanner_password_hash: str = ""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+    )
+
+    @property
+    def allowed_origins_list(self) -> list[str]:
+        """Split the comma-separated ALLOWED_ORIGINS into a list for CORS middleware."""
+        if self.allowed_origins.strip() == "*":
+            return ["*"]
+        return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
+
+    @property
+    def google_sheet_csv_url(self) -> str:
+        """
+        Converts a normal Google Sheet URL (the one you copy from the
+        browser, e.g. .../spreadsheets/d/XXXX/edit#gid=0) into its
+        CSV export link, so the backend can fetch it with a plain
+        HTTP GET — no Google API key or service account needed, as
+        long as the sheet is shared as "Anyone with the link: Viewer".
+        Returns "" if GOOGLE_SHEET_URL isn't set yet.
+        """
+        url = self.google_sheet_url.strip()
+        if not url or "/spreadsheets/d/" not in url:
+            return ""
+
+        sheet_id = url.split("/spreadsheets/d/")[1].split("/")[0]
+
+        gid = "0"
+        if "gid=" in url:
+            gid = url.split("gid=")[1].split("&")[0].split("#")[0]
+
+        return f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
+
+
+# Import this single instance everywhere: `from config import settings`
+settings = Settings()

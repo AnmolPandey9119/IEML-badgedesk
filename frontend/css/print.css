@@ -1,0 +1,136 @@
+/* ==========================================================
+   IEML Badge Print Layout
+   Physical badge size: 4in x 6in (portrait), PRE-PRINTED card.
+   We only overlay: Name, Organization, QR code, URN.
+
+   UPDATED (round 2 — based on latest feedback):
+   - Name + Org pushed further up, right below the maroon
+     header band, so they sit clearly ABOVE the building
+     sketch watermark instead of landing near/on it.
+   - Name + Org font-size reduced further (14pt -> 11pt),
+     still matched to each other.
+   - QR code and URN size/position UNCHANGED from previous
+     version — user confirmed those are correct as-is.
+
+   IMPORTANT: 1.3in is right at the edge of the maroon header
+   on the sample photo — this is close to the physical limit
+   for how high the name can go without landing on the header
+   itself. Do a real test print and nudge by 1-2mm if needed.
+   ========================================================== */
+
+   @page {
+    size: A4;
+    margin: 0;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    width: 8.27in;   /* A4 width */
+    height: 11.69in; /* A4 height */
+  }
+
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* The full badge canvas - matches physical card exactly */
+  .badge-sheet {
+    width: 4in;
+    height: 6in;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .badge-print-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4in;
+    height: 6in;
+  }
+
+  /* ---------- Name ---------- */
+  /* Pushed right up under the maroon header, above the building sketch */
+  .field-name {
+    position: absolute;
+    top: 0.30in;
+    left: 0.25in;
+    width: 3.5in;
+    text-align: center;
+    font-size: 11pt;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    color: #000;
+    text-transform: uppercase;
+  }
+
+  /* ---------- Organization ---------- */
+  /* Same font-size as Name, right below it */
+  .field-org {
+    position: absolute;
+    top: 0.55in;
+    left: 0.25in;
+    width: 3.5in;
+    text-align: center;
+    font-size: 11pt;
+    font-weight: 600;
+    color: #000;
+    text-transform: uppercase;
+  }
+
+  /* ---------- QR Code ---------- */
+  /* Unchanged — user confirmed size/position is correct */
+  .qr-wrapper {
+    position: absolute;
+    top: 0.85in;
+    left: 1.575in;
+    width: 0.85in;
+    height: 0.85in;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .qr-wrapper img,
+  .qr-wrapper canvas {
+    width: 0.85in !important;
+    height: 0.85in !important;
+  }
+
+  /* ---------- URN ---------- */
+  /* Unchanged — user confirmed size/position is correct */
+  .field-urn {
+    position: absolute;
+    top: 1.75in;
+    left: 0.25in;
+    width: 3.5in;
+    text-align: center;
+    font-size: 9pt;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: #000;
+  }
+
+  /* ---------- Screen preview mode ----------
+     When viewed directly in a browser tab (not via print),
+     show a light border + off-white background so the operator
+     can visually sanity-check the layout before hitting print. */
+  @media screen {
+    body {
+      background: #ddd;
+    }
+    .badge-sheet {
+      background: #fffdf7;
+      border: 1px dashed #b0298c;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+  }

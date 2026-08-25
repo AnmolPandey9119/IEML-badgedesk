@@ -1,0 +1,99 @@
+"""
+main.py
+FastAPI application entry point.
+
+Run with:
+    uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+
+(host/port also come from .env via config.py — the command above
+just needs to match what's in APP_HOST / APP_PORT if you override)
+"""
+
+import asyncio
+import logging
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from config import settings
+from services import master_store, sheet_sync
+
+logger = logging.getLogger("main")
+
+
+async def _auto_sync_loop() -> None:
+    """
+    Background task: calls the exact same sync function the "Sync
+    Now" button uses, every SHEET_SYNC_INTERVAL_MINUTES. Runs for
+    the lifetime of the server. Any single failed sync (sheet
+    temporarily unreachable, etc.) is logged and skipped — it just
+    tries again on the next interval, never crashes the server.
+    """
+    interval_seconds = max(settings.sheet_sync_interval_minutes, 1) * 60
+    while True:
+        if settings.sheet_sync_enabled:
+            try:
+                summary = await sheet_sync.run_sync()
+                logger.info("Auto-sync: %s", summary)
+            except Exception:
+                logger.exception("Auto-sync failed, will retry next interval")
+        await asyncio.sleep(interval_seconds)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ---- startup ----
+    master_store.init_db()
+    sync_task = asyncio.create_task(_auto_sync_loop())
+
+    yield
+
+    # ---- shutdown ----
+    sync_task.cancel()
+
+
+app = FastAPI(
+    title="IEML BadgeDesk API",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+# CORS: allows the frontend (served from a different origin — the
+# custom domain's frontend, or a counter laptop) to call this API.
+# Origins list comes from .env, never hardcoded here.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.allowed_origins_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/health")
+async def health_check():
+    """Simple liveness check used by the frontend's topbar to show Online/Offline."""
+    return {
+        "status": "ok",
+        "event": settings.event_name,
+        "sheet_sync_enabled": settings.sheet_sync_enabled,
+        "visitor_count": master_store.count(),
+    }
+
+
+# ----------------------------------------------------------------
+# Routers
+# ----------------------------------------------------------------
+# NOTE: auth router stays PUBLIC (no login required to reach /login
+# itself, obviously). Every other router is login-gated via
+# Depends(get_current_admin) declared inside each router file.
+# `master` is the NEW one — its own routes are gated further, down
+# to Depends(get_current_master), declared inside routers/master.py.
+from routers import auth, export, master, registration, sync  # noqa: E402
+
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+app.include_router(registration.router, prefix="/api/visitors", tags=["visitors"])
+app.include_router(sync.router, prefix="/api/sync", tags=["sync"])
+app.include_router(export.router, prefix="/api/export", tags=["export"])
+app.include_router(master.router, prefix="/api/master", tags=["master"])
