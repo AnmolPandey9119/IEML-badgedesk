@@ -131,5 +131,65 @@
           method: "DELETE",
         });
       },
+
+      /**
+       * Triggers an on-demand sync: backend fetches the Google Sheet
+       * right now, saves any new registrants into the master store
+       * with a fresh URN, and returns { enabled, fetched, new, skipped }.
+       * Same function the background auto-sync loop uses, so manual
+       * and automatic sync always behave identically.
+       */
+      runSync() {
+        return request("/api/sync/run", { method: "POST" });
+      },
+
+      /**
+       * Downloads the URN-first master Excel file (every visitor
+       * currently in the master store — sheet-synced + onsite).
+       * Master-only endpoint. Not a plain <a href> link because the
+       * route needs the master token attached, so this fetches the
+       * file as a blob and triggers the browser download manually.
+       */
+      async exportExcel() {
+        const token = window.Auth && window.Auth.getToken();
+        const headers = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        try {
+          const res = await fetch(`${BASE_URL}/api/export/excel`, { headers });
+
+          if (res.status === 401 && window.Auth) {
+            window.Auth.logout(true);
+            return { ok: false, error: "Session expired — please log in again" };
+          }
+
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.detail || `Export failed (${res.status})`);
+          }
+
+          const blob = await res.blob();
+
+          // Filename comes from the backend's Content-Disposition
+          // header (e.g. "ieml-visitors-2026-08-18-1432.xlsx") so
+          // repeated exports never overwrite each other.
+          const disposition = res.headers.get("Content-Disposition") || "";
+          const match = disposition.match(/filename="?([^"]+)"?/);
+          const filename = match ? match[1] : "ieml-visitors.xlsx";
+
+          const blobUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = blobUrl;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.URL.revokeObjectURL(blobUrl);
+
+          return { ok: true, filename };
+        } catch (err) {
+          return { ok: false, error: err.message || "Network error" };
+        }
+      },
     };
   })();

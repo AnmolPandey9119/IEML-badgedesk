@@ -26,7 +26,10 @@
      wireTableRowClicks();
      wireFindAndPrint();
      wireExports();
+     wireSyncNow();
+     wireExportMasterExcel();
      startScanMonitoring();
+     startVisitorAutoRefresh();
    });
    
    /* ---------------- Tabs ---------------- */
@@ -196,6 +199,73 @@
      allVisitors = result.data.visitors || [];
      renderOnsiteTable(onlyOnsite(allVisitors));
      renderPrintedTable(onlyPrinted(allVisitors));
+   }
+
+   /* ---------------- Auto-refresh (Onsite/Printed tables) ----------------
+      Same pattern as startScanMonitoring() — polls every 5s so sheet
+      changes (synced in the background, or via someone else hitting
+      Sync Now) show up here without a manual page reload. Skipped
+      while the add/view/edit panel is open so it doesn't yank the
+      form out from under whoever is mid-edit; the next tick after
+      the panel closes picks it back up automatically. */
+   function startVisitorAutoRefresh() {
+     setInterval(() => {
+       if (panelMode === "closed") {
+         loadVisitors();
+       }
+     }, 5000);
+   }
+
+   /* ---------------- Sync Now ----------------
+      Manually triggers the same backend sync the background loop
+      runs every few minutes — fetches the Google Sheet right now,
+      saves any new registrants, then reloads the tables so the
+      result is visible immediately instead of waiting for the next
+      5s auto-refresh tick. */
+   function wireSyncNow() {
+     const btn = document.getElementById("sync-now-btn");
+     if (!btn) return;
+     btn.addEventListener("click", async () => {
+       btn.disabled = true;
+       btn.textContent = "Syncing...";
+
+       const result = await API.runSync();
+
+       btn.disabled = false;
+       btn.textContent = "🔄 Sync Now";
+
+       if (!result.ok) {
+         alert(`Sync failed: ${result.error}`);
+         return;
+       }
+
+       await loadVisitors();
+       const { fetched = 0, new: newCount = 0, skipped = 0 } = result.data || {};
+       alert(`Sync complete — ${fetched} fetched, ${newCount} new, ${skipped} already up to date.`);
+     });
+   }
+
+   /* ---------------- Export Excel (master, full DB) ----------------
+      Downloads the URN-first master Excel file from the backend —
+      every visitor currently in the master store, sheet-synced +
+      onsite combined. Master-only endpoint, so this button only
+      exists here now (removed from the operator app). */
+   function wireExportMasterExcel() {
+     const btn = document.getElementById("export-excel-btn");
+     if (!btn) return;
+     btn.addEventListener("click", async () => {
+       btn.disabled = true;
+       btn.textContent = "Exporting...";
+
+       const result = await API.exportExcel();
+
+       btn.disabled = false;
+       btn.textContent = "⬇️ Export Excel";
+
+       if (!result.ok) {
+         alert(`Export failed: ${result.error}`);
+       }
+     });
    }
    
    function onlyOnsite(list) {
