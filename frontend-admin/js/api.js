@@ -108,6 +108,26 @@
         const params = new URLSearchParams({ limit: String(limit) });
         return request(`/api/master/recent-scans?${params.toString()}`, { method: "GET" });
       },
+
+      /**
+       * NEW. Visitors whose badge has been printed at least once but
+       * who were never scanned at any entrance gate. Master-only
+       * endpoint. Powers the "Unscanned Entries" tab.
+       */
+      getUnscannedEntries(limit = 5000) {
+        const params = new URLSearchParams({ limit: String(limit) });
+        return request(`/api/master/unscanned?${params.toString()}`, { method: "GET" });
+      },
+
+      /**
+       * NEW. End-of-event reset — clears print/scan history and
+       * counts (never touches visitor names/URNs/org details) so the
+       * system is ready for the next event. Master-only endpoint.
+       * Returns { visitors_reset, print_logs_cleared, scan_logs_cleared }.
+       */
+      clearHistory() {
+        return request("/api/master/clear-history", { method: "POST" });
+      },
   
       /** New registration — same endpoint the counter app uses. */
       registerVisitor(payload) {

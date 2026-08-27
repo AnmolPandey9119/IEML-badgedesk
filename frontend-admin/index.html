@@ -223,6 +223,19 @@
       border-radius: 6px;
       margin-right: 6px;
     }
+
+    /* ---------------- Danger Zone (Clear History) ---------------- */
+    .danger-zone {
+      border: 1px solid var(--error-border);
+      background: var(--error-bg);
+    }
+    .danger-zone h2 { color: var(--danger); }
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+      border: 1px solid var(--danger);
+    }
+    .btn-danger:hover { opacity: 0.9; }
   </style>
 </head>
 <body>
@@ -248,6 +261,7 @@
     <button class="tab-btn active" data-tab="home">Home</button>
     <button class="tab-btn" data-tab="print-count">Print Count</button>
     <button class="tab-btn" data-tab="scan">Scan Monitoring</button>
+    <button class="tab-btn" data-tab="unscanned">Unscanned Entries</button>
   </nav>
 
   <main class="container">
@@ -371,6 +385,19 @@
         </div>
       </section>
 
+      <!-- DANGER ZONE — end-of-event reset -->
+      <section class="card danger-zone" id="danger-zone-section">
+        <h2>Danger Zone</h2>
+        <p class="section-caption">
+          Once an event is fully over, clear its print/scan history so the
+          system starts clean for the next event. This clears the Print
+          Count, Scan Monitoring, and Unscanned Entries tabs (counts and
+          history logs only). It does <strong>not</strong> delete any
+          visitor's name, URN, organization, or other details.
+        </p>
+        <button id="clear-history-btn" class="btn btn-danger btn-small">Clear Print/Scan History</button>
+      </section>
+
     </div>
 
     <!-- ================= PRINT COUNT TAB ================= -->
@@ -382,6 +409,10 @@
           <div class="stat-box">
             <div class="stat-label">Overall Prints</div>
             <div class="stat-value" id="overall-print-total">—</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Unique Visitors Printed</div>
+            <div class="stat-value" id="unique-print-total">—</div>
           </div>
         </div>
         <div class="table-scroll table-scroll-spaced">
@@ -430,6 +461,10 @@
             <div class="stat-label">Overall Entries</div>
             <div class="stat-value" id="overall-scan-total">—</div>
           </div>
+          <div class="stat-box">
+            <div class="stat-label">Unique Visitors Scanned</div>
+            <div class="stat-value" id="unique-scan-total">—</div>
+          </div>
         </div>
         <div class="table-scroll table-scroll-spaced">
           <table class="activity-table" id="scanner-stats-table">
@@ -457,6 +492,31 @@
               <tr><th>URN</th><th>Name</th><th>Organization</th><th>Mobile</th><th>Category</th><th>Scans</th><th>Last Scanned</th></tr>
             </thead>
             <tbody id="scanned-table-body">
+              <tr><td colspan="7" class="search-empty">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- ================= UNSCANNED ENTRIES TAB ================= -->
+    <div class="tab-panel hidden" id="panel-unscanned">
+      <section class="card" id="unscanned-section">
+        <div class="section-header-row">
+          <h2>Unscanned Entries</h2>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <span id="unscanned-total" class="status count-badge">0 total</span>
+            <button id="export-unscanned-btn" class="btn btn-outline btn-small">⬇️ Export Excel</button>
+          </div>
+        </div>
+        <p class="section-caption">Badge printed at least once, but never scanned at any entrance gate — the people you may still need to follow up with.</p>
+        <input type="text" id="unscanned-search" class="table-search" placeholder="Filter by URN, name, mobile, organization..." />
+        <div class="table-scroll">
+          <table class="activity-table" id="unscanned-table">
+            <thead>
+              <tr><th>URN</th><th>Name</th><th>Organization</th><th>Mobile</th><th>Category</th><th>Prints</th><th>Last Printed</th></tr>
+            </thead>
+            <tbody id="unscanned-table-body">
               <tr><td colspan="7" class="search-empty">Loading...</td></tr>
             </tbody>
           </table>

@@ -9,6 +9,7 @@
    ========================================================== */
 
    let allVisitors = [];
+   let allUnscanned = [];
    let panelMode = "closed"; // "closed" | "add" | "view" | "edit"
    let activeUrn = null;     // which visitor the panel is currently showing (view/edit)
    
@@ -24,12 +25,15 @@
      wireSearch();
      wirePrintedSearch();
      wireScannedSearch();
+     wireUnscannedSearch();
+     wireClearHistory();
      wireTableRowClicks();
      wireFindAndPrint();
      wireExports();
      wireSyncNow();
      wireExportMasterExcel();
      startScanMonitoring();
+     startUnscannedMonitoring();
      startVisitorAutoRefresh();
    });
    
@@ -95,6 +99,9 @@
    
      totalEl.textContent = result.data.overall_total;
      if (homeTotalEl) homeTotalEl.textContent = result.data.overall_total;
+
+     const uniquePrintEl = document.getElementById("unique-print-total");
+     if (uniquePrintEl) uniquePrintEl.textContent = result.data.unique_total;
    
      const byDevice = result.data.by_device || [];
      if (byDevice.length === 0) {
@@ -134,6 +141,9 @@
 
      totalEl.textContent = result.data.overall_total;
 
+     const uniqueScanEl = document.getElementById("unique-scan-total");
+     if (uniqueScanEl) uniqueScanEl.textContent = result.data.unique_total;
+
      const byScanner = result.data.by_scanner || [];
      if (byScanner.length === 0) {
        bodyEl.innerHTML = `<tr><td colspan="2" class="search-empty">No entrance scans yet</td></tr>`;
@@ -143,6 +153,124 @@
      bodyEl.innerHTML = byScanner
        .map((s) => `<tr><td>${escapeHtml(s.scanner_name)}</td><td>${s.count}</td></tr>`)
        .join("");
+   }
+
+   /* ---------------- Unscanned Entries (printed but never scanned) ----------------
+      Badge printed at least once, scan_count still zero — the people
+      who may need following up before an event wraps. Same polling
+      pattern as startScanMonitoring(): print/scan actions can happen
+      from other devices (counter operators, scanner app) at any time,
+      so this refreshes on its own timer instead of waiting for a
+      manual reload. Comes from its own backend endpoint (not derived
+      from allVisitors client-side) since it needs last_printed_at,
+      which only print_log has. */
+   function startUnscannedMonitoring() {
+     loadUnscanned();
+     setInterval(loadUnscanned, 5000);
+   }
+
+   async function loadUnscanned() {
+     const result = await API.getUnscannedEntries();
+     const bodyEl = document.getElementById("unscanned-table-body");
+     if (!result.ok) {
+       if (bodyEl) bodyEl.innerHTML = `<tr><td colspan="7" class="search-empty">${escapeHtml(result.error || "Failed to load")}</td></tr>`;
+       return;
+     }
+     allUnscanned = result.data.entries || [];
+     renderUnscannedTable(currentUnscannedFiltered());
+   }
+
+   function currentUnscannedFiltered() {
+     const input = document.getElementById("unscanned-search");
+     const q = input ? input.value.trim().toLowerCase() : "";
+     return q ? allUnscanned.filter((v) => matchesQuery(v, q)) : allUnscanned;
+   }
+
+   function wireUnscannedSearch() {
+     const input = document.getElementById("unscanned-search");
+     if (!input) return;
+     input.addEventListener("input", () => {
+       renderUnscannedTable(currentUnscannedFiltered());
+     });
+   }
+
+   function renderUnscannedTable(entries) {
+     const bodyEl = document.getElementById("unscanned-table-body");
+     if (!bodyEl) return;
+     const totalEl = document.getElementById("unscanned-total");
+     if (totalEl) totalEl.textContent = `${entries.length} total`;
+
+     if (entries.length === 0) {
+       bodyEl.innerHTML = `<tr><td colspan="7" class="search-empty">Nobody left — everyone printed has also been scanned</td></tr>`;
+       return;
+     }
+
+     bodyEl.innerHTML = entries
+       .map(
+         (v) => `
+         <tr>
+           <td>${escapeHtml(v.urn)}</td>
+           <td>${escapeHtml(v.name)}</td>
+           <td>${escapeHtml(v.organization || "")}</td>
+           <td>${escapeHtml(v.mobile || "")}</td>
+           <td>${escapeHtml(v.category || "")}</td>
+           <td><span class="print-count-pill">${v.print_count || 0}</span></td>
+           <td>${formatScanTime(v.last_printed_at)}</td>
+         </tr>`
+       )
+       .join("");
+   }
+
+   /* ---------------- Clear History (end-of-event reset) ----------------
+      Double-confirms on purpose — wipes print/scan counts and history
+      for EVERY visitor at once and can't be undone. Visitor names/
+      URN/organization/etc. are never touched (see backend
+      master_store.clear_history() docstring) — only print_count/
+      scan_count/last_scanned_at + the print_log/scan_log tables. */
+   function wireClearHistory() {
+     const btn = document.getElementById("clear-history-btn");
+     if (!btn) return;
+     btn.addEventListener("click", async () => {
+       const firstOk = window.confirm(
+         "This will clear ALL print counts, scan counts, and print/scan " +
+         "history for every visitor, ready for a new event.\n\n" +
+         "Visitor names, URNs, and organization details will NOT be " +
+         "deleted — only print/scan counts and history.\n\n" +
+         "This cannot be undone. Continue?"
+       );
+       if (!firstOk) return;
+
+       const typed = window.prompt('Type CONFIRM (in capitals) to proceed:');
+       if (typed !== "CONFIRM") {
+         if (typed !== null) alert("Clear History cancelled — text didn't match.");
+         return;
+       }
+
+       btn.disabled = true;
+       btn.textContent = "Clearing...";
+
+       const result = await API.clearHistory();
+
+       btn.disabled = false;
+       btn.textContent = "Clear Print/Scan History";
+
+       if (!result.ok) {
+         alert(`Clear History failed: ${result.error}`);
+         return;
+       }
+
+       const { visitors_reset = 0, print_logs_cleared = 0, scan_logs_cleared = 0 } = result.data || {};
+       alert(
+         `Done — ${visitors_reset} visitor(s) reset, ${print_logs_cleared} print ` +
+         `log(s) and ${scan_logs_cleared} scan log(s) cleared.`
+       );
+
+       // Refresh every tab that could have changed
+       await loadVisitors();
+       await loadPrintStats();
+       await loadScanStats();
+       await loadUnscanned();
+     });
    }
 
    /* ---------------- Visitors: fetch once, render three filtered views ---------------- */
@@ -780,6 +908,32 @@
      const stamp2 = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
      XLSX.writeFile(workbook, `${filenamePrefix}-${stamp2}.xlsx`);
    }
+
+   function exportUnscannedToExcel(entries, filenamePrefix, emptyMessage) {
+     if (entries.length === 0) {
+       alert(emptyMessage);
+       return;
+     }
+
+     const header = ["URN", "Name", "Organization", "Mobile", "Category", "Prints", "Last Printed"];
+     const rows = entries.map((v) => [
+       v.urn || "", v.name || "", v.organization || "",
+       v.mobile || "", v.category || "", v.print_count || 0,
+       v.last_printed_at ? new Date(v.last_printed_at).toLocaleString() : "",
+     ]);
+
+     const worksheet = XLSX.utils.aoa_to_sheet([header, ...rows]);
+     worksheet["!cols"] = [
+       { wch: 10 }, { wch: 22 }, { wch: 22 },
+       { wch: 14 }, { wch: 16 }, { wch: 8 }, { wch: 20 },
+     ];
+
+     const workbook = XLSX.utils.book_new();
+     XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+
+     const stamp3 = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+     XLSX.writeFile(workbook, `${filenamePrefix}-${stamp3}.xlsx`);
+   }
    
    function wireExports() {
      document.getElementById("export-onsite-btn").addEventListener("click", () => {
@@ -797,6 +951,13 @@
      if (exportScannedBtn) {
        exportScannedBtn.addEventListener("click", () => {
          exportScannedToExcel(currentScannedFiltered(), "ieml-scanned-visitors", "No entrance scans to export yet.");
+       });
+     }
+
+     const exportUnscannedBtn = document.getElementById("export-unscanned-btn");
+     if (exportUnscannedBtn) {
+       exportUnscannedBtn.addEventListener("click", () => {
+         exportUnscannedToExcel(currentUnscannedFiltered(), "ieml-unscanned-entries", "No unscanned entries to export.");
        });
      }
    }
