@@ -164,8 +164,17 @@ class DeviceCount(BaseModel):
 
 
 class PrintStatsResponse(BaseModel):
-    """Returned by GET /api/master/print-stats"""
+    """
+    Returned by GET /api/master/print-stats.
+    overall_total = every print event counted (a badge reprinted 3x
+    counts as 3). unique_total = distinct visitors who have been
+    printed at least once (that same person counts as 1). NEW:
+    unique_total, added so the master console can show both numbers
+    side by side — overall_total alone was misleading once operators
+    started reprinting badges.
+    """
     overall_total: int
+    unique_total: int = 0
     by_device: list[DeviceCount] = Field(default_factory=list)
 
 
@@ -175,8 +184,15 @@ class ScannerCount(BaseModel):
 
 
 class ScanStatsResponse(BaseModel):
-    """Returned by GET /api/master/scan-stats"""
+    """
+    Returned by GET /api/master/scan-stats.
+    overall_total = every scan event counted (entry+exit, re-entries,
+    etc. all add up — this can be way bigger than visitor count at a
+    multi-day event). unique_total = distinct visitors scanned at
+    least once. NEW: unique_total, mirrors PrintStatsResponse.
+    """
     overall_total: int
+    unique_total: int = 0
     by_scanner: list[ScannerCount] = Field(default_factory=list)
 
 
@@ -199,3 +215,51 @@ class RecentScanEntry(BaseModel):
 class RecentScansResponse(BaseModel):
     """Returned by GET /api/master/recent-scans"""
     scans: list[RecentScanEntry] = Field(default_factory=list)
+
+
+# ----------------------------------------------------------------
+# NEW — Unscanned Entries (printed but never scanned at any gate)
+# ----------------------------------------------------------------
+
+class UnscannedEntry(BaseModel):
+    """
+    One row in the master console's new "Unscanned Entries" tab —
+    a visitor whose badge has been printed at least once but who has
+    never been scanned at any entrance gate (print_count > 0 AND
+    scan_count = 0). Deliberately a small, fixed field set (mirrors
+    RecentScanEntry's style) rather than MasterVisitor's "allow
+    everything" style — this tab is a focused follow-up list, not a
+    full record browser.
+    """
+    urn: str
+    name: str
+    organization: Optional[str] = None
+    category: Optional[str] = None
+    mobile: Optional[str] = None
+    print_count: int
+    last_printed_at: Optional[datetime] = None
+
+
+class UnscannedListResponse(BaseModel):
+    """Returned by GET /api/master/unscanned"""
+    entries: list[UnscannedEntry] = Field(default_factory=list)
+    total: int
+
+
+# ----------------------------------------------------------------
+# NEW — Clear History (end-of-event reset)
+# ----------------------------------------------------------------
+
+class ClearHistoryResponse(BaseModel):
+    """
+    Returned by POST /api/master/clear-history. Reports exactly what
+    got wiped so the frontend can show a concrete confirmation
+    ("142 print logs and 389 scan logs cleared across 210 visitors")
+    instead of a vague "done". Visitor master records themselves
+    (name/URN/org/etc.) are NEVER touched by this — only their
+    print_count/scan_count/last_scanned_at get reset to zero/null,
+    and the print_log/scan_log history rows are removed.
+    """
+    visitors_reset: int
+    print_logs_cleared: int
+    scan_logs_cleared: int

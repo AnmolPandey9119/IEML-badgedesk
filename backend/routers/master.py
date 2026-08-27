@@ -8,18 +8,26 @@ all of them automatically — there's no per-route repetition needed.
   - GET /api/master/visitors     -> every visitor on file, full
                                      details + how many times each
                                      one's badge has been printed.
-  - GET /api/master/print-stats  -> overall print total + a
-                                     breakdown by device name.
+  - GET /api/master/print-stats  -> overall + unique print totals +
+                                     a breakdown by device name.
+  - GET /api/master/scan-stats   -> overall + unique scan totals +
+                                     a breakdown by scanner/gate name.
+  - GET /api/master/recent-scans -> live feed of recent entrance scans.
+  - GET /api/master/unscanned    -> NEW: visitors printed but never
+                                     scanned at any gate.
+  - POST /api/master/clear-history -> NEW: end-of-event reset — wipes
+                                     print/scan history + counts only,
+                                     never touches visitor records.
 
-Nothing here writes anything — reads only. Add/edit/print-log/delete
-all stay in routers/registration.py (add/edit/print-log are shared
-with counter operators; delete is master-only but lives there next
-to the other URN-keyed actions for consistency).
+Add/edit/print-log all stay in routers/registration.py (shared with
+counter operators); delete and clear-history are master-only writes
+that live here since they're master-console-only actions.
 """
 
 from fastapi import APIRouter, Depends, Query
 
 from models.visitor import (
+    ClearHistoryResponse,
     DeviceCount,
     MasterVisitor,
     MasterVisitorListResponse,
@@ -28,6 +36,8 @@ from models.visitor import (
     RecentScansResponse,
     ScannerCount,
     ScanStatsResponse,
+    UnscannedEntry,
+    UnscannedListResponse,
 )
 from services import master_store
 from utils.auth import get_current_master
@@ -62,20 +72,22 @@ async def list_all_visitors():
 
 @router.get("/print-stats", response_model=PrintStatsResponse)
 async def get_print_stats():
-    """Overall print total across every device, plus a per-device breakdown."""
+    """Overall + unique print totals across every device, plus a per-device breakdown."""
     stats = master_store.print_stats()
     return PrintStatsResponse(
         overall_total=stats["overall_total"],
+        unique_total=stats["unique_total"],
         by_device=[DeviceCount(**d) for d in stats["by_device"]],
     )
 
 
 @router.get("/scan-stats", response_model=ScanStatsResponse)
 async def get_scan_stats():
-    """Overall entrance-scan total across every gate, plus a per-scanner breakdown."""
+    """Overall + unique entrance-scan totals across every gate, plus a per-scanner breakdown."""
     stats = master_store.scan_stats()
     return ScanStatsResponse(
         overall_total=stats["overall_total"],
+        unique_total=stats["unique_total"],
         by_scanner=[ScannerCount(**s) for s in stats["by_scanner"]],
     )
 
@@ -91,3 +103,32 @@ async def get_recent_scans(limit: int = Query(100, ge=1, le=500)):
     """
     rows = master_store.recent_scans(limit=limit)
     return RecentScansResponse(scans=[RecentScanEntry(**row) for row in rows])
+
+
+@router.get("/unscanned", response_model=UnscannedListResponse)
+async def get_unscanned_entries(limit: int = Query(5000, ge=1, le=20000)):
+    """
+    NEW. Powers the master console's "Unscanned Entries" tab —
+    visitors whose badge was printed at least once but who were never
+    scanned at any entrance gate. Read-only, same pattern as
+    get_recent_scans() above.
+    """
+    rows = master_store.unscanned_entries(limit=limit)
+    entries = [UnscannedEntry(**row) for row in rows]
+    return UnscannedListResponse(entries=entries, total=len(entries))
+
+
+@router.post("/clear-history", response_model=ClearHistoryResponse)
+async def clear_history():
+    """
+    NEW. End-of-event reset — wipes print_log + scan_log entirely and
+    resets every visitor's print_count/scan_count/last_scanned_at to
+    zero/null, so the Print Count, Scan Monitoring, and Unscanned
+    Entries tabs all go back to a clean slate for the next event.
+    Visitor master records (name/URN/org/etc.) are untouched — see
+    master_store.clear_history() for exactly what this does and does
+    not affect. Gated by get_current_master like every route in this
+    router — a counter operator's token can never reach this.
+    """
+    result = master_store.clear_history()
+    return ClearHistoryResponse(**result)

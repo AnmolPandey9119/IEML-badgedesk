@@ -368,12 +368,19 @@ def print_stats() -> dict:
     NEW — powers the master console's print stats view. Returns:
       {
         "overall_total": <int, sum of every print across every device>,
+        "unique_total": <int, distinct visitors printed at least once>,
         "by_device": [{"device_name": "Counter 1", "count": 42}, ...]
       }
+    unique_total is NEW — added alongside overall_total so a reprinted
+    badge (which bumps overall_total every time) doesn't make it look
+    like more people were printed than actually were.
     """
     with _connection() as conn, conn.cursor() as cur:
         cur.execute("SELECT COUNT(*) AS c FROM print_log")
         overall_total = cur.fetchone()["c"]
+
+        cur.execute("SELECT COUNT(DISTINCT urn) AS c FROM print_log")
+        unique_total = cur.fetchone()["c"]
 
         cur.execute(
             """
@@ -385,7 +392,7 @@ def print_stats() -> dict:
         )
         by_device = [{"device_name": row["device_name"], "count": row["count"]} for row in cur.fetchall()]
 
-    return {"overall_total": overall_total, "by_device": by_device}
+    return {"overall_total": overall_total, "unique_total": unique_total, "by_device": by_device}
 
 
 def log_scan(urn: str, scanner_name: str) -> Optional[dict]:
@@ -417,13 +424,19 @@ def scan_stats() -> dict:
     NEW — powers the master console's Scan Monitoring tab. Returns:
       {
         "overall_total": <int, sum of every scan across every gate>,
+        "unique_total": <int, distinct visitors scanned at least once>,
         "by_scanner": [{"scanner_name": "Gate 1", "count": 240}, ...]
       }
-    Mirrors print_stats() exactly.
+    unique_total is NEW — mirrors print_stats(). At a multi-day event
+    with repeat entry/exit scans, overall_total can be far bigger than
+    the actual number of people who walked through the gate.
     """
     with _connection() as conn, conn.cursor() as cur:
         cur.execute("SELECT COUNT(*) AS c FROM scan_log")
         overall_total = cur.fetchone()["c"]
+
+        cur.execute("SELECT COUNT(DISTINCT urn) AS c FROM scan_log")
+        unique_total = cur.fetchone()["c"]
 
         cur.execute(
             """
@@ -435,7 +448,7 @@ def scan_stats() -> dict:
         )
         by_scanner = [{"scanner_name": row["scanner_name"], "count": row["count"]} for row in cur.fetchall()]
 
-    return {"overall_total": overall_total, "by_scanner": by_scanner}
+    return {"overall_total": overall_total, "unique_total": unique_total, "by_scanner": by_scanner}
 
 
 def recent_scans(limit: int = 100) -> list[dict]:
@@ -495,3 +508,78 @@ def count() -> int:
     with _connection() as conn, conn.cursor() as cur:
         cur.execute("SELECT COUNT(*) AS c FROM visitors")
         return cur.fetchone()["c"]
+
+
+# ----------------------------------------------------------------
+# NEW — Unscanned Entries (printed but never scanned at any gate)
+# ----------------------------------------------------------------
+
+def unscanned_entries(limit: int = 5000) -> list[dict]:
+    """
+    NEW — powers the master console's "Unscanned Entries" tab. A
+    visitor lands here if their badge has been printed at least once
+    (print_count > 0) but they have never been scanned at any
+    entrance gate (scan_count = 0). last_printed_at is pulled from
+    print_log (the visitors table itself has no such column, only
+    last_scanned_at) via MAX(printed_at) per visitor, same join style
+    as recent_scans() above.
+    """
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT v.urn, v.name, v.org AS organization, v.category,
+                   v.mobile, v.print_count, MAX(pl.printed_at) AS last_printed_at
+            FROM visitors v
+            JOIN print_log pl ON pl.urn = v.urn
+            WHERE v.print_count > 0 AND v.scan_count = 0
+            GROUP BY v.urn, v.name, v.org, v.category, v.mobile, v.print_count
+            ORDER BY MAX(pl.printed_at) DESC
+            LIMIT %s
+            """,
+            (limit,),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+# ----------------------------------------------------------------
+# NEW — Clear History (end-of-event reset)
+# ----------------------------------------------------------------
+
+def clear_history() -> dict:
+    """
+    NEW — master console only (routers/master.py gates this behind
+    get_current_master, same as delete_visitor()). Wipes print/scan
+    HISTORY only, ready for the next event:
+
+      - print_log and scan_log rows: deleted entirely
+      - every visitor's print_count / scan_count / last_scanned_at:
+        reset to 0 / 0 / NULL
+
+    Deliberately does NOT touch name/org/city/category/status/email/
+    mobile/extra_json/source/sheet_row on the visitors table — the
+    visitor master list itself is untouched, only the print/scan
+    activity tied to this event is cleared. Runs as one transaction
+    (the _connection() context manager commits only at the end, so
+    if anything here fails, nothing is partially cleared).
+    """
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute("DELETE FROM print_log")
+        print_logs_cleared = cur.rowcount
+
+        cur.execute("DELETE FROM scan_log")
+        scan_logs_cleared = cur.rowcount
+
+        cur.execute(
+            """
+            UPDATE visitors
+            SET print_count = 0, scan_count = 0, last_scanned_at = NULL
+            WHERE print_count > 0 OR scan_count > 0
+            """
+        )
+        visitors_reset = cur.rowcount
+
+    return {
+        "visitors_reset": visitors_reset,
+        "print_logs_cleared": print_logs_cleared,
+        "scan_logs_cleared": scan_logs_cleared,
+    }
