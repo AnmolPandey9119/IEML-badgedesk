@@ -183,20 +183,16 @@
      renderUnscannedTable(currentUnscannedFiltered());
    }
 
-   /* Mirrors loadPrintStats()/loadScanStats(): "Overall Entries" sums
-      print_count across every left-out visitor (so someone reprinted
-      3 times still counts as 3), "Unique Entries" is just how many
-      distinct people are on this list — always computed from the
-      FULL list, not whatever the search box currently has typed,
-      same as the Print Count / Scan Monitoring stat boxes. */
+   /* Mirrors loadPrintStats()/loadScanStats() in spirit, but this list
+      is already one row per distinct visitor (print_count > 0 AND
+      scan_count = 0), so there's no separate "overall vs unique" split
+      to show here — just how many people are left to follow up with.
+      Always computed from the FULL list, not whatever's typed in the
+      search box, same as the other stat boxes. */
    function updateUnscannedStats(entries) {
-     const overallEl = document.getElementById("unscanned-overall-total");
-     const uniqueEl = document.getElementById("unscanned-unique-total");
-     if (!overallEl || !uniqueEl) return;
-
-     const overallTotal = entries.reduce((sum, v) => sum + (v.print_count || 0), 0);
-     overallEl.textContent = overallTotal;
-     uniqueEl.textContent = entries.length;
+     const totalEl = document.getElementById("unscanned-overall-total");
+     if (!totalEl) return;
+     totalEl.textContent = entries.length;
    }
 
    function currentUnscannedFiltered() {
