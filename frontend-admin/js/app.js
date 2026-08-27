@@ -131,6 +131,7 @@
 
    async function loadScanStats() {
      const totalEl = document.getElementById("overall-scan-total");
+     const homeScanTotalEl = document.getElementById("home-scan-total");
      const bodyEl = document.getElementById("scanner-stats-body");
 
      const result = await API.getScanStats();
@@ -140,6 +141,7 @@
      }
 
      totalEl.textContent = result.data.overall_total;
+     if (homeScanTotalEl) homeScanTotalEl.textContent = result.data.overall_total;
 
      const uniqueScanEl = document.getElementById("unique-scan-total");
      if (uniqueScanEl) uniqueScanEl.textContent = result.data.unique_total;
