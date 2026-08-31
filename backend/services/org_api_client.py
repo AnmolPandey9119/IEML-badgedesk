@@ -106,8 +106,11 @@ async def search_visitor(query: str) -> list[Visitor]:
         return [Visitor(**v) for v in matches]
 
     # ---------- Real org server ----------
+    # Auth confirmed via the reference curl (UPITS 2025's saveData
+    # endpoint): a plain `apiKey` header, not an OAuth Bearer token.
+    # IEML's real endpoint is expected to follow the same pattern.
     url = f"{settings.org_api_base_url}/visitors/search"
-    headers = {"Authorization": f"Bearer {settings.org_api_key}"}
+    headers = {"apiKey": settings.org_api_key}
 
     async with httpx.AsyncClient(timeout=settings.org_api_timeout_seconds) as client:
         resp = await client.get(url, headers=headers, params={"q": query})
@@ -131,7 +134,7 @@ async def register_visitor(payload: dict) -> Visitor:
 
     # ---------- Real org server ----------
     url = f"{settings.org_api_base_url}/visitors/register"
-    headers = {"Authorization": f"Bearer {settings.org_api_key}"}
+    headers = {"apiKey": settings.org_api_key}
 
     async with httpx.AsyncClient(timeout=settings.org_api_timeout_seconds) as client:
         resp = await client.post(url, headers=headers, json=payload)
@@ -158,7 +161,7 @@ async def update_visitor(urn: str, payload: dict) -> Visitor:
 
     # ---------- Real org server ----------
     url = f"{settings.org_api_base_url}/visitors/{urn}"
-    headers = {"Authorization": f"Bearer {settings.org_api_key}"}
+    headers = {"apiKey": settings.org_api_key}
 
     async with httpx.AsyncClient(timeout=settings.org_api_timeout_seconds) as client:
         resp = await client.put(url, headers=headers, json=payload)

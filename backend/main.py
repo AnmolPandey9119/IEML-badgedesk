@@ -90,10 +90,11 @@ async def health_check():
 # Depends(get_current_admin) declared inside each router file.
 # `master` is the NEW one — its own routes are gated further, down
 # to Depends(get_current_master), declared inside routers/master.py.
-from routers import auth, export, master, registration, sync  # noqa: E402
+from routers import auth, export, external, master, registration, sync  # noqa: E402
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(registration.router, prefix="/api/visitors", tags=["visitors"])
 app.include_router(sync.router, prefix="/api/sync", tags=["sync"])
 app.include_router(export.router, prefix="/api/export", tags=["export"])
 app.include_router(master.router, prefix="/api/master", tags=["master"])
+app.include_router(external.router, prefix="/api/external", tags=["external"])

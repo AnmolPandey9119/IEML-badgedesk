@@ -263,3 +263,53 @@ class ClearHistoryResponse(BaseModel):
     visitors_reset: int
     print_logs_cleared: int
     scan_logs_cleared: int
+
+
+# ----------------------------------------------------------------
+# NEW — External portal push sync (POST /api/external/save-data)
+# ----------------------------------------------------------------
+# The IEML registration portal pushes data INTO this backend, instead
+# of us pulling from a Google Sheet. Field names below match the
+# reference curl exactly (the portal's existing saveData API) so
+# whoever wires this up on their end doesn't need to translate
+# anything.
+
+class ExternalRegistrationRecord(BaseModel):
+    """
+    One record in the JSON array body of POST /api/external/save-data.
+    RegID is the portal's own unique registration number — it becomes
+    this system's URN directly (same value, printed on the badge / in
+    the QR), so it's the only required field. Everything else is
+    optional so one partially-filled record doesn't get the whole
+    batch rejected. `extra="allow"` means any column the portal adds
+    later is still accepted and kept, never silently dropped.
+    """
+    model_config = ConfigDict(extra="allow")
+
+    RegID: str
+    Title: Optional[str] = None
+    FirstName: Optional[str] = None
+    LastName: Optional[str] = None
+    Jobtitle: Optional[str] = None
+    CompanyName: Optional[str] = None
+    Country_Code: Optional[str] = None
+    Mobile_number: Optional[str] = None
+    Email: Optional[str] = None
+    Country: Optional[str] = None
+    Address: Optional[str] = None
+    City: Optional[str] = None
+    State: Optional[str] = None
+    PinCode: Optional[str] = None
+    Website: Optional[str] = None
+    RegistrationType: Optional[str] = None
+    SubmittedAt: Optional[str] = None
+    BadgeDownloadStatus: Optional[str] = None
+    EventName: Optional[str] = None
+
+
+class ExternalSyncResponse(BaseModel):
+    """Returned by POST /api/external/save-data — a summary, same spirit as sheet_sync's run_sync() summary."""
+    received: int
+    created: int
+    updated: int
+    skipped_invalid: int
