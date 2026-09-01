@@ -90,7 +90,10 @@ async def health_check():
 # Depends(get_current_admin) declared inside each router file.
 # `master` is the NEW one — its own routes are gated further, down
 # to Depends(get_current_master), declared inside routers/master.py.
-from routers import auth, export, external, master, registration, sync  # noqa: E402
+# `mart_registration` is ALSO public on purpose (no Depends at all,
+# see that file's own header comment) — it's the public Mart Days
+# registration form, meant to be reachable by anyone with the link.
+from routers import auth, export, external, mart_registration, master, registration, sync  # noqa: E402
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(registration.router, prefix="/api/visitors", tags=["visitors"])
@@ -98,3 +101,4 @@ app.include_router(sync.router, prefix="/api/sync", tags=["sync"])
 app.include_router(export.router, prefix="/api/export", tags=["export"])
 app.include_router(master.router, prefix="/api/master", tags=["master"])
 app.include_router(external.router, prefix="/api/external", tags=["external"])
+app.include_router(mart_registration.router, prefix="/api/mart-days", tags=["mart-days"])

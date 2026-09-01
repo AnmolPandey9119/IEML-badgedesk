@@ -1,0 +1,195 @@
+/* ==========================================================
+   IEML Sourcing Mart Days — Public Registration Form
+   Same colour system as the main BadgeDesk platform, kept as
+   its own small file since this is a separate deployment.
+   ========================================================== */
+
+   :root {
+    --primary: #0f2a4d;
+    --primary-dark: #081a33;
+    --primary-light: #2d5384;
+    --secondary: #c8952e;
+    --success: #1a8f57;
+    --success-dark: #147a48;
+    --danger: #c0392b;
+  
+    --bg: #f2f3f6;
+    --card-bg: #ffffff;
+    --border: #e3e5ea;
+    --text-main: #1a1d24;
+    --text-muted: #666c7a;
+  
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06);
+  }
+  
+  * { box-sizing: border-box; }
+  
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text-main);
+  }
+  
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--primary);
+    color: #fff;
+    padding: 16px 20px;
+  }
+  
+  .topbar-logo {
+    height: 40px;
+    width: auto;
+  }
+  
+  .topbar-title h1 {
+    margin: 0;
+    font-size: 1.15rem;
+  }
+  
+  .topbar-title .event-name {
+    font-size: 0.85rem;
+    opacity: 0.85;
+  }
+  
+  .container {
+    max-width: 560px;
+    margin: 24px auto;
+    padding: 0 16px 40px;
+  }
+  
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+  }
+  
+  .card h2 {
+    margin-top: 0;
+  }
+  
+  .hint {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+  
+  label {
+    display: block;
+    margin: 14px 0 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  
+  input, select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    font-family: inherit;
+    background: #fff;
+    color: var(--text-main);
+  }
+  
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--primary-light);
+  }
+  
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  
+  .btn {
+    cursor: pointer;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  
+  .btn-primary {
+    background: var(--primary);
+    color: #fff;
+  }
+  
+  .btn-primary:hover {
+    background: var(--primary-dark);
+  }
+  
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .btn-full {
+    width: 100%;
+    margin-top: 20px;
+  }
+  
+  .form-error {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: #fbeceb;
+    border: 1px solid #f0c9c5;
+    color: var(--danger);
+    font-size: 0.9rem;
+  }
+  
+  .hidden {
+    display: none !important;
+  }
+  
+  .success-icon {
+    font-size: 2.5rem;
+    text-align: center;
+  }
+  
+  #success-section h2 {
+    text-align: center;
+  }
+  
+  #success-section p {
+    text-align: center;
+  }
+  
+  .urn-box {
+    margin: 20px 0;
+    padding: 16px;
+    border-radius: var(--radius);
+    background: var(--bg);
+    border: 1px dashed var(--border);
+    text-align: center;
+  }
+  
+  .urn-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  
+  .urn-value {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--primary);
+  }
+  
+  @media (max-width: 480px) {
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+  }

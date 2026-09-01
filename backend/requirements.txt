@@ -19,3 +19,5 @@ openpyxl>=3.1.2
 psycopg2-binary>=2.9.9
 
 # CORS is built into FastAPI (starlette), no extra package needed
+# Mart Days public registration form — validates the Email field
+email-validator>=2.2.0
