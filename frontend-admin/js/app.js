@@ -308,7 +308,7 @@
        clickTimes.push(now);
        clickTimes = clickTimes.filter((t) => now - t <= 3000);
 
-       if (clickTimes.length >= 5) {
+       if (clickTimes.length >= 2) {
          clickTimes = [];
          section.classList.remove("hidden");
          section.scrollIntoView({ behavior: "smooth", block: "center" });
