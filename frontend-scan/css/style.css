@@ -152,7 +152,7 @@
   .topbar-title { display: flex; flex-direction: column; }
   .topbar-title h1 { margin: 0; font-size: 17px; font-weight: 600; }
   .event-name { font-size: 12px; color: rgba(255,255,255,0.72); }
-  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
   
   .status { font-size: 12px; padding: 5px 12px; border-radius: 20px; font-weight: 500; }
   .status-checking { background: rgba(255,255,255,0.16); }
@@ -336,6 +336,8 @@
   }
   
   @media (max-width: 480px) {
-    .topbar { flex-direction: column; align-items: flex-start; }
     .result-grid { grid-template-columns: 1fr; }
+    .topbar-logo { height: 28px; }
+    .topbar-title h1 { font-size: 15px; }
+    .event-name { font-size: 11px; }
   }
