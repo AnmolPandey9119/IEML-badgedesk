@@ -431,6 +431,16 @@
   .btn-small { padding: 6px 14px; font-size: 12.5px; }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   
+  /* Keyboard-navigation focus ring — only shows for keyboard users
+     (Tab key), never on a mouse click, so it never looks like visual
+     clutter for the vast majority of clicks/taps this app gets. */
+  .btn:focus-visible, .tab-btn:focus-visible, #search-input:focus-visible,
+  .table-search:focus-visible, .search-result-item:focus-visible,
+  #visitors-table-body tr:focus-visible {
+    outline: 2px solid var(--secondary);
+    outline-offset: 2px;
+  }
+  
   .topbar .btn-outline { color: #fff; border-color: rgba(255,255,255,0.5); background: transparent; }
   .topbar .btn-outline:hover { border-color: #fff; background: rgba(255,255,255,0.1); }
   
@@ -455,3 +465,13 @@
     .topbar { flex-direction: column; align-items: flex-start; gap: 8px; }
     .search-row { flex-direction: column; }
   }
+  
+  /* Thin, on-brand scrollbars for horizontally-scrolling tables/tabs —
+     the default chunky grey system scrollbar was the one visibly
+     "unstyled" element left in an otherwise designed page. */
+  .table-scroll::-webkit-scrollbar, .table-scroll-spaced::-webkit-scrollbar, .tabs-nav::-webkit-scrollbar { height: 6px; }
+  .table-scroll::-webkit-scrollbar-thumb, .table-scroll-spaced::-webkit-scrollbar-thumb, .tabs-nav::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 3px;
+  }
+  .table-scroll, .table-scroll-spaced, .tabs-nav { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
