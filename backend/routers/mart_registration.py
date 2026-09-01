@@ -19,20 +19,21 @@ always possible to tell "who came in through this public form" apart
 from onsite/sheet/portal registrations, e.g. for the master console
 later or for debugging.
 
-EMAIL (Step 2 — NOT wired up yet):
-Right where marked below is exactly where the confirmation email +
-QR badge attachment will be triggered once the email approach
-(SMTP vs Brevo etc.) is decided. Registration itself already works
-fully without it — the URN is returned directly in the response so
-the frontend can show it on-screen either way.
+EMAIL (Step 2 — NOW wired up):
+Confirmation email + QR badge attachment is sent via
+services/email_service.py (Brevo API), as a BackgroundTask — added
+AFTER the response is built, so a slow/failed email never delays or
+breaks the registration itself. The URN is also still returned
+directly in the response, so the on-screen confirmation never
+depends on the email succeeding.
 """
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from models.mart_registration import MartDaysRegisterRequest, MartDaysRegisterResponse
-from services import master_store
+from services import email_service, master_store
 from utils.urn import generate_urn
 
 logger = logging.getLogger("mart_registration")
@@ -42,7 +43,7 @@ router = APIRouter()
 
 
 @router.post("/register", response_model=MartDaysRegisterResponse)
-async def register_mart_days_visitor(payload: MartDaysRegisterRequest):
+async def register_mart_days_visitor(payload: MartDaysRegisterRequest, background_tasks: BackgroundTasks):
     """
     Public registration for the Mart Days event. Anyone with the link
     (once "sir" makes it public) can submit this — no login involved.
@@ -78,11 +79,17 @@ async def register_mart_days_visitor(payload: MartDaysRegisterRequest):
             detail="Registration could not be saved right now. Please try again.",
         )
 
-    # ------------------------------------------------------------
-    # TODO (Step 2): trigger confirmation email here, e.g.
-    #   await email_service.send_mart_days_confirmation(urn, payload)
-    # Intentionally not called yet — email approach not decided.
-    # ------------------------------------------------------------
+    # Scheduled to run AFTER this response is sent to the browser —
+    # registrant sees their URN instantly; email goes out right after,
+    # in the background. A Brevo failure here never touches the
+    # response the registrant already received.
+    background_tasks.add_task(
+        email_service.send_mart_days_confirmation,
+        urn,
+        payload.full_name,
+        payload.email,
+        payload.phone_number,
+    )
 
     return MartDaysRegisterResponse(
         urn=urn,
