@@ -23,6 +23,7 @@ just check whether that URN already exists.
 import logging
 
 from services import master_store
+from services.master_store import _CORE_FIELDS
 
 logger = logging.getLogger("external_sync")
 
@@ -107,17 +108,29 @@ def _map_record(record: dict) -> dict:
 
 def run_sync(records: list[dict]) -> dict:
     """
-    For each record: upsert by RegID (== URN). No hash-skip
-    optimization like sheet_sync.py's — pushes are already
-    event-driven (only sent when something happened on the portal
-    side), not a full-sheet re-scan every minute, so every push is
-    just applied directly. Never raises on a single bad record —
-    one missing RegID is skipped and counted, the rest of the batch
-    still goes through.
+    NEW (was previously one insert_visitor()/sync_update_visitor()
+    call per record — see master_store.bulk_upsert_visitors()'s own
+    docstring for exactly why that doesn't scale to a bulk push).
+
+    Bulk-upserts every record by RegID (== URN) in ONE database round
+    trip, so a push of even tens of thousands of records finishes in
+    a couple of seconds instead of many minutes. routers/external.py
+    also runs this off the main event loop via run_in_threadpool, so
+    a big batch never freezes printing/scanning for anyone else on
+    the live event floor while it's being saved.
+
+    Never raises on a single bad record — one missing RegID is
+    skipped and counted, the rest of the batch still goes through.
+
+    If the same RegID appears more than once in a single push,
+    the LAST occurrence wins. (Postgres physically cannot apply
+    ON CONFLICT DO UPDATE twice to the same row within one INSERT
+    statement — it errors out — so duplicates within a batch are
+    collapsed here first. Net effect is identical to processing
+    the batch one record at a time, in order.)
     """
-    created = 0
-    updated = 0
     skipped_invalid = 0
+    by_urn: dict[str, dict] = {}
 
     for record in records:
         urn = str(record.get("RegID") or "").strip()
@@ -127,21 +140,19 @@ def run_sync(records: list[dict]) -> dict:
             continue
 
         mapped = _map_record(record)
+        core = {field: mapped.get(field) for field in _CORE_FIELDS}
+        extra = {k: v for k, v in mapped.items() if k not in _CORE_FIELDS}
+        by_urn[urn] = {"urn": urn, **core, "extra": extra, "source": "portal"}
 
-        if master_store.get_by_urn(urn):
-            master_store.sync_update_visitor(urn, mapped, source_hash=None)
-            updated += 1
-        else:
-            master_store.insert_visitor(urn, mapped, source="portal", source_hash=None, sheet_row=None)
-            created += 1
+    result = master_store.bulk_upsert_visitors(list(by_urn.values()))
 
     logger.info(
         "External sync done: %d created, %d updated, %d skipped_invalid (received %d)",
-        created, updated, skipped_invalid, len(records),
+        result["created"], result["updated"], skipped_invalid, len(records),
     )
     return {
         "received": len(records),
-        "created": created,
-        "updated": updated,
+        "created": result["created"],
+        "updated": result["updated"],
         "skipped_invalid": skipped_invalid,
     }

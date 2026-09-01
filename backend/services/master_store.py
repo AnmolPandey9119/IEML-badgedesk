@@ -326,6 +326,93 @@ def update_visitor(urn: str, data: dict) -> Optional[dict]:
     return get_by_urn(urn)
 
 
+def bulk_upsert_visitors(rows: list[dict]) -> dict:
+    """
+    NEW — bulk insert/update MANY visitors in ONE database round trip.
+    Built for services/external_sync.py's push-API endpoint, which can
+    receive thousands of records in a single call.
+
+    WHY THIS EXISTS (instead of just calling insert_visitor()/
+    sync_update_visitor() once per record, like sheet_sync.py does):
+    those two open a FRESH connection every single call. For a
+    handful of records that's fine — for a bulk push of, say, 30,000
+    records, that's up to 60,000 sequential connections, which would
+    take many minutes and — because it's all synchronous, blocking
+    code — freeze the entire server (no printing, no scanning, no
+    search for anyone) for that whole time. routers/external.py also
+    runs this off the main thread via run_in_threadpool for the same
+    reason: even a fast bulk upsert shouldn't block other requests.
+
+    ONE connection, ONE INSERT ... ON CONFLICT statement covering the
+    whole batch (via execute_values, chunked internally at page_size)
+    — a few seconds even for tens of thousands of rows, instead of
+    tens of minutes.
+
+    `rows`: list of dicts with keys urn, name, org, city, category,
+    status, email, mobile, extra (dict), source. On conflict (urn
+    already exists), OVERWRITES every core field + extra_json with
+    the new values — same full-replace semantics as
+    sync_update_visitor() above, so behavior matches exactly whether
+    a record arrives one-at-a-time or in a bulk batch. source /
+    source_hash / sheet_row are only set on first insert — never
+    touched on update, same rule sync_update_visitor() already
+    follows (a URN's origin and sheet position don't change later).
+
+    Returns {"created": int, "updated": int} — "created" and
+    "updated" are computed from which URNs already existed BEFORE
+    this call, same meaning external_sync.py's response already had.
+    """
+    if not rows:
+        return {"created": 0, "updated": 0}
+
+    urns = [r["urn"] for r in rows]
+
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT urn FROM visitors WHERE urn = ANY(%s)", (urns,))
+        existing_before = {row["urn"] for row in cur.fetchall()}
+
+        values = [
+            (
+                r["urn"],
+                r.get("name"),
+                r.get("org"),
+                r.get("city"),
+                r.get("category"),
+                r.get("status"),
+                r.get("email"),
+                r.get("mobile"),
+                json.dumps(r.get("extra") or {}),
+                r.get("source", "portal"),
+            )
+            for r in rows
+        ]
+
+        psycopg2.extras.execute_values(
+            cur,
+            """
+            INSERT INTO visitors
+                (urn, name, org, city, category, status, email, mobile, extra_json, source)
+            VALUES %s
+            ON CONFLICT (urn) DO UPDATE SET
+                name = EXCLUDED.name,
+                org = EXCLUDED.org,
+                city = EXCLUDED.city,
+                category = EXCLUDED.category,
+                status = EXCLUDED.status,
+                email = EXCLUDED.email,
+                mobile = EXCLUDED.mobile,
+                extra_json = EXCLUDED.extra_json
+            """,
+            values,
+            page_size=1000,
+        )
+
+    unique_urns = set(urns)
+    created = len(unique_urns - existing_before)
+    updated = len(unique_urns & existing_before)
+    return {"created": created, "updated": updated}
+
+
 def delete_visitor(urn: str) -> bool:
     """
     NEW — master console only (routers/master.py gates this behind
