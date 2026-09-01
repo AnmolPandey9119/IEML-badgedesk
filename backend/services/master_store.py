@@ -670,3 +670,40 @@ def clear_history() -> dict:
         "print_logs_cleared": print_logs_cleared,
         "scan_logs_cleared": scan_logs_cleared,
     }
+
+
+def purge_everything() -> dict:
+    """
+    NEW — master console's hidden "Danger Zone" full wipe (routers/
+    master.py's POST /purge-all, master-only + a server-side confirm
+    phrase check on top of that). Deletes EVERY visitor row outright
+    — name, URN, org, category, everything. print_log and scan_log
+    rows for those visitors go with them automatically (ON DELETE
+    CASCADE, same foreign keys delete_visitor() already relies on for
+    a single visitor). This is the true "start completely fresh for
+    the next event" reset — unlike clear_history() above, which
+    deliberately keeps every visitor's identity and only resets their
+    print/scan counters.
+
+    Counts everything BEFORE deleting (since the cascade means
+    print_log/scan_log row counts would otherwise be gone by the time
+    we could count them), all inside one transaction — either
+    everything is wiped, or (if something fails) nothing is.
+    """
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) AS c FROM visitors")
+        visitors_deleted = cur.fetchone()["c"]
+
+        cur.execute("SELECT COUNT(*) AS c FROM print_log")
+        print_logs_deleted = cur.fetchone()["c"]
+
+        cur.execute("SELECT COUNT(*) AS c FROM scan_log")
+        scan_logs_deleted = cur.fetchone()["c"]
+
+        cur.execute("DELETE FROM visitors")  # cascades to print_log + scan_log
+
+    return {
+        "visitors_deleted": visitors_deleted,
+        "print_logs_deleted": print_logs_deleted,
+        "scan_logs_deleted": scan_logs_deleted,
+    }

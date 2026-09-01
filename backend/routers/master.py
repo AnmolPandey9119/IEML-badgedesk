@@ -24,7 +24,7 @@ counter operators); delete and clear-history are master-only writes
 that live here since they're master-console-only actions.
 """
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from models.visitor import (
     ClearHistoryResponse,
@@ -32,12 +32,15 @@ from models.visitor import (
     MasterVisitor,
     MasterVisitorListResponse,
     PrintStatsResponse,
+    PurgeAllRequest,
+    PurgeAllResponse,
     RecentScanEntry,
     RecentScansResponse,
     ScannerCount,
     ScanStatsResponse,
     UnscannedEntry,
     UnscannedListResponse,
+    _PURGE_CONFIRM_PHRASE,
 )
 from services import master_store
 from utils.auth import get_current_master
@@ -132,3 +135,28 @@ async def clear_history():
     """
     result = master_store.clear_history()
     return ClearHistoryResponse(**result)
+
+
+@router.post("/purge-all", response_model=PurgeAllResponse)
+async def purge_all(body: PurgeAllRequest):
+    """
+    NEW. Full database wipe — deletes EVERY visitor row (their
+    print_log/scan_log go with them automatically). Unlike
+    clear_history() above, this also removes visitor identity itself
+    (name/URN/org/etc.) — a true "start completely fresh" reset for
+    a brand new event.
+
+    Requires body {"confirm_phrase": "DELETE EVERYTHING"} — exact,
+    case-sensitive match — or this returns 400 and deletes nothing.
+    This is a SECOND gate, purely server-side, on top of whatever the
+    master console's own hidden-unlock + typed-confirmation UI
+    already requires before it even shows this button. Already
+    master-only via this router's Depends(get_current_master).
+    """
+    if body.confirm_phrase != _PURGE_CONFIRM_PHRASE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'Send {{"confirm_phrase": "{_PURGE_CONFIRM_PHRASE}"}} to confirm — this permanently deletes ALL data and cannot be undone.',
+        )
+    result = master_store.purge_everything()
+    return PurgeAllResponse(**result)

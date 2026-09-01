@@ -266,6 +266,40 @@ class ClearHistoryResponse(BaseModel):
 
 
 # ----------------------------------------------------------------
+# NEW — Purge Everything (full end-of-event database wipe)
+# ----------------------------------------------------------------
+# Deliberately separate from ClearHistoryResponse above.
+# Clear History (existing) only resets print/scan counters —
+# visitor identity rows (name, URN, org, etc.) are never touched.
+# Purge Everything is the opposite: it deletes every visitor row
+# outright (print_log/scan_log go with them automatically via
+# ON DELETE CASCADE) — a true "wipe the database clean" for
+# starting an entirely new event from scratch. This is why the
+# frontend hides it behind a secret unlock gesture + a typed
+# confirm phrase, on top of this being master-only already.
+
+_PURGE_CONFIRM_PHRASE = "DELETE EVERYTHING"
+
+
+class PurgeAllRequest(BaseModel):
+    """
+    Body for POST /api/master/purge-all. confirm_phrase must be
+    EXACTLY "DELETE EVERYTHING" (case-sensitive) — a second,
+    server-side gate on top of whatever the master console's own UI
+    already requires the operator to type, so this endpoint can never
+    be triggered by an empty or automated POST.
+    """
+    confirm_phrase: str = ""
+
+
+class PurgeAllResponse(BaseModel):
+    """Returned by POST /api/master/purge-all — exactly how much was permanently deleted."""
+    visitors_deleted: int
+    print_logs_deleted: int
+    scan_logs_deleted: int
+
+
+# ----------------------------------------------------------------
 # NEW — External portal push sync (POST /api/external/save-data)
 # ----------------------------------------------------------------
 # The IEML registration portal pushes data INTO this backend, instead
