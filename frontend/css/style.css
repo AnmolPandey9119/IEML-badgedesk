@@ -1,89 +1,97 @@
 /* ==========================================================
-   IEML BadgeDesk - Dashboard Styles
+   IEML BadgeDesk — Counter (Search & Print)
+   Same design system as the master console — see that file's
+   header comment for the full rationale. Kept as its own file
+   since this app is a separate deployment.
    ========================================================== */
 
    :root {
-    /* IEML brand palette — deep navy (institutional/trade-body
-       identity, matches indiaexpomart.com) + gold/amber accent
-       (matches the IEML logo). If IEML's comms team gives you
-       exact hex/PMS codes from an official brand kit, swap these
-       two values only — everything else derives from them. */
-    --primary: #14335e;       /* IEML navy */
-    --primary-dark: #0c223f;
-    --secondary: #c8952e;     /* IEML gold accent */
-    --success: #1e9e5a;
-    --danger: #d64545;
-    --bg: #f5f6fa;
+    --primary: #0f2a4d;
+    --primary-dark: #081a33;
+    --primary-light: #2d5384;
+    --secondary: #c8952e;
+    --secondary-dark: #a97a1f;
+    --success: #1a8f57;
+    --success-dark: #147a48;
+    --danger: #c0392b;
+    --danger-dark: #a53025;
+  
+    --bg: #f2f3f6;
     --card-bg: #ffffff;
-    --border: #e1e3ea;
-    --text-main: #000000;
-    --text-muted: #000000;
+    --border: #e3e5ea;
+    --border-strong: #cfd2da;
+    --text-main: #1a1d24;
+    --text-muted: #666c7a;
+  
     --radius: 10px;
-    --shadow: 0 2px 8px rgba(0,0,0,0.06);
-
-    /* Theme-aware accents used for hover states, badges and tags —
-       kept as variables (instead of hardcoded hex) so every one of
-       these stays legible and on-brand in both light and dark mode. */
-    --hover-bg: rgba(20, 51, 94, 0.06);
-    --queue-bg: #faf3e3;
-    --queue-text: var(--secondary);
-    --error-bg: #fdeaea;
-    --error-border: #f3c6c6;
-    --tag-success-bg: #e3f7ea;
-    --tag-success-text: #147a43;
-    --tag-pending-bg: #fff4e0;
+    --radius-sm: 6px;
+    --shadow: 0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06);
+    --shadow-md: 0 6px 18px rgba(16,24,40,0.10);
+  
+    --hover-bg: rgba(15, 42, 77, 0.05);
+    --queue-bg: #f8f0e0;
+    --queue-text: #93701f;
+    --error-bg: #fbeceb;
+    --error-border: #f0c9c5;
+    --tag-success-bg: #e5f5ec;
+    --tag-success-text: #146b43;
+    --tag-pending-bg: #fbf1de;
     --tag-pending-text: #8a6206;
-    --tag-failed-bg: #fdeaea;
-    --tag-failed-text: #a52f2f;
+    --tag-failed-bg: #fbeceb;
+    --tag-failed-text: #a13429;
   }
   
-  /* Dark theme — activated by setting data-theme="dark" on <html>,
-     toggled + persisted via js/theme.js */
   html[data-theme="dark"] {
-    --primary: #3d6fb4;       /* lighter navy — stays legible on dark bg */
-    --primary-dark: #1b2c64;
-    --secondary: #e5b03c;     /* brighter gold for dark-bg contrast */
-    --success: #3ecf7e;
-    --danger: #ef6464;
-    --bg: #14151a;
-    --card-bg: #1e2028;
-    --border: #33353f;
-    --text-main: #eceef2;
-    --text-muted: #9aa0ac;
-    --shadow: 0 2px 8px rgba(0,0,0,0.35);
-
-    --hover-bg: rgba(61, 111, 180, 0.18);
-    --queue-bg: rgba(229, 176, 60, 0.15);
+    --primary: #4d84c4;
+    --primary-dark: #16294a;
+    --primary-light: #6a9bd6;
+    --secondary: #e0ab4a;
+    --secondary-dark: #c8952e;
+    --success: #34b374;
+    --success-dark: #269459;
+    --danger: #e0605a;
+    --danger-dark: #c0453f;
+  
+    --bg: #12141a;
+    --card-bg: #1b1e26;
+    --border: #2c303b;
+    --border-strong: #3a3f4c;
+    --text-main: #eef0f4;
+    --text-muted: #9aa1b0;
+  
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.25);
+    --shadow-md: 0 8px 22px rgba(0,0,0,0.45);
+  
+    --hover-bg: rgba(77, 132, 196, 0.14);
+    --queue-bg: rgba(224, 171, 74, 0.14);
     --queue-text: var(--secondary);
-    --error-bg: rgba(239, 100, 100, 0.15);
-    --error-border: rgba(239, 100, 100, 0.4);
-    --tag-success-bg: rgba(62, 207, 126, 0.16);
-    --tag-success-text: #5fe39a;
-    --tag-pending-bg: rgba(229, 176, 60, 0.18);
+    --error-bg: rgba(224, 96, 90, 0.14);
+    --error-border: rgba(224, 96, 90, 0.38);
+    --tag-success-bg: rgba(52, 179, 116, 0.16);
+    --tag-success-text: #5fdb9a;
+    --tag-pending-bg: rgba(224, 171, 74, 0.18);
     --tag-pending-text: #f0c766;
-    --tag-failed-bg: rgba(239, 100, 100, 0.16);
-    --tag-failed-text: #f28c8c;
+    --tag-failed-bg: rgba(224, 96, 90, 0.16);
+    --tag-failed-text: #f4948e;
   }
   
-  body,
-  .card,
-  .status,
-  input,
-  select,
-  button {
+  body, .card, .status, input, select, button {
     transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
   }
   
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
   
   body {
     margin: 0;
-    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
     background: var(--bg);
     color: var(--text-main);
+    -webkit-font-smoothing: antialiased;
   }
+  
+  h1, h2, h3 { font-weight: 600; letter-spacing: -0.01em; }
   
   /* ---------------- Top Bar ---------------- */
   .topbar {
@@ -91,59 +99,28 @@
     justify-content: space-between;
     align-items: center;
     padding: 14px 28px;
-    background: linear-gradient(90deg, var(--primary-dark), var(--primary));
+    background: var(--primary-dark);
+    border-bottom: 2px solid var(--secondary);
     color: #fff;
-    box-shadow: var(--shadow);
   }
   
-  .topbar-left {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .topbar-logo {
-    height: 40px;
-    width: auto;
-    object-fit: contain;
-  }
-
-  .topbar-title {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .topbar-left h1 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 600;
-  }
-  
-  .event-name {
-    font-size: 12px;
-    opacity: 0.85;
-    letter-spacing: 0.5px;
-  }
-  
-  .topbar-right {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
+  .topbar-left { display: flex; align-items: center; gap: 14px; }
+  .topbar-logo { height: 38px; width: auto; object-fit: contain; }
+  .topbar-title { display: flex; flex-direction: column; }
+  .topbar-left h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  .event-name { font-size: 12px; color: rgba(255,255,255,0.72); }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
   
   .status {
-    font-size: 13px;
+    font-size: 12.5px;
     padding: 5px 12px;
     border-radius: 20px;
     font-weight: 500;
   }
+  .status-checking { background: rgba(255,255,255,0.16); }
+  .status-online { background: var(--success); }
+  .status-offline { background: var(--danger); }
   
-  .status-checking { background: rgba(255,255,255,0.2); }
-  .status-online { background: #1e9e5a; }
-  .status-offline { background: #d64545; }
-
-  /* Activity Log row status pill — same shape as .status above but
-     sized for a table cell, not the topbar. */
   .activity-status {
     display: inline-block;
     font-size: 12px;
@@ -152,8 +129,8 @@
     font-weight: 500;
     color: #fff;
   }
-  .activity-status-success { background: #1e9e5a; }
-  .activity-status-failed { background: #d64545; }
+  .activity-status-success { background: var(--success); }
+  .activity-status-failed { background: var(--danger); }
   
   /* ---------------- Layout ---------------- */
   .container {
@@ -162,7 +139,7 @@
     padding: 0 20px 60px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 18px;
   }
   
   .card {
@@ -170,73 +147,39 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 22px 24px;
-    box-shadow: var(--shadow);
   }
   
-  .card h2 {
-    margin: 0 0 16px;
-    font-size: 17px;
-    font-weight: 600;
-    color: var(--text-main);
-  }
-  
-  .section-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-  
+  .card h2 { margin: 0 0 16px; font-size: 16px; font-weight: 600; color: var(--text-main); }
+  .section-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; flex-wrap: wrap; }
   .section-header-row h2 { margin: 0; }
-  
   .hidden { display: none !important; }
   
   /* ---------------- Search ---------------- */
-  .search-row {
-    display: flex;
-    gap: 10px;
-  }
-  
+  .search-row { display: flex; gap: 10px; }
   #search-input {
     flex: 1;
     padding: 12px 14px;
     font-size: 15px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
     outline: none;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
-  
-  #search-input:focus {
-    border-color: var(--primary);
-  }
-  
-  .search-results {
-    margin-top: 14px;
-  }
-  
+  #search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--hover-bg); }
+  .search-results { margin-top: 14px; }
   .search-result-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 12px 14px;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     margin-bottom: 8px;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background 0.15s, border-color 0.15s;
   }
-  
-  .search-result-item:hover {
-    background: var(--hover-bg);
-    border-color: var(--primary);
-  }
-  
-  .search-empty {
-    color: var(--text-muted);
-    font-size: 14px;
-    padding: 10px 2px;
-  }
+  .search-result-item:hover { background: var(--hover-bg); border-color: var(--primary); }
+  .search-empty { color: var(--text-muted); font-size: 14px; padding: 10px 2px; }
   
   /* ---------------- Visitor Details ---------------- */
   .visitor-info-grid {
@@ -245,37 +188,28 @@
     gap: 16px;
     margin-bottom: 18px;
   }
-  
-  .visitor-info-grid > div {
-    min-width: 0; /* lets long content (e.g. emails) actually wrap instead of overflowing into the next column */
-  }
-  
+  .visitor-info-grid > div { min-width: 0; }
   .visitor-info-grid label {
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
+    font-size: 12.5px;
+    font-weight: 500;
     color: var(--text-muted);
     display: block;
     margin-bottom: 4px;
   }
-  
   .visitor-info-grid p {
     margin: 0;
     font-size: 16px;
-    font-weight: 400;
+    font-weight: 500;
     word-break: break-word;
     overflow-wrap: anywhere;
   }
-  
-  .visitor-info-grid input,
-  .visitor-info-grid select {
+  .visitor-info-grid input, .visitor-info-grid select {
     width: 100%;
     padding: 8px 10px;
     font-size: 15px;
-    font-weight: 600;
-    border: 1.5px solid var(--primary);
-    border-radius: 6px;
+    font-weight: 500;
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-sm);
     outline: none;
     font-family: inherit;
   }
@@ -287,135 +221,60 @@
     gap: 16px;
     margin-bottom: 18px;
   }
-  
-  .form-group label {
-    display: block;
-    font-size: 13px;
-    margin-bottom: 6px;
-    color: var(--text-muted);
-    font-weight: 500;
-  }
-  
-  .form-group input,
-  .form-group select {
+  .form-group label { display: block; font-size: 12.5px; margin-bottom: 6px; color: var(--text-muted); font-weight: 500; }
+  .form-group input, .form-group select {
     width: 100%;
     padding: 10px 12px;
     font-size: 14px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
     outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
-  
-  .form-group input:focus,
-  .form-group select:focus {
-    border-color: var(--primary);
-  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--hover-bg); }
   
   /* ---------------- Buttons ---------------- */
-  .action-row {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  
+  .action-row { display: flex; gap: 10px; flex-wrap: wrap; }
   .btn {
-    padding: 10px 20px;
-    font-size: 14px;
+    padding: 10px 18px;
+    font-size: 13.5px;
     font-weight: 600;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: opacity 0.15s, transform 0.05s;
+    transition: background 0.15s, border-color 0.15s, transform 0.05s;
   }
-  
   .btn:active { transform: scale(0.97); }
-  
   .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-light); }
   .btn-success { background: var(--success); color: #fff; }
-  .btn-secondary { background: var(--secondary); color: #fff; }
-  .btn-outline {
-    background: transparent;
-    color: var(--text-main);
-    border: 1.5px solid var(--border);
-  }
-  .btn-small { padding: 6px 14px; font-size: 13px; }
-  
-  .btn:hover { opacity: 0.9; }
+  .btn-success:hover { background: var(--success-dark); }
+  .btn-secondary { background: var(--secondary); color: #2b1f04; }
+  .btn-secondary:hover { background: var(--secondary-dark); color: #fff; }
+  .btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border-strong); }
+  .btn-outline:hover { background: var(--hover-bg); border-color: var(--primary); }
+  .btn-small { padding: 6px 14px; font-size: 12.5px; }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  /* Topbar is always a dark navy gradient regardless of theme — its
-     outline buttons (Sync Now, Export Excel, Dark/Light toggle,
-     Logout) need light text always, not var(--text-main) which
-     turns black in light mode and disappears against the navy
-     background. */
-  .topbar .btn-outline {
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.55);
-  }
-  .topbar .btn-outline:hover {
-    border-color: #fff;
-    background: rgba(255, 255, 255, 0.1);
-  }
+  
+  .topbar .btn-outline { color: #fff; border-color: rgba(255,255,255,0.5); background: transparent; }
+  .topbar .btn-outline:hover { border-color: #fff; background: rgba(255,255,255,0.1); }
   
   /* ---------------- Activity Table ---------------- */
-  .queue-status {
-    font-size: 13px;
-    background: var(--queue-bg);
-    color: var(--queue-text);
-    padding: 4px 12px;
-    border-radius: 14px;
-    font-weight: 600;
-  }
-
-  /* Topbar print-count badge — sits right next to the Online/Offline
-     status pill so the operator always sees today's print total.
-     Lives on the navy topbar gradient (both themes), same as
-     .status-checking, so it needs a semi-transparent WHITE treatment
-     — not the card-based --queue-bg pair used inside .queue-status. */
-  .print-count-badge {
-    background: rgba(255, 255, 255, 0.16);
-    color: #fff;
-  }
+  .queue-status { font-size: 13px; background: var(--queue-bg); color: var(--queue-text); padding: 4px 12px; border-radius: 14px; font-weight: 600; }
+  .print-count-badge { background: rgba(255,255,255,0.14); color: #fff; }
   
-  .activity-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13.5px;
-  }
+  .activity-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .activity-table th { text-align: left; padding: 10px 8px; color: var(--text-muted); border-bottom: 1px solid var(--border-strong); font-weight: 600; font-size: 12.5px; }
+  .activity-table td { padding: 10px 8px; border-bottom: 1px solid var(--border); }
+  .activity-table tbody tr:hover { background: var(--hover-bg); }
   
-  .activity-table th {
-    text-align: left;
-    padding: 10px 8px;
-    color: var(--text-muted);
-    border-bottom: 2px solid var(--border);
-    font-weight: 600;
-  }
-  
-  .activity-table td {
-    padding: 10px 8px;
-    border-bottom: 1px solid var(--border);
-  }
-  
-  .tag {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 600;
-  }
-  
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
   .tag-success { background: var(--tag-success-bg); color: var(--tag-success-text); }
   .tag-pending { background: var(--tag-pending-bg); color: var(--tag-pending-text); }
   .tag-failed { background: var(--tag-failed-bg); color: var(--tag-failed-text); }
   
   /* ---------------- Misc ---------------- */
-  .print-frame-hidden {
-    position: absolute;
-    width: 0;
-    height: 0;
-    border: 0;
-    visibility: hidden;
-  }
+  .print-frame-hidden { position: absolute; width: 0; height: 0; border: 0; visibility: hidden; }
   
   @media (max-width: 640px) {
     .topbar { flex-direction: column; align-items: flex-start; gap: 8px; }
