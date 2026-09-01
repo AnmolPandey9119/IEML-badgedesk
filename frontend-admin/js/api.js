@@ -128,6 +128,20 @@
       clearHistory() {
         return request("/api/master/clear-history", { method: "POST" });
       },
+
+      /**
+       * Full database wipe — every visitor, every print/scan log,
+       * gone. Requires the exact confirm phrase server-side too (see
+       * routers/master.py) even though the UI already gates this
+       * behind a hidden unlock + typed confirmation before this is
+       * ever called.
+       */
+      purgeAll(confirmPhrase) {
+        return request("/api/master/purge-all", {
+          method: "POST",
+          body: JSON.stringify({ confirm_phrase: confirmPhrase }),
+        });
+      },
   
       /** New registration — same endpoint the counter app uses. */
       registerVisitor(payload) {

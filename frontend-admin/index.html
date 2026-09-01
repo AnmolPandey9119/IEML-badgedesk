@@ -242,7 +242,7 @@
 
   <header class="topbar">
     <div class="topbar-left">
-      <img src="assets/ieml-logo.png" alt="IEML" class="topbar-logo" onerror="this.style.display='none'" />
+      <img src="assets/ieml-logo.png" alt="IEML" class="topbar-logo" id="topbar-logo" onerror="this.style.display='none'" />
       <div class="topbar-title">
         <h1>IEML BadgeDesk — Master Console</h1>
         <span id="event-name" class="event-name">Loading event...</span>
@@ -401,6 +401,28 @@
           visitor's name, URN, organization, or other details.
         </p>
         <button id="clear-history-btn" class="btn btn-danger btn-small">Clear Print/Scan History</button>
+      </section>
+
+      <!-- HIDDEN — full database wipe. Not part of normal flow on
+           purpose: stays display:none until the topbar logo is
+           clicked 5 times in a row (see wireSecretPurgeUnlock() in
+           app.js). Even once revealed, the actual delete button
+           stays disabled until the exact confirm phrase is typed
+           into the box below it — two separate things have to
+           happen deliberately before anything can be deleted. -->
+      <section class="card danger-zone hidden" id="purge-all-section">
+        <h2>⚠️ Delete Everything</h2>
+        <p class="section-caption">
+          Permanently deletes <strong>every</strong> visitor — name, URN,
+          organization, print history, scan history, all of it — across
+          the entire database. Use this only when starting a completely
+          new event from a blank slate. There is <strong>no undo</strong>.
+        </p>
+        <p class="section-caption">
+          Type <code>DELETE EVERYTHING</code> below to enable the button.
+        </p>
+        <input type="text" id="purge-confirm-input" class="table-search" placeholder="Type DELETE EVERYTHING to unlock" style="max-width: 320px; display: inline-block; margin-right: 10px;" />
+        <button id="purge-all-btn" class="btn btn-danger btn-small" disabled>Delete Everything</button>
       </section>
 
     </div>

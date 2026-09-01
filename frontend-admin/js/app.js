@@ -27,6 +27,8 @@
      wireScannedSearch();
      wireUnscannedSearch();
      wireClearHistory();
+     wireSecretPurgeUnlock();
+     wirePurgeAll();
      wireTableRowClicks();
      wireFindAndPrint();
      wireExports();
@@ -281,6 +283,93 @@
        );
 
        // Refresh every tab that could have changed
+       await loadVisitors();
+       await loadPrintStats();
+       await loadScanStats();
+       await loadUnscanned();
+     });
+   }
+
+   /* ---------------- Secret unlock for the "Delete Everything" section ----------------
+      Click the topbar logo 5 times within 3 seconds to reveal the
+      hidden Purge-All danger zone. Deliberately not a visible/labeled
+      button — this is the whole point (see index.html's comment on
+      #purge-all-section): nobody should ever land on this by
+      accident. Clicks older than 3 seconds fall off the window, so a
+      slow/accidental sequence of clicks never accumulates to 5. */
+   function wireSecretPurgeUnlock() {
+     const logo = document.getElementById("topbar-logo");
+     const section = document.getElementById("purge-all-section");
+     if (!logo || !section) return;
+
+     let clickTimes = [];
+     logo.addEventListener("click", () => {
+       const now = Date.now();
+       clickTimes.push(now);
+       clickTimes = clickTimes.filter((t) => now - t <= 3000);
+
+       if (clickTimes.length >= 5) {
+         clickTimes = [];
+         section.classList.remove("hidden");
+         section.scrollIntoView({ behavior: "smooth", block: "center" });
+       }
+     });
+   }
+
+   /* ---------------- Delete Everything (full database wipe) ----------------
+      Only reachable via wireSecretPurgeUnlock() above. Even once
+      visible, the button stays disabled until the typed text
+      EXACTLY matches "DELETE EVERYTHING" (case-sensitive) — then a
+      native confirm() dialog is still one more step before the API
+      call actually fires. Server-side (routers/master.py) checks the
+      same exact phrase again independently, so this can't be
+      triggered by anything short of deliberately doing all of this. */
+   function wirePurgeAll() {
+     const input = document.getElementById("purge-confirm-input");
+     const btn = document.getElementById("purge-all-btn");
+     if (!input || !btn) return;
+
+     const PHRASE = "DELETE EVERYTHING";
+
+     input.addEventListener("input", () => {
+       btn.disabled = input.value !== PHRASE;
+     });
+
+     btn.addEventListener("click", async () => {
+       if (input.value !== PHRASE) return;
+
+       const confirmed = window.confirm(
+         "This permanently deletes EVERY visitor, every print log, and every " +
+         "scan log in the entire database.\n\n" +
+         "There is NO undo. Only do this when starting a brand new event " +
+         "from a completely blank slate.\n\n" +
+         "Continue?"
+       );
+       if (!confirmed) return;
+
+       btn.disabled = true;
+       btn.textContent = "Deleting...";
+
+       const result = await API.purgeAll(input.value);
+
+       btn.textContent = "Delete Everything";
+       input.value = "";
+
+       if (!result.ok) {
+         btn.disabled = true; // stays disabled until phrase is retyped
+         alert(`Delete Everything failed: ${result.error}`);
+         return;
+       }
+
+       const { visitors_deleted = 0, print_logs_deleted = 0, scan_logs_deleted = 0 } = result.data || {};
+       alert(
+         `Done — ${visitors_deleted} visitor(s), ${print_logs_deleted} print log(s), ` +
+         `and ${scan_logs_deleted} scan log(s) permanently deleted. The system is ` +
+         `now a blank slate.`
+       );
+
+       // Everything's gone — refresh every tab and re-hide this section.
+       document.getElementById("purge-all-section").classList.add("hidden");
        await loadVisitors();
        await loadPrintStats();
        await loadScanStats();
