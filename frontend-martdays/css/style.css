@@ -51,7 +51,14 @@
   
   .identity {
     background: var(--navy);
-    background-image: linear-gradient(165deg, var(--navy) 0%, var(--navy-dark) 100%);
+    /* Background photo (IEML venue) + navy overlay so the gradient
+       always wins for text contrast, whatever the photo looks like.
+       Scoped to .identity only — the form/card panel never gets this. */
+    background-image:
+      linear-gradient(165deg, rgba(12, 35, 64, 0.92) 0%, rgba(7, 22, 40, 0.94) 100%),
+      url("https://indiaexpomart.com/wp-content/uploads/2025/09/Untitled-design-2.jpg");
+    background-size: cover;
+    background-position: center;
     color: #fff;
     padding: 28px 20px calc(28px + env(safe-area-inset-bottom));
     padding-top: calc(28px + env(safe-area-inset-top));
