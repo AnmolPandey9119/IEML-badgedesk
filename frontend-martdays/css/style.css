@@ -1,32 +1,33 @@
 /* ==========================================================
    IEML Mart Sourcing Days — Public Registration Form
-   Identity: a government-flagship B2B trade show. Deep navy +
-   brass gold (official/ledger feel), a serif for the event
-   identity, a plain sans for the working form itself — the
-   form should feel quick and trustworthy to fill, not decorative.
+   Identity: matched to the actual event poster — a vibrant,
+   energetic B2B sourcing show for home decor, gifting, and
+   furnishing brands. Deep magenta + warm gold, a bold rounded
+   display face for the event identity, a clean sans for the
+   working form itself so it stays fast and easy to fill in.
    ========================================================== */
 
    :root {
-    --navy: #0c2340;
-    --navy-dark: #071628;
-    --navy-soft: #1c3f66;
-    --gold: #b8863a;
-    --gold-soft: #d9b877;
+    --pink: #e11876;
+    --pink-dark: #a30f57;
+    --pink-deeper: #620a38;
+    --gold: #e6a418;
+    --gold-soft: #f6cf7a;
     --success: #1a7a4c;
-    --danger: #b23b2e;
+    --danger: #c81e4b;
   
-    --paper: #f7f5f0;
+    --paper: #fff6fa;
     --card-bg: #ffffff;
-    --border: #e4e0d6;
-    --ink: #1c1f26;
-    --ink-muted: #666f7a;
+    --border: #f2d9e6;
+    --ink: #241220;
+    --ink-muted: #7a6572;
   
-    --radius: 4px;
-    --radius-sm: 3px;
-    --shadow: 0 1px 3px rgba(12, 35, 64, 0.06), 0 8px 24px rgba(12, 35, 64, 0.06);
+    --radius: 10px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(98, 10, 56, 0.06), 0 10px 28px rgba(98, 10, 56, 0.08);
   
-    --serif: "IBM Plex Serif", Georgia, serif;
-    --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    --display: "Poppins", "Segoe UI", sans-serif;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
   }
   
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -50,14 +51,14 @@
   }
   
   .identity {
-    background: var(--navy);
-    /* Background photo (IEML venue) + navy overlay so the gradient
-       always wins for text contrast, whatever the photo looks like.
-       Scoped to .identity only — the form/card panel never gets this.
-       Local asset (not an external URL) so it doesn't depend on some
-       other site staying online, and it's the actual IEML gate photo. */
+    position: relative;
+    overflow: hidden;
+    background: var(--pink-dark);
+    /* Real gate photo, pushed well back with a magenta gradient so
+       it reads as venue proof, not the main visual — the poster's
+       own pink/gold identity carries the panel. Local asset. */
     background-image:
-      linear-gradient(165deg, rgba(12, 35, 64, 0.92) 0%, rgba(7, 22, 40, 0.94) 100%),
+      linear-gradient(160deg, rgba(225, 24, 118, 0.94) 0%, rgba(98, 10, 56, 0.96) 100%),
       url("../assets/expo-mart-gate.png");
     background-size: cover;
     background-position: center;
@@ -66,53 +67,139 @@
     padding-top: calc(28px + env(safe-area-inset-top));
   }
   
+  /* Soft decorative dot grid in the top-right corner, echoing the
+     poster's own dot clusters. Purely ambient — never over text. */
+  .identity-dots {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 140px;
+    height: 140px;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.28) 1.6px, transparent 1.6px);
+    background-size: 16px 16px;
+    -webkit-mask-image: radial-gradient(circle at top right, #000 40%, transparent 75%);
+    mask-image: radial-gradient(circle at top right, #000 40%, transparent 75%);
+    pointer-events: none;
+  }
+  
   .identity-inner {
+    position: relative;
     max-width: 560px;
     margin: 0 auto;
   }
   
   .identity-logo {
-    height: 34px;
+    height: 32px;
     width: auto;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
     filter: brightness(0) invert(1);
-    opacity: 0.92;
+    opacity: 0.95;
   }
   
   .identity-kicker {
-    margin: 0 0 6px;
-    font-size: 0.78rem;
-    letter-spacing: 0.02em;
-    color: var(--gold-soft);
+    margin: 0 0 10px;
+    font-size: 0.76rem;
+    letter-spacing: 0.03em;
+    color: rgba(255, 255, 255, 0.78);
     font-weight: 500;
   }
   
-  .identity-title {
-    font-family: var(--serif);
-    font-weight: 600;
-    font-size: 1.7rem;
-    line-height: 1.2;
-    margin: 0 0 6px;
+  .identity-badge {
+    display: inline-block;
+    margin-bottom: 10px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--gold) 0%, var(--gold-soft) 100%);
+    color: var(--pink-deeper);
+    font-family: var(--display);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
   }
   
-  .identity-edition {
+  .identity-title {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 2.3rem;
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    margin: 0 0 10px;
+  }
+  
+  .identity-tagline {
     margin: 0 0 18px;
+    max-width: 40ch;
     font-size: 0.92rem;
-    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.82);
+  }
+  
+  .identity-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.8rem;
+    padding: 7px 12px;
+    border-radius: 999px;
+  }
+  
+  .chip svg { width: 14px; height: 14px; flex-shrink: 0; }
+  
+  .chip-fill {
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    color: #fff;
   }
   
   .identity-venue {
-    margin: 0 0 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0 0 18px;
     padding-top: 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.14);
-    font-size: 0.9rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+    font-size: 0.86rem;
     line-height: 1.5;
     color: rgba(255, 255, 255, 0.85);
   }
   
+  .identity-venue svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--gold-soft);
+  }
+  
+  .identity-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+  
+  .identity-categories .tag {
+    font-size: 0.72rem;
+    font-weight: 500;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: rgba(255, 255, 255, 0.78);
+  }
+  
   .identity-steps {
     list-style: none;
-    margin: 0;
+    margin: 0 0 18px;
     padding: 0;
     display: flex;
     flex-direction: column;
@@ -124,7 +211,7 @@
     align-items: center;
     gap: 12px;
     font-size: 0.86rem;
-    color: rgba(255, 255, 255, 0.82);
+    color: rgba(255, 255, 255, 0.88);
   }
   
   .identity-steps span {
@@ -132,13 +219,22 @@
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    border: 1px solid var(--gold-soft);
-    color: var(--gold-soft);
-    font-family: var(--serif);
-    font-size: 0.78rem;
+    background: var(--gold);
+    color: var(--pink-deeper);
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 0.74rem;
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+  
+  .identity-footer {
+    margin: 0;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.7);
   }
   
   .panel {
@@ -151,21 +247,31 @@
   /* ---------------- Card / form ---------------- */
   
   .card {
+    position: relative;
     max-width: 560px;
     margin: 0 auto;
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
-    padding: 22px 20px;
+    padding: 24px 20px;
+    overflow: hidden;
+  }
+  
+  .card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--pink) 0%, var(--gold) 100%);
   }
   
   .card h2 {
     margin: 0 0 6px;
-    font-family: var(--serif);
-    font-weight: 600;
-    font-size: 1.3rem;
-    color: var(--navy);
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1.35rem;
+    color: var(--pink-deeper);
   }
   
   .hint {
@@ -189,9 +295,9 @@
   .fieldset-title {
     margin: 0 0 4px;
     font-size: 0.72rem;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: 0.04em;
-    color: var(--gold);
+    color: var(--pink);
   }
   
   label {
@@ -219,7 +325,7 @@
   }
   
   select {
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666f7a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237a6572' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 12px center;
     background-size: 16px;
@@ -228,8 +334,8 @@
   
   input:focus, select:focus {
     outline: none;
-    border-color: var(--navy-soft);
-    box-shadow: 0 0 0 3px rgba(12, 35, 64, 0.08);
+    border-color: var(--pink);
+    box-shadow: 0 0 0 3px rgba(225, 24, 118, 0.1);
   }
   
   input:disabled, select:disabled {
@@ -251,18 +357,19 @@
     padding: 13px 20px;
     min-height: 48px;
     font-size: 0.96rem;
-    font-weight: 600;
-    font-family: var(--sans);
+    font-weight: 700;
+    font-family: var(--display);
     touch-action: manipulation;
-    transition: background 0.15s ease;
+    transition: filter 0.15s ease, transform 0.05s ease;
   }
   
   .btn-primary {
-    background: var(--navy);
+    background: linear-gradient(90deg, var(--pink) 0%, var(--pink-dark) 100%);
     color: #fff;
   }
   
-  .btn-primary:hover { background: var(--navy-dark); }
+  .btn-primary:hover { filter: brightness(1.06); }
+  .btn-primary:active { transform: translateY(1px); }
   
   .btn-primary:disabled {
     opacity: 0.6;
@@ -278,8 +385,8 @@
     margin-top: 14px;
     padding: 10px 12px;
     border-radius: var(--radius-sm);
-    background: #fbece9;
-    border: 1px solid #edc7bf;
+    background: #fdebf0;
+    border: 1px solid #f3c3d3;
     color: var(--danger);
     font-size: 0.88rem;
   }
@@ -301,7 +408,7 @@
     padding: 18px;
     border-radius: var(--radius);
     background: var(--paper);
-    border: 1px dashed var(--gold-soft);
+    border: 1px dashed var(--gold);
     text-align: center;
   }
   
@@ -315,11 +422,11 @@
   
   .urn-value {
     display: block;
-    font-family: var(--serif);
+    font-family: var(--display);
     font-size: 1.7rem;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: 1px;
-    color: var(--navy);
+    color: var(--pink-deeper);
   }
   
   /* ---------------- Responsive ---------------- */
@@ -335,11 +442,17 @@
       background-position: center 30%;
     }
   
+    .identity-title { font-size: 1.7rem; }
+    .identity-tagline { display: none; }
+    .identity-categories { display: none; }
+  
     .identity-venue { margin-bottom: 16px; }
   
-    .identity-steps { gap: 8px; }
+    .identity-steps { gap: 8px; margin-bottom: 14px; }
     .identity-steps li { font-size: 0.82rem; }
     .identity-steps span { width: 20px; height: 20px; font-size: 0.72rem; }
+  
+    .identity-footer { font-size: 0.74rem; }
   
     /* Card floats up over the rounded identity band, like a bottom
        sheet — reads as one deliberate composition on a phone instead
@@ -351,15 +464,16 @@
   
     .card {
       border-radius: 16px;
-      box-shadow: 0 4px 10px rgba(12, 35, 64, 0.08), 0 16px 32px rgba(12, 35, 64, 0.12);
+      box-shadow: 0 4px 10px rgba(98, 10, 56, 0.1), 0 16px 32px rgba(98, 10, 56, 0.14);
       padding: 22px 18px;
     }
   }
   
   @media (max-width: 480px) {
     .form-row { grid-template-columns: 1fr; }
-    .identity-title { font-size: 1.5rem; }
     .identity { padding-bottom: 38px; }
+    .identity-chips { gap: 6px; }
+    .chip { font-size: 0.76rem; padding: 6px 10px; }
   }
   
   @media (min-width: 900px) {
@@ -369,8 +483,8 @@
     }
   
     .identity {
-      width: 38%;
-      max-width: 420px;
+      width: 42%;
+      max-width: 460px;
       display: flex;
       align-items: center;
       padding: 48px 40px;
