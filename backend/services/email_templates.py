@@ -19,9 +19,9 @@ from typing import Tuple
 # Edit these 4 lines whenever the event details change — everything
 # below reads from these, so you never have to hunt through HTML.
 # ----------------------------------------------------------------
-EVENT_NAME = "IEML Sourcing Mart Days"
+EVENT_NAME = "IEML Mart Sourcing Days"
 EVENT_EDITION = "29th Edition"
-EVENT_DATES = "[[EVENT DATES — TO BE CONFIRMED]]"
+EVENT_DATES = "16-17 September 2026"
 EVENT_VENUE = "India Expo Centre & Mart, Greater Noida"
 
 
