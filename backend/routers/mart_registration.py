@@ -76,7 +76,12 @@ async def register_mart_days_visitor(payload: MartDaysRegisterRequest, backgroun
 
     urn = generate_urn()
 
-    row_data = {
+    # Kept minimal on purpose — this is ONLY what the shared onsite
+    # print/scan/master console apps need to find and print this
+    # person's badge by URN, exactly like every other event's
+    # registrants. Every Mart-Days-specific field now lives solely in
+    # mart_days_registrations (below), not duplicated in here.
+    visitor_data = {
         "name": payload.full_name,
         "org": payload.company_name,
         "city": payload.district,
@@ -84,20 +89,30 @@ async def register_mart_days_visitor(payload: MartDaysRegisterRequest, backgroun
         "status": None,
         "email": payload.email,
         "mobile": payload.phone_number,
-        # Everything below isn't a core visitors column — it rides
-        # along in extra_json automatically (see master_store.py),
-        # exactly like "designation" already does for onsite regs.
-        "designation": payload.designation,
-        "address": payload.address,
-        "state": payload.state,
-        "country": payload.country,
-        "pincode": payload.pincode,
-        "buyer_type": payload.buyer_type,
         "event": "IEML Mart Sourcing Days",
     }
 
+    # The full public-form submission — every field sir asked for,
+    # each its own real column (see master_store.py's
+    # mart_days_registrations table). This is the table to query/
+    # export/clear for Mart Days specifically, independent of every
+    # other event's data sitting in the visitors table.
+    mart_days_data = {
+        "buyer_type": payload.buyer_type,
+        "full_name": payload.full_name,
+        "company_name": payload.company_name,
+        "designation": payload.designation,
+        "email": payload.email,
+        "phone_number": payload.phone_number,
+        "address": payload.address,
+        "district": payload.district,
+        "state": payload.state,
+        "country": payload.country,
+        "pincode": payload.pincode,
+    }
+
     try:
-        master_store.insert_visitor(urn, row_data, source="mart_days")
+        master_store.insert_mart_days_visitor(urn, visitor_data, mart_days_data)
     except Exception:
         logger.exception("Failed to save Mart Days registration for %s", payload.email)
         raise HTTPException(

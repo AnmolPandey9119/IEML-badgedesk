@@ -195,6 +195,45 @@ def init_db() -> None:
             cur.execute("CREATE INDEX IF NOT EXISTS idx_scan_log_urn ON scan_log(urn)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_scan_log_scanner ON scan_log(scanner_name)")
 
+            # NEW: dedicated table holding ONLY Mart Days registration
+            # data (real typed columns, not squeezed into visitors'
+            # extra_json anymore) -- one row per Mart Days registrant,
+            # every field from the public form. This is a pure ADDITION
+            # alongside the visitors row for the same URN, not a
+            # replacement: the visitors row still exists exactly as
+            # before (source='mart_days'), which is what the SAME
+            # onsite print/scan/master console apps already rely on to
+            # find and print a Mart Days registrant's badge. Nothing
+            # about print/scan changes -- this table exists purely so
+            # Mart Days data (which recurs every month) can be
+            # filtered, exported, or cleared on its own, without
+            # touching any other event's rows.
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS mart_days_registrations (
+                    urn           TEXT PRIMARY KEY REFERENCES visitors(urn) ON DELETE CASCADE,
+                    buyer_type    TEXT NOT NULL,
+                    full_name     TEXT NOT NULL,
+                    company_name  TEXT NOT NULL,
+                    designation   TEXT,
+                    email         TEXT NOT NULL,
+                    phone_number  TEXT NOT NULL,
+                    address       TEXT,
+                    district      TEXT,
+                    state         TEXT,
+                    country       TEXT,
+                    pincode       TEXT,
+                    registered_at TIMESTAMPTZ DEFAULT NOW()
+                )
+                """
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_mart_days_email ON mart_days_registrations(LOWER(email))"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_mart_days_phone ON mart_days_registrations(phone_number)"
+            )
+
 
 def existing_urns() -> set[str]:
     """All URNs currently in use — used to make sure a newly generated URN is unique."""
@@ -262,6 +301,57 @@ def insert_visitor(
                 "source_hash": source_hash,
                 "sheet_row": sheet_row,
             },
+        )
+
+    return {"urn": urn, "print_count": 0, **core, **extra}
+
+
+def insert_mart_days_visitor(urn: str, visitor_data: dict, mart_days_data: dict) -> dict:
+    """
+    Used ONLY by routers/mart_registration.py. Writes BOTH:
+      1. the usual visitors row (same as insert_visitor()) -- this is
+         what the onsite print/scan/master console apps search by URN
+         to find and print this person's badge, unchanged from before.
+      2. a mart_days_registrations row -- the full public-form
+         submission, in its own dedicated columns, kept ONLY here
+         (not duplicated into visitors.extra_json anymore).
+
+    Both writes happen inside ONE database transaction: if either
+    insert fails, NEITHER is committed (see _connection()'s
+    commit-only-on-success behaviour) -- so a registrant can never end
+    up half-saved (a visitors row with no matching Mart Days details,
+    or vice versa).
+    """
+    core = {field: visitor_data.get(field) for field in _CORE_FIELDS}
+    extra = {k: v for k, v in visitor_data.items() if k not in _CORE_FIELDS and k != "urn"}
+
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO visitors
+                (urn, name, org, city, category, status, email, mobile,
+                 extra_json, source)
+            VALUES
+                (%(urn)s, %(name)s, %(org)s, %(city)s, %(category)s, %(status)s,
+                 %(email)s, %(mobile)s, %(extra_json)s, %(source)s)
+            """,
+            {
+                "urn": urn,
+                **core,
+                "extra_json": json.dumps(extra),
+                "source": "mart_days",
+            },
+        )
+        cur.execute(
+            """
+            INSERT INTO mart_days_registrations
+                (urn, buyer_type, full_name, company_name, designation,
+                 email, phone_number, address, district, state, country, pincode)
+            VALUES
+                (%(urn)s, %(buyer_type)s, %(full_name)s, %(company_name)s, %(designation)s,
+                 %(email)s, %(phone_number)s, %(address)s, %(district)s, %(state)s, %(country)s, %(pincode)s)
+            """,
+            {"urn": urn, **mart_days_data},
         )
 
     return {"urn": urn, "print_count": 0, **core, **extra}
@@ -596,22 +686,28 @@ def search(query: str, limit: int = 25) -> list[dict]:
 
 
 def find_mart_days_by_email(email: str) -> Optional[dict]:
-    """Case-insensitive email match among Mart Days registrations."""
+    """
+    Case-insensitive email match, now read straight from
+    mart_days_registrations (its own dedicated table) instead of
+    filtering visitors by source -- same duplicate-check behaviour as
+    before, just against the new table.
+    """
     with _connection() as conn, conn.cursor() as cur:
         cur.execute(
-            "SELECT * FROM visitors WHERE source = 'mart_days' AND LOWER(email) = LOWER(%s) LIMIT 1",
+            "SELECT * FROM mart_days_registrations WHERE LOWER(email) = LOWER(%s) LIMIT 1",
             (email.strip(),),
         )
         row = cur.fetchone()
-        return _row_to_visitor(row) if row else None
+        return dict(row) if row else None
 
 
 def find_mart_days_by_mobile(mobile: str) -> Optional[dict]:
     """
-    Mobile match among Mart Days registrations. Both sides are
-    stripped down to digits-only before comparing, so "+91 98765
-    43210" and "9876543210" are correctly treated as the same number
-    even if someone types it differently the second time.
+    Mobile match among Mart Days registrations, read from
+    mart_days_registrations. Both sides are stripped down to
+    digits-only before comparing, so "+91 98765 43210" and
+    "9876543210" are correctly treated as the same number even if
+    someone types it differently the second time.
     """
     mobile_digits = re.sub(r"\D", "", mobile or "")
     if not mobile_digits:
@@ -619,15 +715,14 @@ def find_mart_days_by_mobile(mobile: str) -> Optional[dict]:
     with _connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-            SELECT * FROM visitors
-            WHERE source = 'mart_days'
-              AND REGEXP_REPLACE(COALESCE(mobile, ''), '\\D', '', 'g') = %s
+            SELECT * FROM mart_days_registrations
+            WHERE REGEXP_REPLACE(COALESCE(phone_number, ''), '\\D', '', 'g') = %s
             LIMIT 1
             """,
             (mobile_digits,),
         )
         row = cur.fetchone()
-        return _row_to_visitor(row) if row else None
+        return dict(row) if row else None
 
 
 def get_all() -> list[dict]:
