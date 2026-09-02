@@ -56,7 +56,7 @@
        Scoped to .identity only — the form/card panel never gets this. */
     background-image:
       linear-gradient(165deg, rgba(12, 35, 64, 0.92) 0%, rgba(7, 22, 40, 0.94) 100%),
-      url("https://tennews.in/wp-content/uploads/2019/09/B66B9E3F-2CB1-4B69-BD0D-4DB03EC46DFD.jpeg");
+      url("https://indiaexpomart.com/wp-content/uploads/2025/09/Untitled-design-2.jpg");
     background-size: cover;
     background-position: center;
     color: #fff;
@@ -322,9 +322,42 @@
   
   /* ---------------- Responsive ---------------- */
   
+  @media (max-width: 899px) {
+    /* Hero-style identity band: shorter, rounded bottom corners,
+       photo cropped a touch higher so faces/logos in the source
+       photo aren't cut off on a narrow strip. */
+    .identity {
+      padding: 24px 20px 44px;
+      padding-top: calc(24px + env(safe-area-inset-top));
+      border-radius: 0 0 22px 22px;
+      background-position: center 30%;
+    }
+  
+    .identity-venue { margin-bottom: 16px; }
+  
+    .identity-steps { gap: 8px; }
+    .identity-steps li { font-size: 0.82rem; }
+    .identity-steps span { width: 20px; height: 20px; font-size: 0.72rem; }
+  
+    /* Card floats up over the rounded identity band, like a bottom
+       sheet — reads as one deliberate composition on a phone instead
+       of two flat stacked blocks. */
+    .panel {
+      margin-top: -26px;
+      padding-top: 0;
+    }
+  
+    .card {
+      border-radius: 16px;
+      box-shadow: 0 4px 10px rgba(12, 35, 64, 0.08), 0 16px 32px rgba(12, 35, 64, 0.12);
+      padding: 22px 18px;
+    }
+  }
+  
   @media (max-width: 480px) {
     .form-row { grid-template-columns: 1fr; }
     .identity-title { font-size: 1.5rem; }
+    .identity { padding-bottom: 38px; }
   }
   
   @media (min-width: 900px) {
