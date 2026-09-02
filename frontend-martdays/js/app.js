@@ -18,6 +18,11 @@
     const districtSelect = document.getElementById("district-select");
     const districtText = document.getElementById("district-text");
   
+    const stateSelectLabel = document.querySelector('label[for="state-select"]');
+    const stateTextLabel = document.querySelector('label[for="state-text"]');
+    const districtSelectLabel = document.querySelector('label[for="district-select"]');
+    const districtTextLabel = document.querySelector('label[for="district-text"]');
+  
     // ------------------------------------------------------------
     // Country dropdown: populated once from location-data.js.
     // ------------------------------------------------------------
@@ -30,34 +35,43 @@
   
     function showIndiaFields() {
       stateSelect.classList.remove("hidden");
+      stateSelectLabel.classList.remove("hidden");
       stateSelect.disabled = false;
       stateText.classList.add("hidden");
+      stateTextLabel.classList.add("hidden");
       stateText.value = "";
     }
   
     function showOtherCountryFields() {
       stateSelect.classList.add("hidden");
+      stateSelectLabel.classList.add("hidden");
       stateSelect.disabled = true;
       stateSelect.innerHTML = '<option value="" selected>Select state</option>';
       stateText.classList.remove("hidden");
+      stateTextLabel.classList.remove("hidden");
       hideDistrictSelect();
       districtText.classList.remove("hidden");
+      districtTextLabel.classList.remove("hidden");
       districtText.value = "";
     }
   
     function hideDistrictSelect() {
       districtSelect.classList.add("hidden");
+      districtSelectLabel.classList.add("hidden");
       districtSelect.disabled = true;
       districtSelect.innerHTML = '<option value="" selected>Select district</option>';
     }
   
     function resetLocationFields() {
       stateSelect.classList.add("hidden");
+      stateSelectLabel.classList.add("hidden");
       stateSelect.disabled = true;
       stateSelect.innerHTML = '<option value="" selected>Select state</option>';
       stateText.classList.add("hidden");
+      stateTextLabel.classList.add("hidden");
       stateText.value = "";
       districtText.classList.add("hidden");
+      districtTextLabel.classList.add("hidden");
       districtText.value = "";
       hideDistrictSelect();
     }
@@ -86,6 +100,7 @@
       const districts = (window.INDIA_LOCATIONS || {})[stateSelect.value] || [];
       if (districts.length) {
         districtSelect.classList.remove("hidden");
+        districtSelectLabel.classList.remove("hidden");
         districtSelect.disabled = false;
         districts.forEach(function (d) {
           const opt = document.createElement("option");
