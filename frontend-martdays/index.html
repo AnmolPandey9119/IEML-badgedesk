@@ -60,27 +60,21 @@
             </select>
           </div>
           <div>
-            <!-- India: real dropdown, populated once Country=India is picked -->
-            <label for="state-select" class="loc-india hidden">State</label>
-            <select id="state-select" class="loc-india hidden" disabled>
-              <option value="" selected>Select state</option>
+            <label>State</label>
+            <select id="state-select" disabled>
+              <option value="" selected>Select country first</option>
             </select>
-            <!-- Any other country: plain text field -->
-            <label for="state-text" class="loc-other hidden">State</label>
-            <input type="text" id="state-text" class="loc-other hidden" maxlength="100" />
+            <input type="text" id="state-text" class="hidden" maxlength="100" placeholder="Enter state" />
           </div>
         </div>
 
         <div class="form-row">
           <div>
-            <!-- India: real dropdown, populated once a State is picked -->
-            <label for="district-select" class="loc-india hidden">District</label>
-            <select id="district-select" class="loc-india hidden" disabled>
-              <option value="" selected>Select district</option>
+            <label>District</label>
+            <select id="district-select" disabled>
+              <option value="" selected>Select state first</option>
             </select>
-            <!-- Any other country: plain text field -->
-            <label for="district-text" class="loc-other hidden">District</label>
-            <input type="text" id="district-text" class="loc-other hidden" maxlength="100" />
+            <input type="text" id="district-text" class="hidden" maxlength="100" placeholder="Enter district" />
           </div>
           <div>
             <label for="pincode">Pincode</label>

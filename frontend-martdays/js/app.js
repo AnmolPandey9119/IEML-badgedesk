@@ -18,11 +18,6 @@
     const districtSelect = document.getElementById("district-select");
     const districtText = document.getElementById("district-text");
   
-    const stateSelectLabel = document.querySelector('label[for="state-select"]');
-    const stateTextLabel = document.querySelector('label[for="state-text"]');
-    const districtSelectLabel = document.querySelector('label[for="district-select"]');
-    const districtTextLabel = document.querySelector('label[for="district-text"]');
-  
     // ------------------------------------------------------------
     // Country dropdown: populated once from location-data.js.
     // ------------------------------------------------------------
@@ -33,85 +28,95 @@
       countryEl.appendChild(opt);
     });
   
-    function showIndiaFields() {
-      stateSelect.classList.remove("hidden");
-      stateSelectLabel.classList.remove("hidden");
-      stateSelect.disabled = false;
-      stateText.classList.add("hidden");
-      stateTextLabel.classList.add("hidden");
-      stateText.value = "";
+    // State/District each have TWO elements sharing one label+slot
+    // (a dropdown for India, a text field for everyone else) — only
+    // one is ever visible at a time, so the field is NEVER a blank
+    // gap: it's always either a locked/disabled placeholder, a real
+    // dropdown, or an editable text box.
+  
+    function setStateMode(mode) {
+      // 'locked'  -> disabled dropdown, "Select country first"
+      // 'india'   -> enabled dropdown with real state options
+      // 'text'    -> enabled free-text field (non-India country)
+      if (mode === "india") {
+        stateSelect.classList.remove("hidden");
+        stateSelect.disabled = false;
+        stateText.classList.add("hidden");
+      } else if (mode === "text") {
+        stateSelect.classList.add("hidden");
+        stateText.classList.remove("hidden");
+        stateText.disabled = false;
+      } else {
+        stateSelect.classList.remove("hidden");
+        stateSelect.disabled = true;
+        stateSelect.innerHTML = '<option value="" selected>Select country first</option>';
+        stateText.classList.add("hidden");
+        stateText.value = "";
+      }
     }
   
-    function showOtherCountryFields() {
-      stateSelect.classList.add("hidden");
-      stateSelectLabel.classList.add("hidden");
-      stateSelect.disabled = true;
-      stateSelect.innerHTML = '<option value="" selected>Select state</option>';
-      stateText.classList.remove("hidden");
-      stateTextLabel.classList.remove("hidden");
-      hideDistrictSelect();
-      districtText.classList.remove("hidden");
-      districtTextLabel.classList.remove("hidden");
-      districtText.value = "";
+    function setDistrictMode(mode) {
+      // 'locked'  -> disabled dropdown, "Select state first"
+      // 'india'   -> enabled dropdown with real district options
+      // 'text'    -> enabled free-text field (non-India country)
+      if (mode === "india") {
+        districtSelect.classList.remove("hidden");
+        districtSelect.disabled = false;
+        districtText.classList.add("hidden");
+      } else if (mode === "text") {
+        districtSelect.classList.add("hidden");
+        districtText.classList.remove("hidden");
+        districtText.disabled = false;
+      } else {
+        districtSelect.classList.remove("hidden");
+        districtSelect.disabled = true;
+        districtSelect.innerHTML = '<option value="" selected>Select state first</option>';
+        districtText.classList.add("hidden");
+        districtText.value = "";
+      }
     }
   
-    function hideDistrictSelect() {
-      districtSelect.classList.add("hidden");
-      districtSelectLabel.classList.add("hidden");
-      districtSelect.disabled = true;
-      districtSelect.innerHTML = '<option value="" selected>Select district</option>';
-    }
-  
-    function resetLocationFields() {
-      stateSelect.classList.add("hidden");
-      stateSelectLabel.classList.add("hidden");
-      stateSelect.disabled = true;
-      stateSelect.innerHTML = '<option value="" selected>Select state</option>';
-      stateText.classList.add("hidden");
-      stateTextLabel.classList.add("hidden");
-      stateText.value = "";
-      districtText.classList.add("hidden");
-      districtTextLabel.classList.add("hidden");
-      districtText.value = "";
-      hideDistrictSelect();
-    }
-  
-    // Country changes -> reset State/District, then show the right
-    // field type (real dropdown for India, free text for everyone
+    // Country changes -> reset State/District, then unlock the right
+    // mode (real dropdown chain for India, free text for everyone
     // else — we don't have district-level data for every country).
     countryEl.addEventListener("change", function () {
-      resetLocationFields();
       if (countryEl.value === "India") {
-        showIndiaFields();
+        stateSelect.innerHTML = '<option value="" selected>Select state</option>';
         Object.keys(window.INDIA_LOCATIONS || {}).forEach(function (state) {
           const opt = document.createElement("option");
           opt.value = state;
           opt.textContent = state;
           stateSelect.appendChild(opt);
         });
+        setStateMode("india");
+        setDistrictMode("locked");
       } else if (countryEl.value) {
-        showOtherCountryFields();
+        setStateMode("text");
+        setDistrictMode("text");
+      } else {
+        setStateMode("locked");
+        setDistrictMode("locked");
       }
     });
   
     // State (India) changes -> populate District dropdown for that state.
     stateSelect.addEventListener("change", function () {
-      hideDistrictSelect();
       const districts = (window.INDIA_LOCATIONS || {})[stateSelect.value] || [];
       if (districts.length) {
-        districtSelect.classList.remove("hidden");
-        districtSelectLabel.classList.remove("hidden");
-        districtSelect.disabled = false;
+        districtSelect.innerHTML = '<option value="" selected>Select district</option>';
         districts.forEach(function (d) {
           const opt = document.createElement("option");
           opt.value = d;
           opt.textContent = d;
           districtSelect.appendChild(opt);
         });
+        setDistrictMode("india");
+      } else {
+        setDistrictMode("locked");
       }
     });
   
-    // Reads whichever field (dropdown or text) is currently visible
+    // Reads whichever field (dropdown or text) is currently active
     // for State/District — the form doesn't care which one was used,
     // only the final chosen value.
     function currentStateValue() {
