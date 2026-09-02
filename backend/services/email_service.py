@@ -1,64 +1,48 @@
 """
 services/email_service.py
-Sends the Mart Days registration confirmation email (with the QR
-badge attached) via Brevo's transactional email API
-(https://api.brevo.com/v3/smtp/email) — a plain HTTPS call, no SMTP
-connection held open. Chosen specifically because this backend runs
-on Render's free tier: a free-tier service can be asleep when a
-registration comes in, and a slow/blocked SMTP handshake on a
+Sends the Mart Days registration confirmation email (with the e-badge
+attached) via Mailchimp Transactional's API
+(https://mandrillapp.com/api/1.0/messages/send.json) -- a plain HTTPS
+call, no SMTP connection held open. Chosen specifically because this
+backend runs on Render's free tier: a free-tier service can be asleep
+when a registration comes in, and a slow/blocked SMTP handshake on a
 cold-starting service is exactly the kind of thing that makes a
 registration submission hang. A single HTTPS POST doesn't have that
 problem.
 
-ALWAYS called as a FastAPI BackgroundTask from the router — never
+NOTE: Mailchimp Transactional (formerly "Mandrill") is a SEPARATE
+product from the regular Mailchimp Marketing plan used for
+audience/campaign emails. It needs its own API key, generated from a
+Mailchimp Transactional / Mandrill account, and its own verified
+sending domain (SPF/DKIM) -- a normal Mailchimp Marketing login does
+NOT give you this key. If MAILCHIMP_TRANSACTIONAL_API_KEY isn't set,
+or the account doesn't actually have Transactional enabled, sends
+will fail -- see the "if not settings..." check below, which logs a
+warning and skips sending rather than crashing anything.
+
+ALWAYS called as a FastAPI BackgroundTask from the router -- never
 awaited directly in the request path. That means:
   - The registrant's screen shows their URN immediately, without
-    waiting for Brevo to respond.
-  - If Brevo is briefly down or misconfigured, the registration
-    ITSELF still succeeds (already saved to Neon) — only the email
-    silently fails and gets logged. Nobody's registration is lost
-    because an email didn't go out.
+    waiting for Mailchimp to respond.
+  - If Mailchimp Transactional is briefly down or misconfigured, the
+    registration ITSELF still succeeds (already saved to Neon) --
+    only the email silently fails and gets logged. Nobody's
+    registration is lost because an email didn't go out.
 """
 
 import base64
-import io
 import logging
 from typing import Optional
 
 import httpx
-import qrcode
 
 from config import settings
+from services.badge_image import build_ebadge_png
 from services.email_templates import mart_days_confirmation_email
 
 logger = logging.getLogger("email_service")
 
-BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email"
-
-
-def _generate_qr_png_base64(urn: str, name: str, mobile: Optional[str], email: Optional[str]) -> str:
-    """
-    Builds the QR image and returns it as base64 (what Brevo's
-    attachment field expects). QR content format matches
-    frontend/js/print.js EXACTLY (URN first line, then Name/Mobile/
-    Email if present) — so a badge printed at the counter and this
-    emailed QR always decode to the identical thing for the
-    entrance-scanning app. If this format ever changes in print.js,
-    mirror the change here too.
-    """
-    lines = [f"URN: {urn}"]
-    if name:
-        lines.append(f"Name: {name}")
-    if mobile:
-        lines.append(f"Mobile: {mobile}")
-    if email:
-        lines.append(f"Email: {email}")
-    qr_text = "\n".join(lines)
-
-    img = qrcode.make(qr_text)
-    buffer = io.BytesIO()
-    img.save(buffer, format="PNG")
-    return base64.b64encode(buffer.getvalue()).decode("ascii")
+MANDRILL_SEND_URL = "https://mandrillapp.com/api/1.0/messages/send.json"
 
 
 async def send_mart_days_confirmation(
@@ -66,50 +50,67 @@ async def send_mart_days_confirmation(
     full_name: str,
     email: str,
     mobile: Optional[str] = None,
+    company_name: Optional[str] = None,
 ) -> bool:
     """
     Sends one confirmation email. Returns True/False purely for
-    logging by the caller — nothing downstream depends on the return
+    logging by the caller -- nothing downstream depends on the return
     value, since this always runs as a background task after the
     registration response has already gone out.
     """
-    if not settings.brevo_api_key or not settings.brevo_sender_email:
+    if not settings.mailchimp_transactional_api_key or not settings.mailchimp_sender_email:
         logger.warning(
-            "BREVO_API_KEY / BREVO_SENDER_EMAIL not set in .env — skipping "
-            "email to %s (URN %s). Registration itself is unaffected.",
+            "MAILCHIMP_TRANSACTIONAL_API_KEY / MAILCHIMP_SENDER_EMAIL not set in "
+            ".env -- skipping email to %s (URN %s). Registration itself is unaffected.",
             email, urn,
         )
         return False
 
-    qr_base64 = _generate_qr_png_base64(urn, full_name, mobile, email)
+    ebadge_png = build_ebadge_png(urn, full_name, company_name or "", mobile=mobile, email=email)
+    ebadge_base64 = base64.b64encode(ebadge_png).decode("ascii")
+
     subject, html_body = mart_days_confirmation_email(full_name, urn)
 
     payload = {
-        "sender": {"name": settings.brevo_sender_name, "email": settings.brevo_sender_email},
-        "to": [{"email": email, "name": full_name}],
-        "subject": subject,
-        "htmlContent": html_body,
-        "attachment": [
-            {
-                "content": qr_base64,
-                "name": f"{urn}-badge-qr.png",
-            }
-        ],
-    }
-    headers = {
-        "api-key": settings.brevo_api_key,
-        "Content-Type": "application/json",
-        "Accept": "application/json",
+        "key": settings.mailchimp_transactional_api_key,
+        "message": {
+            "subject": subject,
+            "html": html_body,
+            "from_email": settings.mailchimp_sender_email,
+            "from_name": settings.mailchimp_sender_name,
+            "to": [{"email": email, "name": full_name, "type": "to"}],
+            "attachments": [
+                {
+                    "type": "image/png",
+                    "name": f"{urn}-ebadge.png",
+                    "content": ebadge_base64,
+                }
+            ],
+        },
     }
 
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.post(BREVO_SEND_URL, json=payload, headers=headers)
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            resp = await client.post(MANDRILL_SEND_URL, json=payload)
+
         if resp.status_code >= 400:
-            logger.error("Brevo send failed for URN %s (%s): %s", urn, resp.status_code, resp.text)
+            logger.error("Mandrill send failed for URN %s (%s): %s", urn, resp.status_code, resp.text)
             return False
+
+        results = resp.json()
+        # Mandrill returns 200 even for a rejected/invalid recipient --
+        # the actual per-recipient outcome is inside the response body.
+        if isinstance(results, list) and results:
+            status = results[0].get("status")
+            if status in ("rejected", "invalid"):
+                logger.error(
+                    "Mandrill accepted the request but rejected the email for URN %s: %s",
+                    urn, results[0],
+                )
+                return False
+
         logger.info("Confirmation email sent for URN %s to %s", urn, email)
         return True
     except Exception:
-        logger.exception("Brevo send raised an exception for URN %s", urn)
+        logger.exception("Mandrill send raised an exception for URN %s", urn)
         return False
