@@ -3,105 +3,140 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f2a4d" />
-  <title>IEML Sourcing Mart Days — Registration</title>
+  <meta name="theme-color" content="#0c2340" />
+  <title>IEML Sourcing Mart Days — Buyer Registration</title>
   <link rel="icon" type="image/png" href="assets/ieml-logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
 
-  <header class="topbar">
-    <img src="assets/ieml-logo.png" alt="IEML" class="topbar-logo" onerror="this.style.display='none'" />
-    <div class="topbar-title">
-      <h1>IEML Sourcing Mart Days</h1>
-      <span class="event-name">Buyer Registration</span>
-    </div>
-  </header>
+  <div class="shell">
 
-  <main class="container">
+    <!-- IDENTITY PANEL -->
+    <aside class="identity">
+      <div class="identity-inner">
+        <img src="assets/ieml-logo.png" alt="IEML" class="identity-logo" onerror="this.style.display='none'" />
 
-    <!-- FORM -->
-    <section class="card" id="form-section">
-      <h2>Register as a Buyer</h2>
-      <p class="hint">Fill in your details below. Please double check your email — your registration confirmation will be sent there.</p>
+        <p class="identity-kicker">India Exposition Mart Limited</p>
+        <h1 class="identity-title">IEML Sourcing<br />Mart Days</h1>
+        <p class="identity-edition">29th Edition</p>
 
-      <form id="register-form" novalidate>
+        <p class="identity-venue">India Expo Centre &amp; Mart<br />Greater Noida</p>
 
-        <label for="buyer_type">Type of Buyer *</label>
-        <select id="buyer_type" name="buyer_type" required>
-          <option value="" disabled selected>Select buyer type</option>
-          <option value="Overseas buyers">Overseas buyers</option>
-          <option value="Domestic volume buyers">Domestic volume buyers</option>
-          <option value="Buying/Sourcing consultants">Buying/Sourcing consultants</option>
-        </select>
-
-        <label for="full_name">Full Name *</label>
-        <input type="text" id="full_name" name="full_name" required maxlength="200" />
-
-        <label for="company_name">Company Name *</label>
-        <input type="text" id="company_name" name="company_name" required maxlength="200" />
-
-        <label for="designation">Designation</label>
-        <input type="text" id="designation" name="designation" maxlength="200" />
-
-        <label for="email">Email *</label>
-        <input type="email" id="email" name="email" required maxlength="200" />
-
-        <label for="phone_number">Phone Number *</label>
-        <input type="tel" id="phone_number" name="phone_number" required maxlength="20" placeholder="+91 XXXXXXXXXX" />
-
-        <label for="address">Address</label>
-        <input type="text" id="address" name="address" maxlength="500" />
-
-        <div class="form-row">
-          <div>
-            <label for="country">Country</label>
-            <select id="country" name="country">
-              <option value="" selected>Select country</option>
-            </select>
-          </div>
-          <div>
-            <label>State</label>
-            <select id="state-select" disabled>
-              <option value="" selected>Select country first</option>
-            </select>
-            <input type="text" id="state-text" class="hidden" maxlength="100" placeholder="Enter state" />
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div>
-            <label>District</label>
-            <select id="district-select" disabled>
-              <option value="" selected>Select state first</option>
-            </select>
-            <input type="text" id="district-text" class="hidden" maxlength="100" placeholder="Enter district" />
-          </div>
-          <div>
-            <label for="pincode">Pincode</label>
-            <input type="text" id="pincode" name="pincode" maxlength="20" />
-          </div>
-        </div>
-
-        <div id="form-error" class="form-error hidden"></div>
-
-        <button type="submit" id="submit-btn" class="btn btn-primary btn-full">Register</button>
-      </form>
-    </section>
-
-    <!-- SUCCESS -->
-    <section class="card hidden" id="success-section">
-      <div class="success-icon">✅</div>
-      <h2>Registration Successful</h2>
-      <p>Thank you, <strong id="success-name"></strong>! Your registration for IEML Sourcing Mart Days is confirmed.</p>
-      <div class="urn-box">
-        <span class="urn-label">Your Registration Number (URN)</span>
-        <span class="urn-value" id="success-urn"></span>
+        <ol class="identity-steps">
+          <li><span>1</span>Fill in your details</li>
+          <li><span>2</span>Receive your URN &amp; QR badge by email</li>
+          <li><span>3</span>Show it at the Registration Desk</li>
+        </ol>
       </div>
-      <p class="hint">Please save this number. It will also be sent to <strong id="success-email"></strong> along with further details.</p>
-    </section>
+    </aside>
 
-  </main>
+    <!-- FORM PANEL -->
+    <main class="panel">
+
+      <section class="card" id="form-section">
+        <h2>Register as a Buyer</h2>
+        <p class="hint">Please fill in your details carefully — double-check your email, your registration confirmation and QR badge will be sent there.</p>
+
+        <form id="register-form" novalidate>
+
+          <div class="fieldset">
+            <p class="fieldset-title">Buyer details</p>
+
+            <label for="buyer_type">Type of Buyer <span class="req">*</span></label>
+            <select id="buyer_type" name="buyer_type" required>
+              <option value="" disabled selected>Select buyer type</option>
+              <option value="Overseas buyers">Overseas buyers</option>
+              <option value="Domestic volume buyers">Domestic volume buyers</option>
+              <option value="Buying/Sourcing consultants">Buying/Sourcing consultants</option>
+            </select>
+
+            <label for="full_name">Full Name <span class="req">*</span></label>
+            <input type="text" id="full_name" name="full_name" required maxlength="200" />
+
+            <div class="form-row">
+              <div>
+                <label for="company_name">Company Name <span class="req">*</span></label>
+                <input type="text" id="company_name" name="company_name" required maxlength="200" />
+              </div>
+              <div>
+                <label for="designation">Designation</label>
+                <input type="text" id="designation" name="designation" maxlength="200" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div>
+                <label for="email">Email <span class="req">*</span></label>
+                <input type="email" id="email" name="email" required maxlength="200" />
+              </div>
+              <div>
+                <label for="phone_number">Phone Number <span class="req">*</span></label>
+                <input type="tel" id="phone_number" name="phone_number" required maxlength="20" placeholder="+91 XXXXXXXXXX" />
+              </div>
+            </div>
+          </div>
+
+          <div class="fieldset">
+            <p class="fieldset-title">Address</p>
+
+            <label for="address">Address</label>
+            <input type="text" id="address" name="address" maxlength="500" />
+
+            <div class="form-row">
+              <div>
+                <label for="country">Country</label>
+                <select id="country" name="country">
+                  <option value="" selected>Select country</option>
+                </select>
+              </div>
+              <div>
+                <label>State</label>
+                <select id="state-select" disabled>
+                  <option value="" selected>Select country first</option>
+                </select>
+                <input type="text" id="state-text" class="hidden" maxlength="100" placeholder="Enter state" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div>
+                <label>District</label>
+                <select id="district-select" disabled>
+                  <option value="" selected>Select state first</option>
+                </select>
+                <input type="text" id="district-text" class="hidden" maxlength="100" placeholder="Enter district" />
+              </div>
+              <div>
+                <label for="pincode">Pincode</label>
+                <input type="text" id="pincode" name="pincode" maxlength="20" />
+              </div>
+            </div>
+          </div>
+
+          <div id="form-error" class="form-error hidden"></div>
+
+          <button type="submit" id="submit-btn" class="btn btn-primary btn-full">Register</button>
+        </form>
+      </section>
+
+      <!-- SUCCESS -->
+      <section class="card hidden" id="success-section">
+        <div class="success-icon">✅</div>
+        <h2>Registration Successful</h2>
+        <p>Thank you, <strong id="success-name"></strong>! Your registration for IEML Sourcing Mart Days is confirmed.</p>
+        <div class="urn-box">
+          <span class="urn-label">Your Registration Number (URN)</span>
+          <span class="urn-value" id="success-urn"></span>
+        </div>
+        <p class="hint">Please save this number. It will also be sent to <strong id="success-email"></strong> along with your QR badge.</p>
+      </section>
+
+    </main>
+  </div>
 
   <script src="js/config.js"></script>
   <script src="js/location-data.js"></script>
