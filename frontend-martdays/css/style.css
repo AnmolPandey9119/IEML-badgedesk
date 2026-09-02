@@ -7,10 +7,10 @@
    ========================================================== */
 
    :root {
-    --blue: #14488c;
-    --blue-dark: #0a2c57;
-    --blue-deep: #071c3a;
-    --blue-mid: #2f6fbf;
+    --blue: #e11876;
+    --blue-dark: #a30f57;
+    --blue-deep: #620a38;
+    --blue-mid: #c4126a;
     --gold: #e6a418;
     --gold-soft: #f6cf7a;
     --success: #1a7a4c;
@@ -24,7 +24,7 @@
   
     --radius: 10px;
     --radius-sm: 8px;
-    --shadow: 0 1px 3px rgba(10, 44, 87, 0.06), 0 10px 28px rgba(10, 44, 87, 0.08);
+    --shadow: 0 1px 3px rgba(163, 15, 87, 0.06), 0 10px 28px rgba(163, 15, 87, 0.08);
   
     --display: "Poppins", "Segoe UI", sans-serif;
     --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
@@ -58,7 +58,7 @@
        blue tint for text contrast, photo stays clearly visible.
        Local asset, scoped to .identity only. */
     background-image:
-      linear-gradient(165deg, rgba(10, 44, 87, 2.00) 0%, rgba(7, 28, 58, 0.70) 100%),
+      linear-gradient(165deg, rgba(163, 15, 87, 0.90) 0%, rgba(98, 10, 56, 0.76) 100%),
       url("../assets/expo-mart-gate.png");
     background-size: cover;
     background-position: center;
@@ -102,7 +102,7 @@
     letter-spacing: 0.03em;
     color: rgba(255, 255, 255, 0.82);
     font-weight: 500;
-    text-shadow: 0 1px 4px rgba(7, 28, 58, 0.5);
+    text-shadow: 0 1px 4px rgba(98, 10, 56, 0.5);
   }
   
   .identity-badge {
@@ -125,7 +125,7 @@
     line-height: 1.08;
     letter-spacing: -0.01em;
     margin: 0 0 10px;
-    text-shadow: 0 2px 10px rgba(7, 28, 58, 0.45);
+    text-shadow: 0 2px 10px rgba(98, 10, 56, 0.45);
   }
   
   .identity-tagline {
@@ -134,7 +134,7 @@
     font-size: 0.92rem;
     line-height: 1.5;
     color: rgba(255, 255, 255, 0.88);
-    text-shadow: 0 1px 6px rgba(7, 28, 58, 0.4);
+    text-shadow: 0 1px 6px rgba(98, 10, 56, 0.4);
   }
   
   /* Small framed photo — a genuine venue shot, kept at its own
@@ -163,7 +163,7 @@
   .chip svg { width: 14px; height: 14px; flex-shrink: 0; }
   
   .chip-fill {
-    background: rgba(10, 44, 87, 0.4);
+    background: rgba(163, 15, 87, 0.4);
     border: 1px solid rgba(255, 255, 255, 0.3);
     color: #fff;
     -webkit-backdrop-filter: blur(2px);
@@ -180,7 +180,7 @@
     font-size: 0.86rem;
     line-height: 1.5;
     color: rgba(255, 255, 255, 0.92);
-    text-shadow: 0 1px 6px rgba(7, 28, 58, 0.4);
+    text-shadow: 0 1px 6px rgba(98, 10, 56, 0.4);
   }
   
   .identity-venue svg {
@@ -195,7 +195,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    margin-bottom: 20px;
   }
   
   .identity-categories .tag {
@@ -203,7 +202,7 @@
     font-weight: 500;
     padding: 4px 9px;
     border-radius: 999px;
-    background: rgba(10, 44, 87, 0.32);
+    background: rgba(163, 15, 87, 0.32);
     border: 1px solid rgba(255, 255, 255, 0.24);
     color: rgba(255, 255, 255, 0.88);
   }
@@ -223,7 +222,7 @@
     gap: 12px;
     font-size: 0.86rem;
     color: #fff;
-    text-shadow: 0 1px 6px rgba(7, 28, 58, 0.4);
+    text-shadow: 0 1px 6px rgba(98, 10, 56, 0.4);
   }
   
   .identity-steps span {
@@ -242,14 +241,54 @@
   }
   
   .identity-footer {
-    margin: 0;
+    margin: 0 0 16px;
     padding-top: 14px;
     border-top: 1px solid rgba(255, 255, 255, 0.22);
     font-size: 0.78rem;
     color: rgba(255, 255, 255, 0.85);
-    text-shadow: 0 1px 6px rgba(7, 28, 58, 0.4);
+    text-shadow: 0 1px 6px rgba(98, 10, 56, 0.4);
   }
-  
+
+  .identity-categories-block {
+    margin-bottom: 16px;
+  }
+
+  .identity-categories-label {
+    margin: 0 0 8px;
+    font-family: var(--display);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--gold-soft);
+  }
+
+  .identity-contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.22);
+  }
+
+  .identity-contact a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.88);
+    text-decoration: none;
+  }
+
+  .identity-contact a:hover { color: #fff; }
+
+  .identity-contact svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: var(--gold-soft);
+  }
+
   .panel {
     flex: 1;
     padding: 20px 16px calc(40px + env(safe-area-inset-bottom));
@@ -458,7 +497,8 @@
     .identity-title { font-size: 1.7rem; }
     .identity-tagline { display: none; }
     .identity-photo { display: none; }
-    .identity-categories { display: none; }
+    .identity-categories-block { display: none; }
+    .identity-contact { display: none; }
   
     .identity-venue { margin-bottom: 16px; }
   
@@ -478,7 +518,7 @@
   
     .card {
       border-radius: 16px;
-      box-shadow: 0 4px 10px rgba(10, 44, 87, 0.1), 0 16px 32px rgba(10, 44, 87, 0.14);
+      box-shadow: 0 4px 10px rgba(163, 15, 87, 0.1), 0 16px 32px rgba(163, 15, 87, 0.14);
       padding: 22px 18px;
     }
   }
