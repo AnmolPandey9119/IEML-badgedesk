@@ -56,7 +56,7 @@
        Scoped to .identity only — the form/card panel never gets this. */
     background-image:
       linear-gradient(165deg, rgba(12, 35, 64, 0.92) 0%, rgba(7, 22, 40, 0.94) 100%),
-      url("https://tennews.in/india-expo-mart-face-of-one-of-the-most-modern-city-of-india-greater-noida/");
+      url("https://tennews.in/india-expo-mart-face-of-one-of-the-most-modern-city-of-india-greater-noida.jpg");
     background-size: cover;
     background-position: center;
     color: #fff;
