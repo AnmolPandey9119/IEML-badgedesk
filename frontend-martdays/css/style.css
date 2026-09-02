@@ -58,7 +58,7 @@
        other site staying online, and it's the actual IEML gate photo. */
     background-image:
       linear-gradient(165deg, rgba(12, 35, 64, 0.92) 0%, rgba(7, 22, 40, 0.94) 100%),
-      url("../assets/expo-mart-gate.jpg");
+      url("../assets/expo-mart-gate.png");
     background-size: cover;
     background-position: center;
     color: #fff;
