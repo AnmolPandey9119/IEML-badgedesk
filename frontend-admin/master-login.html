@@ -13,10 +13,29 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
+      position: relative;
+      background: url('assets/login-bg.jpg') center center / cover no-repeat;
+    }
+    .login-wrap::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(10, 14, 24, 0.72), rgba(10, 14, 24, 0.82));
     }
     .login-card {
+      position: relative;
+      z-index: 1;
       width: 100%;
       max-width: 380px;
+      background: rgba(27, 30, 38, 0.88);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+    .login-card h1,
+    .login-card label {
+      color: #fff;
     }
     .login-card h1 {
       font-size: 19px;

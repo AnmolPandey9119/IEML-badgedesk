@@ -3,351 +3,110 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Master Console — IEML BadgeDesk</title>
-  <script src="js/console-guard.js"></script>
+  <title>Master Login — IEML BadgeDesk</title>
   <link rel="icon" type="image/png" href="assets/ieml-logo.png" />
   <link rel="stylesheet" href="css/style.css" />
-  <script src="js/theme.js"></script>
-  <script>
-    if (!sessionStorage.getItem("ieml_master_token")) {
-      window.location.href = "master-login.html";
+  <style>
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      background: url('assets/login-bg.jpg') center center / cover no-repeat;
     }
-  </script>
-  <!-- All component styles live in css/style.css (previously split between here and there — consolidated for a single source of truth) -->
+    .login-wrap::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(10, 14, 24, 0.72), rgba(10, 14, 24, 0.82));
+    }
+    .login-card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 380px;
+      background: rgba(27, 30, 38, 0.88);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+    .login-card h1,
+    .login-card label {
+      color: #fff;
+    }
+    .login-card h1 {
+      font-size: 19px;
+      margin: 0 0 4px;
+    }
+    .login-card .subtitle {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin: 0 0 20px;
+    }
+    #login-error {
+      background: var(--error-bg);
+      color: var(--danger);
+      border: 1px solid var(--error-border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+    .login-logo {
+      display: block;
+      height: 56px;
+      width: auto;
+      max-width: 100%;
+      object-fit: contain;
+      margin: 0 auto 16px;
+    }
+    .master-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      background: var(--secondary);
+      color: #fff;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 <body>
 
-  <header class="topbar">
-    <div class="topbar-left">
-      <img src="assets/ieml-logo.png" alt="IEML" class="topbar-logo" id="topbar-logo" onerror="this.style.display='none'" />
-      <div class="topbar-title">
-        <h1>IEML BadgeDesk — Master Console</h1>
-        <span id="event-name" class="event-name">Loading event...</span>
-      </div>
-    </div>
-    <div class="topbar-right">
-      <span id="connection-status" class="status status-checking">Checking connection...</span>
-      <button id="sync-now-btn" class="btn btn-outline btn-small" title="Fetch new registrations from the Google Sheet right now">🔄 Sync Now</button>
-      <button id="export-excel-btn" class="btn btn-outline btn-small" title="Download the URN-first master Excel file">⬇️ Export Excel</button>
-      <button id="theme-toggle-btn" class="btn btn-outline btn-small" title="Toggle light/dark theme">🌙 Dark</button>
-      <button id="logout-btn" class="btn btn-outline btn-small">Logout</button>
-    </div>
-  </header>
+  <div class="login-wrap">
+    <section class="card login-card">
+      <img src="assets/ieml-logo.png" alt="IEML" class="login-logo" onerror="this.style.display='none'" />
+      <span class="master-badge">Master Console</span>
+      <h1>IEML BadgeDesk</h1>
+      <p class="subtitle">Master access only — manage registrations, print stats, and records.</p>
 
-  <nav class="tabs-nav">
-    <button class="tab-btn active" data-tab="home">Home</button>
-    <button class="tab-btn" data-tab="print-count">Print Count</button>
-    <button class="tab-btn" data-tab="scan">Scan Monitoring</button>
-    <button class="tab-btn" data-tab="unscanned">Unscanned Entries</button>
-  </nav>
+      <div id="login-error" class="hidden"></div>
 
-  <main class="container">
-
-    <!-- ================= HOME TAB ================= -->
-    <div class="tab-panel" id="panel-home">
-
-      <div class="stat-strip">
-        <div class="stat-card stat-card-clickable" data-goto="print-count">
-          <div class="stat-label">Total Prints</div>
-          <div class="stat-value" id="home-print-total">—</div>
-          <div class="stat-hint">Tap for counter-wise breakdown →</div>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-username">Username</label>
+          <input type="text" id="login-username" name="username" required autofocus autocomplete="username" />
         </div>
-        <div class="stat-card stat-card-clickable" data-goto="scan">
-          <div class="stat-label">Total Scans</div>
-          <div class="stat-value" id="home-scan-total">—</div>
-          <div class="stat-hint">Tap for gate-wise breakdown →</div>
+        <div class="form-group" style="margin-top: 12px;">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" name="password" required autocomplete="current-password" />
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Onsite Registrations</div>
-          <div class="stat-value" id="home-onsite-total">—</div>
-          <div class="stat-hint">Manual walk-in registrations</div>
-        </div>
-      </div>
 
-      <!-- FIND & PRINT -->
-      <section class="card" id="print-section">
-        <h2>Find &amp; Print a Badge</h2>
-        <p class="section-caption">Search by URN, name, mobile, or organization — works for sheet-synced and onsite registrations both.</p>
-        <div class="print-search-row">
-          <input type="text" id="print-search-input" class="table-search print-search-input" placeholder="Search URN, name, mobile, organization..." />
-          <button id="print-search-btn" class="btn btn-primary btn-small">Search</button>
-        </div>
-        <div id="print-search-results" class="search-results"></div>
-      </section>
+        <button type="submit" id="login-btn" class="btn btn-primary" style="width: 100%; margin-top: 18px;">
+          Login
+        </button>
+      </form>
+    </section>
+  </div>
 
-      <!-- REGISTRATION DETAILS / ADD / EDIT — shared panel, opened either by
-           "+ Add Registration" below, a row click in Onsite Registrations,
-           or a Find & Print search result. Kept neutral/standalone on
-           purpose — it shouldn't visually look "owned" by any one section,
-           since a Find & Print result can be a sheet-synced person who
-           isn't an onsite registration at all. -->
-      <section class="card hidden" id="detail-panel-section">
-        <form id="registration-form">
-          <input type="hidden" id="form-urn" value="" />
-          <h3 id="panel-form-title" style="margin: 0 0 14px; font-size: 15px;">Add New Registration</h3>
-          <div id="form-error" class="error-box hidden"></div>
-
-          <div id="form-meta-row" class="form-meta-row hidden">
-            <span><strong>URN:</strong> <span id="meta-urn">—</span></span>
-            <span><strong>Prints so far:</strong> <span id="meta-print-count">—</span></span>
-          </div>
-
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="form-name">Name *</label>
-              <input type="text" id="form-name" required />
-            </div>
-            <div class="form-group">
-              <label for="form-organization">Organization *</label>
-              <input type="text" id="form-organization" required />
-            </div>
-            <div class="form-group">
-              <label for="form-designation">Designation</label>
-              <input type="text" id="form-designation" />
-            </div>
-            <div class="form-group">
-              <label for="form-mobile">Mobile *</label>
-              <input type="text" id="form-mobile" required />
-            </div>
-            <div class="form-group">
-              <label for="form-email">Email</label>
-              <input type="email" id="form-email" />
-            </div>
-            <div class="form-group">
-              <label for="form-category">Category</label>
-              <select id="form-category">
-                <option value="visitor">Visitor</option>
-                <option value="exhibitor">Exhibitor</option>
-                <option value="delegate">Delegate</option>
-                <option value="media">Media</option>
-                <option value="vip">VIP</option>
-              </select>
-            </div>
-          </div>
-
-          <div id="submit-actions" class="action-row">
-            <button type="submit" id="form-submit-btn" class="btn btn-primary">Add Registration</button>
-            <button type="button" id="cancel-edit-btn" class="btn btn-outline hidden">Cancel</button>
-          </div>
-
-          <div id="view-actions" class="action-row hidden">
-            <button type="button" id="view-print-btn" class="btn btn-success">Print Badge</button>
-            <button type="button" id="view-edit-btn" class="btn btn-secondary">Edit Details</button>
-            <button type="button" id="view-delete-btn" class="btn btn-outline" style="color: var(--danger); border-color: var(--danger);">Delete</button>
-            <button type="button" id="view-cancel-btn" class="btn btn-outline">Cancel</button>
-          </div>
-        </form>
-      </section>
-
-      <!-- ONSITE REGISTRATIONS -->
-      <section class="card" id="visitors-section">
-        <div class="section-header-row">
-          <h2>Onsite Registrations</h2>
-          <button id="toggle-add-form-btn" class="btn btn-outline btn-small">+ Add Registration</button>
-        </div>
-        <p class="section-caption">Manual walk-in registrations only — bulk Google Sheet imports aren't shown here.</p>
-
-        <div class="section-header-row">
-          <span id="visitors-total" class="status count-badge">0 total</span>
-          <button id="export-onsite-btn" class="btn btn-outline btn-small">⬇️ Export Excel</button>
-        </div>
-        <input type="text" id="visitors-search" class="table-search" placeholder="Filter by URN, name, mobile, organization..." />
-        <div class="table-scroll">
-          <table class="activity-table" id="visitors-table">
-            <thead>
-              <tr>
-                <th>URN</th><th>Name</th><th>Organization</th><th>Designation</th>
-                <th>Mobile</th><th>Email</th><th>Category</th><th>Prints</th>
-              </tr>
-            </thead>
-            <tbody id="visitors-table-body">
-              <tr><td colspan="8" class="search-empty">Loading...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- DANGER ZONE — end-of-event reset -->
-      <section class="card danger-zone" id="danger-zone-section">
-        <h2>Danger Zone</h2>
-        <p class="section-caption">
-          Once an event is fully over, clear its print/scan history so the
-          system starts clean for the next event. This clears the Print
-          Count, Scan Monitoring, and Unscanned Entries tabs (counts and
-          history logs only). It does <strong>not</strong> delete any
-          visitor's name, URN, organization, or other details.
-        </p>
-        <button id="clear-history-btn" class="btn btn-danger btn-small">Clear Print/Scan History</button>
-      </section>
-
-      <!-- HIDDEN — full database wipe. Not part of normal flow on
-           purpose: stays display:none until the topbar logo is
-           clicked 5 times in a row (see wireSecretPurgeUnlock() in
-           app.js). Even once revealed, the actual delete button
-           stays disabled until the exact confirm phrase is typed
-           into the box below it — two separate things have to
-           happen deliberately before anything can be deleted. -->
-      <section class="card danger-zone hidden" id="purge-all-section">
-        <h2>⚠️ Delete Everything</h2>
-        <p class="section-caption">
-          Permanently deletes <strong>every</strong> visitor — name, URN,
-          organization, print history, scan history, all of it — across
-          the entire database. Use this only when starting a completely
-          new event from a blank slate. There is <strong>no undo</strong>.
-        </p>
-        <p class="section-caption">
-          Type <code>DELETE EVERYTHING</code> below to enable the button.
-        </p>
-        <input type="text" id="purge-confirm-input" class="table-search" placeholder="Type DELETE EVERYTHING to unlock" style="max-width: 320px; display: inline-block; margin-right: 10px;" />
-        <button id="purge-all-btn" class="btn btn-danger btn-small" disabled>Delete Everything</button>
-      </section>
-
-    </div>
-
-    <!-- ================= PRINT COUNT TAB ================= -->
-    <div class="tab-panel hidden" id="panel-print-count">
-
-      <section class="card" id="print-stats-section">
-        <h2>Print Stats</h2>
-        <div class="stats-row">
-          <div class="stat-box">
-            <div class="stat-label">Overall Prints</div>
-            <div class="stat-value" id="overall-print-total">—</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">Unique Visitors Printed</div>
-            <div class="stat-value" id="unique-print-total">—</div>
-          </div>
-        </div>
-        <div class="table-scroll table-scroll-spaced">
-          <table class="activity-table" id="device-stats-table">
-            <thead><tr><th>Device</th><th>Prints</th></tr></thead>
-            <tbody id="device-stats-body">
-              <tr><td colspan="2" class="search-empty">Loading...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="card" id="printed-section">
-        <div class="section-header-row">
-          <h2>Printed Badges</h2>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <span id="printed-total" class="status count-badge">0 total</span>
-            <button id="export-printed-btn" class="btn btn-outline btn-small">⬇️ Export Excel</button>
-          </div>
-        </div>
-        <p class="section-caption">Everyone whose badge has been printed at least once, regardless of source.</p>
-        <input type="text" id="printed-search" class="table-search" placeholder="Filter by URN, name, mobile, organization..." />
-        <div class="table-scroll">
-          <table class="activity-table" id="printed-table">
-            <thead>
-              <tr><th>URN</th><th>Name</th><th>Organization</th><th>Designation</th><th>Mobile</th><th>Email</th><th>Category</th><th>Prints</th></tr>
-            </thead>
-            <tbody id="printed-table-body">
-              <tr><td colspan="8" class="search-empty">Loading...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-    </div>
-
-    <!-- ================= SCAN MONITORING TAB ================= -->
-    <div class="tab-panel hidden" id="panel-scan">
-      <section class="card" id="scan-stats-section">
-        <div class="section-header-row">
-          <h2>Entrance Scan Stats</h2>
-          <span id="scan-live-indicator" class="status status-online">Live</span>
-        </div>
-        <div class="stats-row">
-          <div class="stat-box">
-            <div class="stat-label">Overall Entries</div>
-            <div class="stat-value" id="overall-scan-total">—</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">Unique Visitors Scanned</div>
-            <div class="stat-value" id="unique-scan-total">—</div>
-          </div>
-        </div>
-        <div class="table-scroll table-scroll-spaced">
-          <table class="activity-table" id="scanner-stats-table">
-            <thead><tr><th>Scanner / Gate</th><th>Entries</th></tr></thead>
-            <tbody id="scanner-stats-body">
-              <tr><td colspan="2" class="search-empty">Loading...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="card" id="scan-section">
-        <div class="section-header-row">
-          <h2>Scanned Visitors</h2>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <span id="scanned-total" class="status count-badge">0 total</span>
-            <button id="export-scanned-btn" class="btn btn-outline btn-small">⬇️ Export Excel</button>
-          </div>
-        </div>
-        <p class="section-caption">Everyone whose badge has been scanned at least once. Repeat scans just raise the count below — no duplicate rows.</p>
-        <input type="text" id="scanned-search" class="table-search" placeholder="Filter by URN, name, mobile, organization..." />
-        <div class="table-scroll">
-          <table class="activity-table" id="scanned-table">
-            <thead>
-              <tr><th>URN</th><th>Name</th><th>Organization</th><th>Mobile</th><th>Category</th><th>Scans</th><th>Last Scanned</th></tr>
-            </thead>
-            <tbody id="scanned-table-body">
-              <tr><td colspan="7" class="search-empty">Loading...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-
-    <!-- ================= UNSCANNED ENTRIES TAB ================= -->
-    <div class="tab-panel hidden" id="panel-unscanned">
-
-      <section class="card" id="unscanned-stats-section">
-        <h2>Unscanned Stats</h2>
-        <div class="stats-row">
-          <div class="stat-box">
-            <div class="stat-label">Unscanned Entries</div>
-            <div class="stat-value" id="unscanned-overall-total">—</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="card" id="unscanned-section">
-        <div class="section-header-row">
-          <h2>Unscanned Entries</h2>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <span id="unscanned-total" class="status count-badge">0 total</span>
-            <button id="export-unscanned-btn" class="btn btn-outline btn-small">⬇️ Export Excel</button>
-          </div>
-        </div>
-        <p class="section-caption">Badge printed at least once, but never scanned at any entrance gate — the people you may still need to follow up with.</p>
-        <input type="text" id="unscanned-search" class="table-search" placeholder="Filter by URN, name, mobile, organization..." />
-        <div class="table-scroll">
-          <table class="activity-table" id="unscanned-table">
-            <thead>
-              <tr><th>URN</th><th>Name</th><th>Organization</th><th>Mobile</th><th>Category</th><th>Prints</th><th>Last Printed</th></tr>
-            </thead>
-            <tbody id="unscanned-table-body">
-              <tr><td colspan="7" class="search-empty">Loading...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-
-  </main>
-
-  <iframe id="print-frame" name="print-frame" class="print-frame-hidden"></iframe>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="config.js"></script>
   <script src="js/api.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/print.js"></script>
-  <script src="js/app.js"></script>
 </body>
 </html>
