@@ -67,7 +67,7 @@ async def register_mart_days_visitor(payload: MartDaysRegisterRequest, backgroun
         "country": payload.country,
         "pincode": payload.pincode,
         "buyer_type": payload.buyer_type,
-        "event": "IEML Sourcing Mart Days",
+        "event": "IEML Mart Sourcing Days",
     }
 
     try:
