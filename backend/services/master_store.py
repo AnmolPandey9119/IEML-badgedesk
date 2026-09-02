@@ -54,6 +54,7 @@ succeeds — never guessed or backfilled.
 """
 
 import json
+import re
 from contextlib import contextmanager
 from typing import Optional
 
@@ -582,6 +583,51 @@ def search(query: str, limit: int = 25) -> list[dict]:
             (q, q, q, q, q, limit),
         )
         return [_row_to_visitor(row) for row in cur.fetchall()]
+
+
+# ----------------------------------------------------------------
+# NEW — Mart Days duplicate check (public registration form only)
+# ----------------------------------------------------------------
+# Scoped to source='mart_days' on purpose: this only stops the SAME
+# person registering twice through the public Mart Days form. It
+# never blocks someone who, say, was already in the onsite/sheet
+# data for a different event under the same email — that's a
+# different registration entirely and shouldn't be treated as a dup.
+
+
+def find_mart_days_by_email(email: str) -> Optional[dict]:
+    """Case-insensitive email match among Mart Days registrations."""
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT * FROM visitors WHERE source = 'mart_days' AND LOWER(email) = LOWER(%s) LIMIT 1",
+            (email.strip(),),
+        )
+        row = cur.fetchone()
+        return _row_to_visitor(row) if row else None
+
+
+def find_mart_days_by_mobile(mobile: str) -> Optional[dict]:
+    """
+    Mobile match among Mart Days registrations. Both sides are
+    stripped down to digits-only before comparing, so "+91 98765
+    43210" and "9876543210" are correctly treated as the same number
+    even if someone types it differently the second time.
+    """
+    mobile_digits = re.sub(r"\D", "", mobile or "")
+    if not mobile_digits:
+        return None
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT * FROM visitors
+            WHERE source = 'mart_days'
+              AND REGEXP_REPLACE(COALESCE(mobile, ''), '\\D', '', 'g') = %s
+            LIMIT 1
+            """,
+            (mobile_digits,),
+        )
+        row = cur.fetchone()
+        return _row_to_visitor(row) if row else None
 
 
 def get_all() -> list[dict]:
