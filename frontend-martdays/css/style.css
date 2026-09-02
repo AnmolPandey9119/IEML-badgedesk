@@ -1,5 +1,5 @@
 /* ==========================================================
-   IEML Sourcing Mart Days — Public Registration Form
+   IEML Mart Sourcing Days — Public Registration Form
    Identity: a government-flagship B2B trade show. Deep navy +
    brass gold (official/ledger feel), a serif for the event
    identity, a plain sans for the working form itself — the
@@ -56,7 +56,7 @@
        Scoped to .identity only — the form/card panel never gets this. */
     background-image:
       linear-gradient(165deg, rgba(12, 35, 64, 0.92) 0%, rgba(7, 22, 40, 0.94) 100%),
-      url("https://indiaexpomart.com/wp-content/uploads/2025/09/Untitled-design-2.jpg");
+      url("https://tennews.in/india-expo-mart-face-of-one-of-the-most-modern-city-of-india-greater-noida/");
     background-size: cover;
     background-position: center;
     color: #fff;
