@@ -58,16 +58,19 @@ class Settings(BaseSettings):
     # replacement for it — both write into the same visitors table.
     external_api_key: str = ""
 
-    # ---------- Brevo Email (Mart Days registration confirmation) ----------
-    # BREVO_API_KEY comes from your Brevo account (Settings -> SMTP & API ->
-    # API Keys -> generate a new one). Left blank by default so a backend
-    # that hasn't set this up yet just skips sending (logs a warning,
-    # never crashes) instead of failing registration.
-    brevo_api_key: str = ""
-    # Must be a sender EMAIL that's verified in your Brevo account
-    # (Senders, Domains & Dedicated IPs -> Senders) before it can send.
-    brevo_sender_email: str = ""
-    brevo_sender_name: str = "IEML Sourcing Mart Days"
+    # ---------- Mailchimp Transactional / Mandrill Email (Mart Days confirmation) ----------
+    # MAILCHIMP_TRANSACTIONAL_API_KEY comes from a Mailchimp TRANSACTIONAL
+    # account (mandrillapp.com), NOT the regular Mailchimp Marketing login
+    # used for audience/campaign emails -- those are two separate products
+    # with separate billing, even under the same Mailchimp company account.
+    # Left blank by default so a backend that hasn't set this up yet just
+    # skips sending (logs a warning, never crashes) instead of failing
+    # registration.
+    mailchimp_transactional_api_key: str = ""
+    # Must be a sender EMAIL on a domain verified (SPF/DKIM) in the
+    # Mailchimp Transactional account before it can send.
+    mailchimp_sender_email: str = ""
+    mailchimp_sender_name: str = "IEML Sourcing Mart Days"
 
     # ---------- Event Info ----------
     # Reused across every IEML event — this is the one thing that

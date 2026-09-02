@@ -107,14 +107,15 @@ async def register_mart_days_visitor(payload: MartDaysRegisterRequest, backgroun
 
     # Scheduled to run AFTER this response is sent to the browser —
     # registrant sees their URN instantly; email goes out right after,
-    # in the background. A Brevo failure here never touches the
-    # response the registrant already received.
+    # in the background. A Mailchimp Transactional failure here never
+    # touches the response the registrant already received.
     background_tasks.add_task(
         email_service.send_mart_days_confirmation,
         urn,
         payload.full_name,
         payload.email,
         payload.phone_number,
+        payload.company_name,
     )
 
     return MartDaysRegisterResponse(
