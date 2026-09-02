@@ -12,6 +12,101 @@
     const formSection = document.getElementById("form-section");
     const successSection = document.getElementById("success-section");
   
+    const countryEl = document.getElementById("country");
+    const stateSelect = document.getElementById("state-select");
+    const stateText = document.getElementById("state-text");
+    const districtSelect = document.getElementById("district-select");
+    const districtText = document.getElementById("district-text");
+  
+    // ------------------------------------------------------------
+    // Country dropdown: populated once from location-data.js.
+    // ------------------------------------------------------------
+    (window.COUNTRIES || []).forEach(function (name) {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      countryEl.appendChild(opt);
+    });
+  
+    function showIndiaFields() {
+      stateSelect.classList.remove("hidden");
+      stateSelect.disabled = false;
+      stateText.classList.add("hidden");
+      stateText.value = "";
+    }
+  
+    function showOtherCountryFields() {
+      stateSelect.classList.add("hidden");
+      stateSelect.disabled = true;
+      stateSelect.innerHTML = '<option value="" selected>Select state</option>';
+      stateText.classList.remove("hidden");
+      hideDistrictSelect();
+      districtText.classList.remove("hidden");
+      districtText.value = "";
+    }
+  
+    function hideDistrictSelect() {
+      districtSelect.classList.add("hidden");
+      districtSelect.disabled = true;
+      districtSelect.innerHTML = '<option value="" selected>Select district</option>';
+    }
+  
+    function resetLocationFields() {
+      stateSelect.classList.add("hidden");
+      stateSelect.disabled = true;
+      stateSelect.innerHTML = '<option value="" selected>Select state</option>';
+      stateText.classList.add("hidden");
+      stateText.value = "";
+      districtText.classList.add("hidden");
+      districtText.value = "";
+      hideDistrictSelect();
+    }
+  
+    // Country changes -> reset State/District, then show the right
+    // field type (real dropdown for India, free text for everyone
+    // else — we don't have district-level data for every country).
+    countryEl.addEventListener("change", function () {
+      resetLocationFields();
+      if (countryEl.value === "India") {
+        showIndiaFields();
+        Object.keys(window.INDIA_LOCATIONS || {}).forEach(function (state) {
+          const opt = document.createElement("option");
+          opt.value = state;
+          opt.textContent = state;
+          stateSelect.appendChild(opt);
+        });
+      } else if (countryEl.value) {
+        showOtherCountryFields();
+      }
+    });
+  
+    // State (India) changes -> populate District dropdown for that state.
+    stateSelect.addEventListener("change", function () {
+      hideDistrictSelect();
+      const districts = (window.INDIA_LOCATIONS || {})[stateSelect.value] || [];
+      if (districts.length) {
+        districtSelect.classList.remove("hidden");
+        districtSelect.disabled = false;
+        districts.forEach(function (d) {
+          const opt = document.createElement("option");
+          opt.value = d;
+          opt.textContent = d;
+          districtSelect.appendChild(opt);
+        });
+      }
+    });
+  
+    // Reads whichever field (dropdown or text) is currently visible
+    // for State/District — the form doesn't care which one was used,
+    // only the final chosen value.
+    function currentStateValue() {
+      return countryEl.value === "India" ? stateSelect.value : stateText.value.trim();
+    }
+  
+    function currentDistrictValue() {
+      return countryEl.value === "India" ? districtSelect.value : districtText.value.trim();
+    }
+  
     function showError(message) {
       errorBox.textContent = message;
       errorBox.classList.remove("hidden");
@@ -34,9 +129,9 @@
         email: document.getElementById("email").value.trim(),
         phone_number: document.getElementById("phone_number").value.trim(),
         address: document.getElementById("address").value.trim() || null,
-        district: document.getElementById("district").value.trim() || null,
-        state: document.getElementById("state").value.trim() || null,
-        country: document.getElementById("country").value.trim() || null,
+        district: currentDistrictValue() || null,
+        state: currentStateValue() || null,
+        country: countryEl.value || null,
         pincode: document.getElementById("pincode").value.trim() || null,
       };
   

@@ -54,19 +54,33 @@
 
         <div class="form-row">
           <div>
-            <label for="district">District</label>
-            <input type="text" id="district" name="district" maxlength="100" />
+            <label for="country">Country</label>
+            <select id="country" name="country">
+              <option value="" selected>Select country</option>
+            </select>
           </div>
           <div>
-            <label for="state">State</label>
-            <input type="text" id="state" name="state" maxlength="100" />
+            <!-- India: real dropdown, populated once Country=India is picked -->
+            <label for="state-select" class="loc-india hidden">State</label>
+            <select id="state-select" class="loc-india hidden" disabled>
+              <option value="" selected>Select state</option>
+            </select>
+            <!-- Any other country: plain text field -->
+            <label for="state-text" class="loc-other hidden">State</label>
+            <input type="text" id="state-text" class="loc-other hidden" maxlength="100" />
           </div>
         </div>
 
         <div class="form-row">
           <div>
-            <label for="country">Country</label>
-            <input type="text" id="country" name="country" maxlength="100" />
+            <!-- India: real dropdown, populated once a State is picked -->
+            <label for="district-select" class="loc-india hidden">District</label>
+            <select id="district-select" class="loc-india hidden" disabled>
+              <option value="" selected>Select district</option>
+            </select>
+            <!-- Any other country: plain text field -->
+            <label for="district-text" class="loc-other hidden">District</label>
+            <input type="text" id="district-text" class="loc-other hidden" maxlength="100" />
           </div>
           <div>
             <label for="pincode">Pincode</label>
@@ -95,6 +109,7 @@
   </main>
 
   <script src="js/config.js"></script>
+  <script src="js/location-data.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
