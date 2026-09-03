@@ -288,12 +288,21 @@ class PurgeAllRequest(BaseModel):
     server-side gate on top of whatever the master console's own UI
     already requires the operator to type, so this endpoint can never
     be triggered by an empty or automated POST.
+
+    NEW: scope decides WHICH event's data gets wiped — "mart_days"
+    (only mart_days_registrations), "other_events" (only visitors +
+    its print_log/scan_log), or "both" (the old behaviour — a true
+    start-completely-fresh reset). Required now, no default, so the
+    master console's UI is forced to ask the operator explicitly
+    rather than silently assuming "both".
     """
     confirm_phrase: str = ""
+    scope: str = Field(..., description="'mart_days', 'other_events', or 'both'")
 
 
 class PurgeAllResponse(BaseModel):
     """Returned by POST /api/master/purge-all — exactly how much was permanently deleted."""
+    mart_days_deleted: int = 0
     visitors_deleted: int
     print_logs_deleted: int
     scan_logs_deleted: int

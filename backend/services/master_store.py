@@ -195,23 +195,20 @@ def init_db() -> None:
             cur.execute("CREATE INDEX IF NOT EXISTS idx_scan_log_urn ON scan_log(urn)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_scan_log_scanner ON scan_log(scanner_name)")
 
-            # NEW: dedicated table holding ONLY Mart Days registration
-            # data (real typed columns, not squeezed into visitors'
-            # extra_json anymore) -- one row per Mart Days registrant,
-            # every field from the public form. This is a pure ADDITION
-            # alongside the visitors row for the same URN, not a
-            # replacement: the visitors row still exists exactly as
-            # before (source='mart_days'), which is what the SAME
-            # onsite print/scan/master console apps already rely on to
-            # find and print a Mart Days registrant's badge. Nothing
-            # about print/scan changes -- this table exists purely so
-            # Mart Days data (which recurs every month) can be
-            # filtered, exported, or cleared on its own, without
-            # touching any other event's rows.
+            # CHANGED: dedicated table holding ONLY Mart Days
+            # registration data (real typed columns, not squeezed into
+            # visitors' extra_json). Mart Days registrants used to
+            # ALSO get a matching `visitors` row (source='mart_days')
+            # — that's no longer the case. A Mart Days registrant now
+            # lives ONLY in this table, never in `visitors`. This is
+            # what keeps the two event buckets genuinely separate:
+            # visitors = everything except Mart Days; this table =
+            # Mart Days only. Search/print/scan/register all route to
+            # the right one — see routers/registration.py.
             cur.execute(
                 """
                 CREATE TABLE IF NOT EXISTS mart_days_registrations (
-                    urn           TEXT PRIMARY KEY REFERENCES visitors(urn) ON DELETE CASCADE,
+                    urn           TEXT PRIMARY KEY,
                     buyer_type    TEXT NOT NULL,
                     full_name     TEXT NOT NULL,
                     company_name  TEXT NOT NULL,
@@ -227,6 +224,28 @@ def init_db() -> None:
                 )
                 """
             )
+            # CHANGED: Mart Days registrations used to also get a
+            # matching `visitors` row (source='mart_days') purely so
+            # this table's urn FK had something to point at. That's
+            # no longer true — Mart Days now lives ONLY here, so the
+            # old FK would reject every future insert. Drop it if an
+            # earlier deploy already created it (safe no-op otherwise).
+            cur.execute(
+                "ALTER TABLE mart_days_registrations DROP CONSTRAINT IF EXISTS mart_days_registrations_urn_fkey"
+            )
+            # NEW: this table now tracks its own print/scan activity
+            # directly — independent of visitors.print_count/scan_count,
+            # since a Mart Days registrant no longer has a visitors row
+            # to keep those counts on.
+            cur.execute(
+                "ALTER TABLE mart_days_registrations ADD COLUMN IF NOT EXISTS print_count INTEGER NOT NULL DEFAULT 0"
+            )
+            cur.execute(
+                "ALTER TABLE mart_days_registrations ADD COLUMN IF NOT EXISTS scan_count INTEGER NOT NULL DEFAULT 0"
+            )
+            cur.execute(
+                "ALTER TABLE mart_days_registrations ADD COLUMN IF NOT EXISTS last_scanned_at TIMESTAMPTZ"
+            )
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_mart_days_email ON mart_days_registrations(LOWER(email))"
             )
@@ -236,10 +255,18 @@ def init_db() -> None:
 
 
 def existing_urns() -> set[str]:
-    """All URNs currently in use — used to make sure a newly generated URN is unique."""
+    """
+    All URNs currently in use — used to make sure a newly generated
+    URN is unique. CHANGED: now checks BOTH visitors and
+    mart_days_registrations, since a URN must be unique across the
+    whole system regardless of which of the two tables it ends up in.
+    """
     with _connection() as conn, conn.cursor() as cur:
         cur.execute("SELECT urn FROM visitors")
-        return {row["urn"] for row in cur.fetchall()}
+        visitor_urns = {row["urn"] for row in cur.fetchall()}
+        cur.execute("SELECT urn FROM mart_days_registrations")
+        mart_days_urns = {row["urn"] for row in cur.fetchall()}
+        return visitor_urns | mart_days_urns
 
 
 def existing_source_hashes() -> set[str]:
@@ -306,42 +333,21 @@ def insert_visitor(
     return {"urn": urn, "print_count": 0, **core, **extra}
 
 
-def insert_mart_days_visitor(urn: str, visitor_data: dict, mart_days_data: dict) -> dict:
+def insert_mart_days_visitor(urn: str, mart_days_data: dict) -> dict:
     """
-    Used ONLY by routers/mart_registration.py. Writes BOTH:
-      1. the usual visitors row (same as insert_visitor()) -- this is
-         what the onsite print/scan/master console apps search by URN
-         to find and print this person's badge, unchanged from before.
-      2. a mart_days_registrations row -- the full public-form
-         submission, in its own dedicated columns, kept ONLY here
-         (not duplicated into visitors.extra_json anymore).
+    Used by BOTH routers/mart_registration.py (public form) and
+    routers/registration.py's new POST /register-mart-days (onsite
+    counter, when the operator has "Mart Days" selected). Writes
+    ONLY to mart_days_registrations now — CHANGED from before, where
+    this also silently created a matching `visitors` row. That row
+    is what let Mart Days people show up mixed into the regular
+    visitors list; removing it is the whole point of the split.
 
-    Both writes happen inside ONE database transaction: if either
-    insert fails, NEITHER is committed (see _connection()'s
-    commit-only-on-success behaviour) -- so a registrant can never end
-    up half-saved (a visitors row with no matching Mart Days details,
-    or vice versa).
+    `mart_days_data` should have exactly the mart_days_registrations
+    columns: buyer_type, full_name, company_name, designation, email,
+    phone_number, address, district, state, country, pincode.
     """
-    core = {field: visitor_data.get(field) for field in _CORE_FIELDS}
-    extra = {k: v for k, v in visitor_data.items() if k not in _CORE_FIELDS and k != "urn"}
-
     with _connection() as conn, conn.cursor() as cur:
-        cur.execute(
-            """
-            INSERT INTO visitors
-                (urn, name, org, city, category, status, email, mobile,
-                 extra_json, source)
-            VALUES
-                (%(urn)s, %(name)s, %(org)s, %(city)s, %(category)s, %(status)s,
-                 %(email)s, %(mobile)s, %(extra_json)s, %(source)s)
-            """,
-            {
-                "urn": urn,
-                **core,
-                "extra_json": json.dumps(extra),
-                "source": "mart_days",
-            },
-        )
         cur.execute(
             """
             INSERT INTO mart_days_registrations
@@ -354,7 +360,138 @@ def insert_mart_days_visitor(urn: str, visitor_data: dict, mart_days_data: dict)
             {"urn": urn, **mart_days_data},
         )
 
-    return {"urn": urn, "print_count": 0, **core, **extra}
+    # Returned in the same Visitor-shape as search_mart_days()/
+    # get_mart_days_by_urn() — so every caller (public form router,
+    # onsite register-mart-days route) gets one consistent shape
+    # regardless of which function they called.
+    return _mart_days_row_to_visitor_shape({"urn": urn, "print_count": 0, "scan_count": 0, **mart_days_data})
+
+
+def _mart_days_row_to_visitor_shape(row: dict) -> dict:
+    """
+    Maps a mart_days_registrations row onto the SAME shape as a
+    visitors row's dict form (name/organization/category/...) — so
+    every URN-keyed endpoint (print-log, scan-log, update, delete)
+    can return the exact same `Visitor` response model no matter
+    which table the URN actually lives in. The frontend never needs
+    to know or care which table answered.
+    """
+    return {
+        "urn": row["urn"],
+        "name": row["full_name"],
+        "organization": row["company_name"],
+        "designation": row.get("designation"),
+        "mobile": row["phone_number"],
+        "email": row["email"],
+        "category": row["buyer_type"],
+        "print_count": row.get("print_count", 0) or 0,
+        "scan_count": row.get("scan_count", 0) or 0,
+        "last_scanned_at": row.get("last_scanned_at"),
+    }
+
+
+def get_mart_days_by_urn(urn: str) -> Optional[dict]:
+    """Looks up a single Mart Days registrant by URN, in the same shape as get_by_urn()."""
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT * FROM mart_days_registrations WHERE urn = %s", (urn,))
+        row = cur.fetchone()
+        return _mart_days_row_to_visitor_shape(dict(row)) if row else None
+
+
+def search_mart_days(q: str, limit: int = 50) -> list[dict]:
+    """Same idea as search() below, scoped to mart_days_registrations only."""
+    q = f"%{q}%"
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT * FROM mart_days_registrations
+            WHERE urn ILIKE %s OR full_name ILIKE %s OR phone_number ILIKE %s
+               OR company_name ILIKE %s OR email ILIKE %s
+            ORDER BY registered_at DESC
+            LIMIT %s
+            """,
+            (q, q, q, q, q, limit),
+        )
+        return [_mart_days_row_to_visitor_shape(dict(row)) for row in cur.fetchall()]
+
+
+def update_mart_days_visitor(urn: str, data: dict) -> Optional[dict]:
+    """
+    Onsite edit path for a Mart Days registrant (operator fixing a
+    typo before printing). `data` is in Visitor shape (organization,
+    designation, ...) — mapped back onto this table's real column
+    names. buyer_type/address/district/state/country/pincode aren't
+    editable through this generic path (the onsite Mart Days form
+    covers those at registration time); this covers the same fields
+    the regular onsite edit flow already covers for everyone else.
+    """
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE mart_days_registrations
+            SET full_name = %(name)s, company_name = %(organization)s,
+                designation = %(designation)s, email = %(email)s, phone_number = %(mobile)s
+            WHERE urn = %(urn)s
+            """,
+            {
+                "urn": urn,
+                "name": data.get("name"),
+                "organization": data.get("organization"),
+                "designation": data.get("designation"),
+                "email": data.get("email"),
+                "mobile": data.get("mobile"),
+            },
+        )
+        if cur.rowcount == 0:
+            return None
+
+    return get_mart_days_by_urn(urn)
+
+
+def delete_mart_days_visitor(urn: str) -> bool:
+    """Mirrors delete_visitor() below, scoped to mart_days_registrations."""
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute("DELETE FROM mart_days_registrations WHERE urn = %s", (urn,))
+        return cur.rowcount > 0
+
+
+def log_mart_days_print(urn: str, device_name: str) -> Optional[dict]:
+    """
+    Mirrors log_print() below, scoped to mart_days_registrations.
+    CHANGED from the visitors version: no print_log row is written
+    here (no per-device breakdown for Mart Days yet) — just the
+    running total on the row itself, per the simpler-for-now scope
+    agreed for this table. `device_name` is accepted for API-shape
+    symmetry with log_print() even though it isn't stored anywhere
+    yet; if per-device Mart Days stats are wanted later, this is
+    exactly where a dedicated log table would plug in.
+    """
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE mart_days_registrations SET print_count = print_count + 1 WHERE urn = %s",
+            (urn,),
+        )
+        if cur.rowcount == 0:
+            return None
+
+    return get_mart_days_by_urn(urn)
+
+
+def log_mart_days_scan(urn: str, scanner_name: str) -> Optional[dict]:
+    """Mirrors log_scan() below, scoped to mart_days_registrations. Same no-per-device-log scope as log_mart_days_print()."""
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE mart_days_registrations
+            SET scan_count = scan_count + 1, last_scanned_at = NOW()
+            WHERE urn = %s
+            """,
+            (urn,),
+        )
+        if cur.rowcount == 0:
+            return None
+
+    return get_mart_days_by_urn(urn)
 
 
 def sync_update_visitor(urn: str, data: dict, source_hash: str) -> Optional[dict]:
@@ -813,38 +950,52 @@ def clear_history() -> dict:
     }
 
 
-def purge_everything() -> dict:
+def purge_everything(scope: str = "both") -> dict:
     """
     NEW — master console's hidden "Danger Zone" full wipe (routers/
     master.py's POST /purge-all, master-only + a server-side confirm
-    phrase check on top of that). Deletes EVERY visitor row outright
-    — name, URN, org, category, everything. print_log and scan_log
-    rows for those visitors go with them automatically (ON DELETE
-    CASCADE, same foreign keys delete_visitor() already relies on for
-    a single visitor). This is the true "start completely fresh for
-    the next event" reset — unlike clear_history() above, which
-    deliberately keeps every visitor's identity and only resets their
-    print/scan counters.
+    phrase check on top of that).
 
-    Counts everything BEFORE deleting (since the cascade means
-    print_log/scan_log row counts would otherwise be gone by the time
-    we could count them), all inside one transaction — either
-    everything is wiped, or (if something fails) nothing is.
+    CHANGED: now scope-aware, since there are two independent event
+    buckets to wipe:
+      - scope="other_events" -> deletes every `visitors` row only
+        (their print_log/scan_log go with them via ON DELETE CASCADE).
+        mart_days_registrations is completely untouched.
+      - scope="mart_days"    -> deletes every mart_days_registrations
+        row only. `visitors` is completely untouched.
+      - scope="both"         -> deletes everything in both tables —
+        the same true "start completely fresh" reset this function
+        always did, before the split existed.
+
+    Counts everything BEFORE deleting (since the visitors cascade
+    means print_log/scan_log row counts would otherwise be gone by
+    the time we could count them), all inside one transaction —
+    either everything in scope is wiped, or (if something fails)
+    nothing is.
     """
-    with _connection() as conn, conn.cursor() as cur:
-        cur.execute("SELECT COUNT(*) AS c FROM visitors")
-        visitors_deleted = cur.fetchone()["c"]
+    if scope not in ("mart_days", "other_events", "both"):
+        raise ValueError(f"Invalid scope '{scope}' — must be 'mart_days', 'other_events', or 'both'")
 
-        cur.execute("SELECT COUNT(*) AS c FROM print_log")
-        print_logs_deleted = cur.fetchone()["c"]
-
-        cur.execute("SELECT COUNT(*) AS c FROM scan_log")
-        scan_logs_deleted = cur.fetchone()["c"]
-
-        cur.execute("DELETE FROM visitors")  # cascades to print_log + scan_log
-
-    return {
-        "visitors_deleted": visitors_deleted,
-        "print_logs_deleted": print_logs_deleted,
-        "scan_logs_deleted": scan_logs_deleted,
+    result = {
+        "visitors_deleted": 0,
+        "print_logs_deleted": 0,
+        "scan_logs_deleted": 0,
+        "mart_days_deleted": 0,
     }
+
+    with _connection() as conn, conn.cursor() as cur:
+        if scope in ("other_events", "both"):
+            cur.execute("SELECT COUNT(*) AS c FROM visitors")
+            result["visitors_deleted"] = cur.fetchone()["c"]
+            cur.execute("SELECT COUNT(*) AS c FROM print_log")
+            result["print_logs_deleted"] = cur.fetchone()["c"]
+            cur.execute("SELECT COUNT(*) AS c FROM scan_log")
+            result["scan_logs_deleted"] = cur.fetchone()["c"]
+            cur.execute("DELETE FROM visitors")  # cascades to print_log + scan_log
+
+        if scope in ("mart_days", "both"):
+            cur.execute("SELECT COUNT(*) AS c FROM mart_days_registrations")
+            result["mart_days_deleted"] = cur.fetchone()["c"]
+            cur.execute("DELETE FROM mart_days_registrations")
+
+    return result
