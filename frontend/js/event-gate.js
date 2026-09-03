@@ -63,10 +63,19 @@
       EventGate._setCurrentEvent(event);
       applyModeToUI(event);
       els.overlay.classList.add("hidden");
+
+      // Mart Days always shows this fixed label on the topbar — it
+      // never comes from the backend. "Other Events" keeps showing
+      // whatever settings.event_name currently is (set per-event in
+      // the backend .env), which app.js's checkConnection() keeps
+      // refreshed on its own poll — see the isMartDays check there.
+      const eventNameEl = document.getElementById("event-name");
+      if (eventNameEl && event === "mart_days") {
+        eventNameEl.textContent = "IEML Mart Days";
+      }
     }
   
     function showChoiceScreen() {
-      els.overlay.classList.remove("hidden");
       els.passwordScreen.classList.add("hidden");
       els.choiceScreen.classList.remove("hidden");
       els.passwordInput.value = "";

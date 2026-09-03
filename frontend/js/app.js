@@ -278,7 +278,15 @@
       if (result.ok) {
         els.connectionStatus.textContent = "Online";
         els.connectionStatus.className = "status status-online";
-        if (result.data.event) {
+        // CHANGED: Mart Days always shows a fixed label, regardless of
+        // whatever settings.event_name the backend is currently set
+        // to — that backend value is "Other Events" only from here on.
+        // See event-gate.js's unlock() for the instant-switch version
+        // of this same check.
+        const isMartDays = window.EventGate && window.EventGate.isMartDays && window.EventGate.isMartDays();
+        if (isMartDays) {
+          els.eventName.textContent = "IEML Mart Days";
+        } else if (result.data.event) {
           els.eventName.textContent = result.data.event;
         }
       } else {

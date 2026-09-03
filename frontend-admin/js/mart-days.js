@@ -39,6 +39,16 @@
    
    const MASTER_EVENT_KEY = "ieml_master_current_event"; // "other" | "mart_days"
    
+   // Exposed so app.js's startHealthCheck() can check the current mode
+   // before writing the backend's settings.event_name into the topbar
+   // label — Mart Days always shows a fixed label instead, never the
+   // backend value. Same pattern as the counter app's window.EventGate.
+   window.MasterEventGate = {
+     isMartDays() {
+       return sessionStorage.getItem(MASTER_EVENT_KEY) === "mart_days";
+     },
+   };
+   
    document.addEventListener("DOMContentLoaded", () => {
      wireEventGate();
      wireSwitchEventBtn();
@@ -117,6 +127,14 @@
      if (badge) {
        badge.textContent = isMartDays ? "Mart Days" : "Other Events";
        badge.classList.remove("hidden");
+     }
+   
+     // Instant feedback on switch — app.js's startHealthCheck() then
+     // keeps this correct on every subsequent poll (see the
+     // MasterEventGate.isMartDays() check added there).
+     const eventNameEl = document.getElementById("event-name");
+     if (eventNameEl && isMartDays) {
+       eventNameEl.textContent = "IEML Mart Days";
      }
    
      if (isMartDays) {

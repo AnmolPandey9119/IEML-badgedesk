@@ -75,7 +75,12 @@
        if (result.ok) {
          statusEl.textContent = "Online";
          statusEl.className = "status status-online";
-         if (eventEl) eventEl.textContent = result.data.event || "";
+         // CHANGED: Mart Days always shows a fixed label, regardless of
+       // whatever settings.event_name the backend is currently set to
+       // — that backend value is "Other Events" only from here on.
+       // See mart-days.js's window.MasterEventGate + applyMasterMode().
+       const isMartDays = window.MasterEventGate && window.MasterEventGate.isMartDays && window.MasterEventGate.isMartDays();
+       if (eventEl) eventEl.textContent = isMartDays ? "IEML Mart Days" : (result.data.event || "");
        } else {
          statusEl.textContent = "Offline";
          statusEl.className = "status status-offline";
