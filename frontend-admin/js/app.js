@@ -12,6 +12,13 @@
    let allUnscanned = [];
    let panelMode = "closed"; // "closed" | "add" | "view" | "edit"
    let activeUrn = null;     // which visitor the panel is currently showing (view/edit)
+
+   // NEW — Onsite Registrations pagination (10/page). Page number is
+   // kept across auto-refresh ticks (clamped if the filtered list
+   // shrinks below the current page) and reset to 1 whenever the
+   // search box changes, since a new filter means a new result set.
+   let onsitePage = 1;
+   const ONSITE_PAGE_SIZE = 10;
    
    document.addEventListener("DOMContentLoaded", () => {
      wireTabs();
@@ -23,6 +30,7 @@
      wireAddToggle();
      wireViewActions();
      wireSearch();
+     wireOnsitePagination();
      wirePrintedSearch();
      wireScannedSearch();
      wireUnscannedSearch();
@@ -409,9 +417,9 @@
        if (scannedBody) scannedBody.innerHTML = `<tr><td colspan="7" class="search-empty">${escapeHtml(result.error || "Failed to load")}</td></tr>`;
        return;
      }
-   
+
      allVisitors = result.data.visitors || [];
-     renderOnsiteTable(onlyOnsite(allVisitors));
+     renderOnsiteTable(currentOnsiteFiltered());
      renderPrintedTable(onlyPrinted(allVisitors));
      renderScannedTable(currentScannedFiltered());
    }
@@ -509,10 +517,21 @@
    
      if (visitors.length === 0) {
        bodyEl.innerHTML = `<tr><td colspan="8" class="search-empty">No onsite registrations yet</td></tr>`;
+       renderOnsitePagination(1, 1);
        return;
      }
+
+     // NEW — 10 rows/page. Clamp the current page into range first
+     // (covers a search narrowing the list, or a row being deleted
+     // off the last page) so a slice never comes back empty.
+     const totalPages = Math.max(1, Math.ceil(visitors.length / ONSITE_PAGE_SIZE));
+     if (onsitePage > totalPages) onsitePage = totalPages;
+     if (onsitePage < 1) onsitePage = 1;
+
+     const start = (onsitePage - 1) * ONSITE_PAGE_SIZE;
+     const pageVisitors = visitors.slice(start, start + ONSITE_PAGE_SIZE);
    
-     bodyEl.innerHTML = visitors
+     bodyEl.innerHTML = pageVisitors
        .map(
          (v) => `
          <tr data-urn="${escapeHtml(v.urn)}" class="${v.urn === activeUrn ? "row-active" : ""}">
@@ -527,6 +546,8 @@
          </tr>`
        )
        .join("");
+
+     renderOnsitePagination(onsitePage, totalPages);
    }
    
    function renderPrintedTable(visitors) {
@@ -604,10 +625,45 @@
    function wireSearch() {
      const input = document.getElementById("visitors-search");
      input.addEventListener("input", () => {
-       const q = input.value.trim().toLowerCase();
-       const base = onlyOnsite(allVisitors);
-       renderOnsiteTable(q ? base.filter((v) => matchesQuery(v, q)) : base);
+       onsitePage = 1; // new filter = new result set, start back at page 1
+       renderOnsiteTable(currentOnsiteFiltered());
      });
+   }
+
+   /* ---------------- Onsite Registrations pagination (10/page) ---------------- */
+   function renderOnsitePagination(page, totalPages) {
+     const bar = document.getElementById("visitors-pagination");
+     if (!bar) return;
+
+     if (totalPages <= 1) {
+       bar.classList.add("hidden");
+       return;
+     }
+     bar.classList.remove("hidden");
+
+     const info = document.getElementById("visitors-page-info");
+     const prevBtn = document.getElementById("visitors-prev-btn");
+     const nextBtn = document.getElementById("visitors-next-btn");
+     if (info) info.textContent = `Page ${page} of ${totalPages}`;
+     if (prevBtn) prevBtn.disabled = page <= 1;
+     if (nextBtn) nextBtn.disabled = page >= totalPages;
+   }
+
+   function wireOnsitePagination() {
+     const prevBtn = document.getElementById("visitors-prev-btn");
+     const nextBtn = document.getElementById("visitors-next-btn");
+     if (prevBtn) {
+       prevBtn.addEventListener("click", () => {
+         onsitePage -= 1;
+         renderOnsiteTable(currentOnsiteFiltered());
+       });
+     }
+     if (nextBtn) {
+       nextBtn.addEventListener("click", () => {
+         onsitePage += 1;
+         renderOnsiteTable(currentOnsiteFiltered());
+       });
+     }
    }
    
    function wirePrintedSearch() {

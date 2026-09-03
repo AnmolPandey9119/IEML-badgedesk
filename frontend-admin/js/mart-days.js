@@ -36,6 +36,13 @@
    let allMartDaysVisitors = [];
    let mdPanelMode = "closed"; // "closed" | "add" | "view" | "edit"
    let mdActiveUrn = null;
+
+   // NEW — Mart Days Registrations pagination (10/page). Mirrors
+   // Other Events' onsitePage in app.js — page persists across
+   // refreshes (clamped if the list shrinks) and resets to 1 on a
+   // new search.
+   let mdVisitorsPage = 1;
+   const MD_PAGE_SIZE = 10;
    
    const MASTER_EVENT_KEY = "ieml_master_current_event"; // "other" | "mart_days"
    
@@ -57,6 +64,7 @@
      wireMartDaysViewActions();
      wireMartDaysTableRowClicks();
      wireMartDaysSearch();
+     wireMdVisitorsPagination();
      wireMartDaysFindAndPrint();
      wireMartDaysExport();
      wireMdClearHistory();
@@ -195,7 +203,10 @@
    function wireMartDaysSearch() {
      const input = document.getElementById("md-visitors-search");
      if (!input) return;
-     input.addEventListener("input", () => renderMartDaysTable(mdCurrentFiltered()));
+     input.addEventListener("input", () => {
+       mdVisitorsPage = 1; // new filter = new result set, start back at page 1
+       renderMartDaysTable(mdCurrentFiltered());
+     });
    }
    
    function renderMartDaysTable(visitors) {
@@ -207,10 +218,20 @@
    
      if (visitors.length === 0) {
        bodyEl.innerHTML = `<tr><td colspan="7" class="search-empty">No Mart Days registrations yet</td></tr>`;
+       renderMdVisitorsPagination(1, 1);
        return;
      }
+
+     // NEW — 10 rows/page, same clamping approach as Other Events'
+     // renderOnsiteTable() in app.js.
+     const totalPages = Math.max(1, Math.ceil(visitors.length / MD_PAGE_SIZE));
+     if (mdVisitorsPage > totalPages) mdVisitorsPage = totalPages;
+     if (mdVisitorsPage < 1) mdVisitorsPage = 1;
+
+     const start = (mdVisitorsPage - 1) * MD_PAGE_SIZE;
+     const pageVisitors = visitors.slice(start, start + MD_PAGE_SIZE);
    
-     bodyEl.innerHTML = visitors
+     bodyEl.innerHTML = pageVisitors
        .map(
          (v) => `
          <tr data-urn="${mdEscapeHtml(v.urn)}" class="${v.urn === mdActiveUrn ? "row-active" : ""}">
@@ -224,6 +245,44 @@
          </tr>`
        )
        .join("");
+
+     renderMdVisitorsPagination(mdVisitorsPage, totalPages);
+   }
+
+   /* ---------------- Mart Days Registrations pagination (10/page) ---------------- */
+   function renderMdVisitorsPagination(page, totalPages) {
+     const bar = document.getElementById("md-visitors-pagination");
+     if (!bar) return;
+
+     if (totalPages <= 1) {
+       bar.classList.add("hidden");
+       return;
+     }
+     bar.classList.remove("hidden");
+
+     const info = document.getElementById("md-visitors-page-info");
+     const prevBtn = document.getElementById("md-visitors-prev-btn");
+     const nextBtn = document.getElementById("md-visitors-next-btn");
+     if (info) info.textContent = `Page ${page} of ${totalPages}`;
+     if (prevBtn) prevBtn.disabled = page <= 1;
+     if (nextBtn) nextBtn.disabled = page >= totalPages;
+   }
+
+   function wireMdVisitorsPagination() {
+     const prevBtn = document.getElementById("md-visitors-prev-btn");
+     const nextBtn = document.getElementById("md-visitors-next-btn");
+     if (prevBtn) {
+       prevBtn.addEventListener("click", () => {
+         mdVisitorsPage -= 1;
+         renderMartDaysTable(mdCurrentFiltered());
+       });
+     }
+     if (nextBtn) {
+       nextBtn.addEventListener("click", () => {
+         mdVisitorsPage += 1;
+         renderMartDaysTable(mdCurrentFiltered());
+       });
+     }
    }
    
    function wireMartDaysTableRowClicks() {
