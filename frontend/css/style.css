@@ -289,3 +289,49 @@
   }
   
   .activity-table { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+  /* ---------------- Event Gate (Other Events / Mart Days) ---------------- */
+  .btn-large { padding: 16px 28px; font-size: 16px; }
+
+  .event-gate-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 14, 22, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .event-gate-box {
+    background: var(--card-bg);
+    border: 1px solid var(--border-strong);
+    border-radius: 14px;
+    padding: 36px 40px;
+    max-width: 420px;
+    width: calc(100% - 40px);
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  }
+
+  .event-gate-box h2 { margin: 0 0 8px; }
+  .event-gate-subtitle { color: var(--text-muted); margin: 0 0 22px; font-size: 14px; }
+
+  .event-gate-choice-buttons { display: flex; flex-direction: column; gap: 12px; }
+
+  #event-gate-password-input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    background: var(--card-bg);
+    color: var(--text-main);
+    font-size: 14px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+  }
+
+  .event-gate-error {
+    color: var(--tag-failed-text, #c0392b);
+    font-size: 13px;
+    margin: -4px 0 10px;
+  }

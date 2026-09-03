@@ -44,8 +44,10 @@
       cancelEditBtn: document.getElementById("cancel-edit-btn"),
   
       toggleRegistrationBtn: document.getElementById("toggle-registration-btn"),
-      registrationForm: document.getElementById("registration-form"),
-      cancelRegistrationBtn: document.getElementById("cancel-registration-btn"),
+      registrationFormWrapper: document.getElementById("registration-form-wrapper"),
+      registrationFormOther: document.getElementById("registration-form-other"),
+      registrationFormMartDays: document.getElementById("registration-form-martdays"),
+      cancelRegistrationBtns: document.querySelectorAll(".cancel-registration-btn"),
   
       printQueueStatus: document.getElementById("print-queue-status"),
       printCount: document.getElementById("print-count"),
@@ -516,47 +518,62 @@
       addActivity({ name: currentVisitor.name, urn: currentVisitor.urn, action: "Update Details", status: "success" });
     });
 
-    /* ---------------- Registration Form ---------------- */
+    /* ---------------- Registration Form ----------------
+       Two separate <form> elements share this section — which one
+       is visible is controlled by event-gate.js (data-event-scope
+       toggling based on Other Events / Mart Days mode). Both share
+       the same "+ New Registration" toggle and Cancel buttons. */
     els.toggleRegistrationBtn.addEventListener("click", () => {
-      els.registrationForm.classList.toggle("hidden");
+      els.registrationFormWrapper.classList.toggle("hidden");
     });
-  
-    els.cancelRegistrationBtn.addEventListener("click", () => {
-      els.registrationForm.reset();
-      els.registrationForm.classList.add("hidden");
-      focusSearchInput();
+
+    els.cancelRegistrationBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        els.registrationFormOther.reset();
+        els.registrationFormMartDays.reset();
+        els.registrationFormWrapper.classList.add("hidden");
+        focusSearchInput();
+      });
     });
-  
-    els.registrationForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-  
-      const formData = new FormData(els.registrationForm);
+
+    async function submitRegistration(form, apiCall) {
+      const formData = new FormData(form);
       const payload = Object.fromEntries(formData.entries());
-  
-      const submitBtn = els.registrationForm.querySelector('button[type="submit"]');
+
+      const submitBtn = form.querySelector('button[type="submit"]');
       submitBtn.disabled = true;
       submitBtn.textContent = "Registering...";
-  
-      const result = await API.registerVisitor(payload);
-  
+
+      const result = await apiCall(payload);
+
       submitBtn.disabled = false;
       submitBtn.textContent = "Register & Print";
-  
+
       if (!result.ok) {
-        addActivity({ name: payload.name, urn: "--", action: "New Registration", status: "failed" });
+        addActivity({ name: payload.name || payload.full_name, urn: "--", action: "New Registration", status: "failed" });
         alert(`Registration failed: ${result.error}`);
         return;
       }
-  
+
       const newVisitor = result.data.visitor;
 
       addActivity({ name: newVisitor.name, urn: newVisitor.urn, action: "New Registration", status: "success" });
-  
-      els.registrationForm.reset();
-      els.registrationForm.classList.add("hidden");
-  
+
+      form.reset();
+      els.registrationFormWrapper.classList.add("hidden");
+
       // Immediately move to print
       triggerPrint(newVisitor);
+    }
+
+    els.registrationFormOther.addEventListener("submit", (e) => {
+      e.preventDefault();
+      submitRegistration(els.registrationFormOther, API.registerVisitor);
+    });
+
+    els.registrationFormMartDays.addEventListener("submit", (e) => {
+      e.preventDefault();
+      submitRegistration(els.registrationFormMartDays, API.registerMartDaysVisitor);
     });
   
     /* ---------------- Print Trigger ---------------- */
