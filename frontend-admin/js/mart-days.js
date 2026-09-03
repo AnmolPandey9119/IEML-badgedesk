@@ -59,6 +59,8 @@
      wireMartDaysSearch();
      wireMartDaysFindAndPrint();
      wireMartDaysExport();
+     wireMdClearHistory();
+     wireMdPurgeAll();
    
      const existing = sessionStorage.getItem(MASTER_EVENT_KEY);
      if (existing) {
@@ -650,6 +652,107 @@
      });
    }
    
+   /* ---------------- Clear History (Mart Days end-of-edition reset) ----------------
+      Mirrors app.js's wireClearHistory(), scoped to "mart_days".
+      Mart Days has no print_log/scan_log of its own (see
+      backend services/master_store.py), so this only resets the
+      print_count/scan_count/last_scanned_at columns on
+      mart_days_registrations — registrant name/URN/company/etc. are
+      never touched. Same double-confirm pattern as Other Events. */
+   function wireMdClearHistory() {
+     const btn = document.getElementById("md-clear-history-btn");
+     if (!btn) return;
+     btn.addEventListener("click", async () => {
+       const firstOk = window.confirm(
+         "This will clear the print count for every Mart Days " +
+         "registrant, ready for the next edition.\n\n" +
+         "Registrant names, URNs, and company details will NOT be " +
+         "deleted — only print counts.\n\n" +
+         "This cannot be undone. Continue?"
+       );
+       if (!firstOk) return;
+
+       const typed = window.prompt('Type CONFIRM (in capitals) to proceed:');
+       if (typed !== "CONFIRM") {
+         if (typed !== null) alert("Clear History cancelled — text didn't match.");
+         return;
+       }
+
+       btn.disabled = true;
+       btn.textContent = "Clearing...";
+
+       const result = await API.clearHistory("mart_days");
+
+       btn.disabled = false;
+       btn.textContent = "Clear Print History";
+
+       if (!result.ok) {
+         alert(`Clear History failed: ${result.error}`);
+         return;
+       }
+
+       const { mart_days_reset = 0 } = result.data || {};
+       alert(`Done — ${mart_days_reset} Mart Days registrant(s) reset.`);
+
+       loadMartDaysStats();
+       loadMartDaysVisitors();
+     });
+   }
+
+   /* ---------------- Delete All Mart Days Data (full mart_days_registrations wipe) ----------------
+      Mirrors app.js's wirePurgeAll(), scoped to "mart_days". Section
+      itself starts hidden and is revealed by the SAME secret-unlock
+      gesture as the Other Events one (see wireSecretPurgeUnlock() in
+      app.js) — this function only wires the typed-confirm + click
+      handling once the section is visible. Server-side (routers/
+      master.py) checks the exact phrase again independently, same
+      as the Other Events endpoint. */
+   function wireMdPurgeAll() {
+     const input = document.getElementById("md-purge-confirm-input");
+     const btn = document.getElementById("md-purge-all-btn");
+     if (!input || !btn) return;
+
+     const PHRASE = "DELETE EVERYTHING";
+
+     input.addEventListener("input", () => {
+       btn.disabled = input.value !== PHRASE;
+     });
+
+     btn.addEventListener("click", async () => {
+       if (input.value !== PHRASE) return;
+
+       const confirmed = window.confirm(
+         "This permanently deletes EVERY Mart Days registrant and their " +
+         "print count. Other Events data is untouched.\n\n" +
+         "There is NO undo. Only do this when starting a brand new Mart " +
+         "Days edition from a completely blank slate.\n\n" +
+         "Continue?"
+       );
+       if (!confirmed) return;
+
+       btn.disabled = true;
+       btn.textContent = "Deleting...";
+
+       const result = await API.purgeAll(input.value, "mart_days");
+
+       btn.textContent = "Delete All Mart Days Data";
+       input.value = "";
+
+       if (!result.ok) {
+         btn.disabled = true; // stays disabled until phrase is retyped
+         alert(`Delete All Mart Days Data failed: ${result.error}`);
+         return;
+       }
+
+       const { mart_days_deleted = 0 } = result.data || {};
+       alert(`Done — ${mart_days_deleted} Mart Days registrant(s) permanently deleted.`);
+
+       document.getElementById("md-purge-all-section").classList.add("hidden");
+       loadMartDaysStats();
+       loadMartDaysVisitors();
+     });
+   }
+
    /* ---------------- Small helper (own copy — app.js's escapeHtml is
       already global, but this file is meant to stand alone) ---------------- */
    function mdEscapeHtml(str) {

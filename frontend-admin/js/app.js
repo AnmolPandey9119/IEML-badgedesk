@@ -271,7 +271,7 @@
        btn.disabled = true;
        btn.textContent = "Clearing...";
 
-       const result = await API.clearHistory();
+       const result = await API.clearHistory("other_events");
 
        btn.disabled = false;
        btn.textContent = "Clear Print/Scan History";
@@ -295,17 +295,26 @@
      });
    }
 
-   /* ---------------- Secret unlock for the "Delete Everything" section ----------------
+   /* ---------------- Secret unlock for the "Delete Everything" section(s) ----------------
       Click the topbar logo 5 times within 3 seconds to reveal the
       hidden Purge-All danger zone. Deliberately not a visible/labeled
       button — this is the whole point (see index.html's comment on
       #purge-all-section): nobody should ever land on this by
       accident. Clicks older than 3 seconds fall off the window, so a
-      slow/accidental sequence of clicks never accumulates to 5. */
+      slow/accidental sequence of clicks never accumulates to 5.
+
+      CHANGED: reveals BOTH #purge-all-section (Other Events) and
+      #md-purge-all-section (Mart Days) with the same gesture — same
+      topbar logo, same session, no reason to make a master remember
+      two different unlock sequences. Only the section for whichever
+      mode is currently visible gets scrolled into view; the other
+      stays revealed-but-offscreen so switching event mode afterward
+      doesn't need a second unlock. */
    function wireSecretPurgeUnlock() {
      const logo = document.getElementById("topbar-logo");
-     const section = document.getElementById("purge-all-section");
-     if (!logo || !section) return;
+     const otherSection = document.getElementById("purge-all-section");
+     const martSection = document.getElementById("md-purge-all-section");
+     if (!logo || (!otherSection && !martSection)) return;
 
      let clickTimes = [];
      logo.addEventListener("click", () => {
@@ -315,8 +324,12 @@
 
        if (clickTimes.length >= 2) {
          clickTimes = [];
-         section.classList.remove("hidden");
-         section.scrollIntoView({ behavior: "smooth", block: "center" });
+         if (otherSection) otherSection.classList.remove("hidden");
+         if (martSection) martSection.classList.remove("hidden");
+
+         const isMartDays = window.MasterEventGate && window.MasterEventGate.isMartDays();
+         const visibleSection = isMartDays ? martSection : otherSection;
+         (visibleSection || otherSection || martSection)?.scrollIntoView({ behavior: "smooth", block: "center" });
        }
      });
    }
@@ -355,7 +368,7 @@
        btn.disabled = true;
        btn.textContent = "Deleting...";
 
-       const result = await API.purgeAll(input.value);
+       const result = await API.purgeAll(input.value, "other_events");
 
        btn.textContent = "Delete Everything";
        input.value = "";

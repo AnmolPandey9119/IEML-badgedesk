@@ -27,6 +27,7 @@ that live here since they're master-console-only actions.
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from models.visitor import (
+    ClearHistoryRequest,
     ClearHistoryResponse,
     DeviceCount,
     MartDaysHomeStatsResponse,
@@ -145,18 +146,18 @@ async def get_mart_days_stats():
 
 
 @router.post("/clear-history", response_model=ClearHistoryResponse)
-async def clear_history():
+async def clear_history(body: ClearHistoryRequest):
     """
-    NEW. End-of-event reset — wipes print_log + scan_log entirely and
-    resets every visitor's print_count/scan_count/last_scanned_at to
-    zero/null, so the Print Count, Scan Monitoring, and Unscanned
-    Entries tabs all go back to a clean slate for the next event.
-    Visitor master records (name/URN/org/etc.) are untouched — see
-    master_store.clear_history() for exactly what this does and does
-    not affect. Gated by get_current_master like every route in this
-    router — a counter operator's token can never reach this.
+    NEW. End-of-event reset — wipes print/scan counters ready for the
+    next event. CHANGED: now scope-aware — body.scope picks which
+    event's counters get reset ("mart_days", "other_events", or
+    "both"; see master_store.clear_history() for exactly what each
+    scope does and does not affect). Visitor/registration identity
+    records (name/URN/org/etc.) are never touched by any scope.
+    Gated by get_current_master like every route in this router — a
+    counter operator's token can never reach this.
     """
-    result = master_store.clear_history()
+    result = master_store.clear_history(scope=body.scope)
     return ClearHistoryResponse(**result)
 
 
@@ -181,5 +182,5 @@ async def purge_all(body: PurgeAllRequest):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f'Send {{"confirm_phrase": "{_PURGE_CONFIRM_PHRASE}"}} to confirm — this permanently deletes ALL data and cannot be undone.',
         )
-    result = master_store.purge_everything()
+    result = master_store.purge_everything(scope=body.scope)
     return PurgeAllResponse(**result)

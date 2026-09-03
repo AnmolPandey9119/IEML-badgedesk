@@ -501,6 +501,45 @@
         </div>
       </section>
 
+      <!-- MART DAYS DANGER ZONE — end-of-event reset, mirrors the
+           Other Events danger zone above (see #danger-zone-section),
+           scoped to mart_days_registrations only. -->
+      <section class="card danger-zone" id="md-danger-zone-section">
+        <h2>Danger Zone</h2>
+        <p class="section-caption">
+          Once Mart Days is fully over, clear its print history so the
+          system starts clean for the next edition. This resets the
+          print count on every Mart Days registration. It does
+          <strong>not</strong> delete any registrant's name, URN,
+          company, or other details.
+        </p>
+        <button id="md-clear-history-btn" class="btn btn-danger btn-small">Clear Print History</button>
+      </section>
+
+      <!-- HIDDEN — full Mart Days wipe. Same secret-unlock gesture as
+           the Other Events one (click the topbar logo) reveals both
+           sections at once — see wireSecretPurgeUnlock() in app.js —
+           since a master switching between the two event modes
+           shouldn't have to remember two different unlock gestures.
+           The delete button itself still stays disabled until the
+           exact confirm phrase is typed below it, independently of
+           the Other Events one. -->
+      <section class="card danger-zone hidden" id="md-purge-all-section">
+        <h2>⚠️ Delete All Mart Days Data</h2>
+        <p class="section-caption">
+          Permanently deletes <strong>every</strong> Mart Days
+          registrant — name, URN, company, print history, all of it.
+          Other Events data is completely untouched. Use this only
+          when starting a brand new Mart Days edition from a blank
+          slate. There is <strong>no undo</strong>.
+        </p>
+        <p class="section-caption">
+          Type <code>DELETE EVERYTHING</code> below to enable the button.
+        </p>
+        <input type="text" id="md-purge-confirm-input" class="table-search" placeholder="Type DELETE EVERYTHING to unlock" style="max-width: 320px; display: inline-block; margin-right: 10px;" />
+        <button id="md-purge-all-btn" class="btn btn-danger btn-small" disabled>Delete All Mart Days Data</button>
+      </section>
+
     </div>
 
   </main>

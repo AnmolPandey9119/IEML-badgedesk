@@ -910,43 +910,74 @@ def unscanned_entries(limit: int = 5000) -> list[dict]:
 # NEW — Clear History (end-of-event reset)
 # ----------------------------------------------------------------
 
-def clear_history() -> dict:
+def clear_history(scope: str = "both") -> dict:
     """
     NEW — master console only (routers/master.py gates this behind
     get_current_master, same as delete_visitor()). Wipes print/scan
-    HISTORY only, ready for the next event:
+    HISTORY only, ready for the next event.
 
-      - print_log and scan_log rows: deleted entirely
-      - every visitor's print_count / scan_count / last_scanned_at:
-        reset to 0 / 0 / NULL
+    CHANGED: now scope-aware, mirroring purge_everything() below —
+    two independent event buckets, either or both can be reset:
+
+      - scope="other_events" -> print_log + scan_log rows deleted
+        entirely, and every `visitors` row's print_count/scan_count/
+        last_scanned_at reset to 0/0/NULL. mart_days_registrations
+        untouched.
+      - scope="mart_days"    -> every mart_days_registrations row's
+        print_count/scan_count/last_scanned_at reset to 0/0/NULL.
+        There's no separate print_log/scan_log for Mart Days to
+        delete (it never had one — see log_mart_days_print/
+        log_mart_days_scan above), so this is just the counter
+        reset. `visitors`/print_log/scan_log untouched.
+      - scope="both"         -> both of the above.
 
     Deliberately does NOT touch name/org/city/category/status/email/
-    mobile/extra_json/source/sheet_row on the visitors table — the
-    visitor master list itself is untouched, only the print/scan
-    activity tied to this event is cleared. Runs as one transaction
-    (the _connection() context manager commits only at the end, so
-    if anything here fails, nothing is partially cleared).
+    mobile/extra_json/source/sheet_row (or the Mart Days equivalents)
+    — only print/scan activity tied to the event is cleared. Runs as
+    one transaction (the _connection() context manager commits only
+    at the end, so if anything here fails, nothing is partially
+    cleared).
     """
+    if scope not in ("mart_days", "other_events", "both"):
+        raise ValueError(f"Invalid scope '{scope}' — must be 'mart_days', 'other_events', or 'both'")
+
+    print_logs_cleared = 0
+    scan_logs_cleared = 0
+    visitors_reset = 0
+    mart_days_reset = 0
+
     with _connection() as conn, conn.cursor() as cur:
-        cur.execute("DELETE FROM print_log")
-        print_logs_cleared = cur.rowcount
+        if scope in ("other_events", "both"):
+            cur.execute("DELETE FROM print_log")
+            print_logs_cleared = cur.rowcount
 
-        cur.execute("DELETE FROM scan_log")
-        scan_logs_cleared = cur.rowcount
+            cur.execute("DELETE FROM scan_log")
+            scan_logs_cleared = cur.rowcount
 
-        cur.execute(
-            """
-            UPDATE visitors
-            SET print_count = 0, scan_count = 0, last_scanned_at = NULL
-            WHERE print_count > 0 OR scan_count > 0
-            """
-        )
-        visitors_reset = cur.rowcount
+            cur.execute(
+                """
+                UPDATE visitors
+                SET print_count = 0, scan_count = 0, last_scanned_at = NULL
+                WHERE print_count > 0 OR scan_count > 0
+                """
+            )
+            visitors_reset = cur.rowcount
+
+        if scope in ("mart_days", "both"):
+            cur.execute(
+                """
+                UPDATE mart_days_registrations
+                SET print_count = 0, scan_count = 0, last_scanned_at = NULL
+                WHERE print_count > 0 OR scan_count > 0
+                """
+            )
+            mart_days_reset = cur.rowcount
 
     return {
         "visitors_reset": visitors_reset,
         "print_logs_cleared": print_logs_cleared,
         "scan_logs_cleared": scan_logs_cleared,
+        "mart_days_reset": mart_days_reset,
     }
 
 

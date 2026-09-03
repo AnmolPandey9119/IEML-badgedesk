@@ -123,10 +123,16 @@
        * NEW. End-of-event reset — clears print/scan history and
        * counts (never touches visitor names/URNs/org details) so the
        * system is ready for the next event. Master-only endpoint.
-       * Returns { visitors_reset, print_logs_cleared, scan_logs_cleared }.
+       * CHANGED: scope is now required — "mart_days", "other_events",
+       * or "both" — so the caller is always explicit about which
+       * event's counters get reset.
+       * Returns { visitors_reset, print_logs_cleared, scan_logs_cleared, mart_days_reset }.
        */
-      clearHistory() {
-        return request("/api/master/clear-history", { method: "POST" });
+      clearHistory(scope) {
+        return request("/api/master/clear-history", {
+          method: "POST",
+          body: JSON.stringify({ scope }),
+        });
       },
 
       /**
@@ -134,12 +140,14 @@
        * gone. Requires the exact confirm phrase server-side too (see
        * routers/master.py) even though the UI already gates this
        * behind a hidden unlock + typed confirmation before this is
-       * ever called.
+       * ever called. scope is required here too — "mart_days",
+       * "other_events", or "both" — deciding WHICH event's data
+       * actually gets deleted.
        */
-      purgeAll(confirmPhrase) {
+      purgeAll(confirmPhrase, scope) {
         return request("/api/master/purge-all", {
           method: "POST",
-          body: JSON.stringify({ confirm_phrase: confirmPhrase }),
+          body: JSON.stringify({ confirm_phrase: confirmPhrase, scope }),
         });
       },
   

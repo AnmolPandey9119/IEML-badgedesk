@@ -250,6 +250,22 @@ class UnscannedListResponse(BaseModel):
 # NEW — Clear History (end-of-event reset)
 # ----------------------------------------------------------------
 
+class ClearHistoryRequest(BaseModel):
+    """
+    Body for POST /api/master/clear-history.
+
+    NEW: scope decides WHICH event's print/scan counters get reset —
+    same three values as PurgeAllRequest.scope below: "mart_days"
+    (only mart_days_registrations' print_count/scan_count/
+    last_scanned_at — it has no print_log/scan_log of its own to
+    delete), "other_events" (the original behaviour — print_log +
+    scan_log deleted, visitors table counters reset), or "both".
+    Required, no default, so the console's UI is always explicit
+    about which event it's resetting.
+    """
+    scope: str = Field(..., description="'mart_days', 'other_events', or 'both'")
+
+
 class ClearHistoryResponse(BaseModel):
     """
     Returned by POST /api/master/clear-history. Reports exactly what
@@ -259,10 +275,15 @@ class ClearHistoryResponse(BaseModel):
     (name/URN/org/etc.) are NEVER touched by this — only their
     print_count/scan_count/last_scanned_at get reset to zero/null,
     and the print_log/scan_log history rows are removed.
+
+    mart_days_reset: NEW — how many mart_days_registrations rows had
+    their print_count/scan_count/last_scanned_at reset. Zero when
+    scope="other_events".
     """
     visitors_reset: int
     print_logs_cleared: int
     scan_logs_cleared: int
+    mart_days_reset: int = 0
 
 
 # ----------------------------------------------------------------
