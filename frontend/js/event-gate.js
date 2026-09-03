@@ -66,6 +66,7 @@
     }
   
     function showChoiceScreen() {
+      els.overlay.classList.remove("hidden");
       els.passwordScreen.classList.add("hidden");
       els.choiceScreen.classList.remove("hidden");
       els.passwordInput.value = "";
