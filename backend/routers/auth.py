@@ -94,8 +94,13 @@ async def verify_mart_days_access(payload: MartDaysGateRequest):
     """
     configured = settings.mart_days_gate_password
     if not configured or payload.password != configured:
+        # 403, not 401 — this must NOT trigger api.js's auto-logout-on-401
+        # handling (that's reserved for an expired/invalid session token).
+        # A wrong Mart Days gate password just means "not authorized for
+        # this specific mode", exactly like get_current_master's 403 for
+        # a valid-but-wrong-role token.
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Incorrect Mart Days password",
         )
     return MartDaysGateResponse(ok=True)
