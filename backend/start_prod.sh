@@ -31,7 +31,15 @@ fi
 ./venv/bin/python -m pip install --quiet -r requirements.txt
 
 HOST=$(./venv/bin/python -c "from config import settings; print(settings.app_host)")
-PORT=$(./venv/bin/python -c "from config import settings; print(settings.app_port)")
+# Render (and most cloud hosts) assign the actual port to LISTEN on
+# via the $PORT environment variable at runtime — it's often NOT the
+# same as APP_PORT in .env, and changes between deploys. If $PORT is
+# set (i.e. we're running on a host like Render), it always wins;
+# otherwise (plain local/manual use) we fall back to APP_PORT from
+# .env exactly as before. This one line is what fixes Render's
+# "No open ports detected" — the app was binding to .env's fixed
+# APP_PORT while Render was scanning the port IT assigned.
+PORT=${PORT:-$(./venv/bin/python -c "from config import settings; print(settings.app_port)")}
 
 # Rule of thumb: (2 x CPU cores) + 1. Adjust WORKERS based on
 # your actual deployment machine's core count.
