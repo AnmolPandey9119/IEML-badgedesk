@@ -20,31 +20,10 @@
 </head>
 <body>
 
-  <!-- EVENT GATE OVERLAY — shown once per login session until the
-       operator picks "Other Events" (opens immediately) or "Mart
-       Days" (needs the extra gate password). See js/event-gate.js -->
-  <div id="event-gate-overlay" class="event-gate-overlay hidden">
-    <div class="event-gate-box">
-      <div id="event-gate-choice">
-        <h2>Choose Event</h2>
-        <p class="event-gate-subtitle">Pick which event this counter is registering for right now.</p>
-        <div class="event-gate-choice-buttons">
-          <button id="event-gate-other-btn" class="btn btn-primary btn-large">Other Events</button>
-          <button id="event-gate-martdays-btn" class="btn btn-secondary btn-large">Mart Days 🔒</button>
-        </div>
-      </div>
-      <div id="event-gate-password" class="hidden">
-        <h2>Mart Days — Password Required</h2>
-        <p class="event-gate-subtitle">Enter the Mart Days access password to continue.</p>
-        <input type="password" id="event-gate-password-input" placeholder="Mart Days password" autocomplete="off" />
-        <p id="event-gate-password-error" class="event-gate-error hidden"></p>
-        <div class="event-gate-choice-buttons">
-          <button id="event-gate-password-submit-btn" class="btn btn-success">Unlock</button>
-          <button id="event-gate-password-back-btn" class="btn btn-outline">Back</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- Which event this counter is scoped to (Other Events / Mart
+       Days) is now decided at LOGIN — see js/auth.js. No in-app
+       gate/overlay needed anymore: sections tagged data-event-scope
+       below are shown/hidden once, right after login, by app.js. -->
 
   <header class="topbar">
     <div class="topbar-left">
@@ -286,7 +265,6 @@
   <script src="config.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/api.js"></script>
-  <script src="js/event-gate.js"></script>
   <script src="js/app.js"></script>
   <script src="js/print.js"></script>
 </body>

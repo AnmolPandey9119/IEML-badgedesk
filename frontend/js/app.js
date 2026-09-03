@@ -58,6 +58,30 @@
     let currentVisitor = null;
     let printQueueCount = 0;
 
+    /* ---------------- Event Mode (Other Events / Mart Days) ----------------
+       FIXED: this used to be an in-app overlay (js/event-gate.js) asking
+       the operator to choose, with a second password for Mart Days.
+       Now the event is decided at LOGIN (two separate badge desk
+       accounts — see js/auth.js) and applied once here, on page load:
+       sections tagged data-event-scope="other" / "mart_days" in
+       index.html are shown/hidden to match, same as before, just
+       driven by Auth.getEvent() instead of a runtime choice. */
+    (function applyEventMode() {
+      const isMartDays = window.Auth && window.Auth.isMartDays && window.Auth.isMartDays();
+      document.querySelectorAll("[data-event-scope='other']").forEach((el) => el.classList.toggle("hidden", isMartDays));
+      document.querySelectorAll("[data-event-scope='mart_days']").forEach((el) => el.classList.toggle("hidden", !isMartDays));
+
+      // Mart Days always shows this fixed label on the topbar — it
+      // never comes from the backend. "Other Events" keeps showing
+      // whatever settings.event_name currently is (set per-event in
+      // the backend .env), which checkConnection() below refreshes
+      // on its own poll.
+      if (isMartDays) {
+        const eventNameEl = document.getElementById("event-name");
+        if (eventNameEl) eventNameEl.textContent = "IEML Mart Days";
+      }
+    })();
+
     /* ---------------- Recent Activity + Print Count ----------------
        Both persist across page refreshes/reopens via localStorage
        (per-browser, this counter's own running total) — so a reload
@@ -278,12 +302,12 @@
       if (result.ok) {
         els.connectionStatus.textContent = "Online";
         els.connectionStatus.className = "status status-online";
-        // CHANGED: Mart Days always shows a fixed label, regardless of
+        // Mart Days always shows a fixed label, regardless of
         // whatever settings.event_name the backend is currently set
         // to — that backend value is "Other Events" only from here on.
-        // See event-gate.js's unlock() for the instant-switch version
-        // of this same check.
-        const isMartDays = window.EventGate && window.EventGate.isMartDays && window.EventGate.isMartDays();
+        // See applyEventMode() above for the at-load version of this
+        // same check.
+        const isMartDays = window.Auth && window.Auth.isMartDays && window.Auth.isMartDays();
         if (isMartDays) {
           els.eventName.textContent = "IEML Mart Days";
         } else if (result.data.event) {
@@ -528,9 +552,9 @@
 
     /* ---------------- Registration Form ----------------
        Two separate <form> elements share this section — which one
-       is visible is controlled by event-gate.js (data-event-scope
-       toggling based on Other Events / Mart Days mode). Both share
-       the same "+ New Registration" toggle and Cancel buttons. */
+       is visible is controlled by applyEventMode() above (data-event-
+       scope toggling based on Other Events / Mart Days login). Both
+       share the same "+ New Registration" toggle and Cancel buttons. */
     els.toggleRegistrationBtn.addEventListener("click", () => {
       els.registrationFormWrapper.classList.toggle("hidden");
     });

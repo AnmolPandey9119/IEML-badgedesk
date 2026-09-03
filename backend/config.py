@@ -108,14 +108,28 @@ class Settings(BaseSettings):
     scanner_password_hash: str = ""
 
     # ---------- Mart Days counter gate (frontend/ only) ----------
-    # A SECOND, lightweight password — checked on top of the normal
-    # operator/master login above — that unlocks the "Mart Days" mode
-    # in the counter app. Plain string compare (not bcrypt-hashed like
-    # the logins above) since this is a soft extra gate for an
-    # already-authenticated staff member, not a full login system; a
-    # blank value here means the Mart Days option is simply never
-    # unlockable, so it fails safe by default.
+    # DEPRECATED — replaced by ADMIN_MARTDAYS_USERNAME below (separate
+    # login instead of an in-app second password). Field kept here,
+    # unused, purely so an existing .env with this key set doesn't
+    # need to be touched during rollout; safe to delete later.
     mart_days_gate_password: str = ""
+
+    # ---------- Mart Days Operator Auth (badge desk — separate login) ----------
+    # NEW. A SEPARATE operator account for the badge desk (frontend/
+    # only), permanently scoped to Mart Days — completely independent
+    # credentials from ADMIN_USERNAME above, generated the same way
+    # (generate_password_hash.py). Logging in with these issues a
+    # role="operator" token exactly like the regular admin login, but
+    # with an extra event="mart_days" claim baked into the JWT itself
+    # — so this operator's badge desk opens straight into Mart Days
+    # mode, no separate in-app gate/password step needed, and the
+    # backend trusts the TOKEN (not a query param) for which table an
+    # operator's search/register/print calls should touch. Left blank
+    # by default, so until this is configured the Mart Days operator
+    # login simply doesn't exist yet (fails safe, same convention as
+    # every other credential pair in this file).
+    admin_martdays_username: str = ""
+    admin_martdays_password_hash: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

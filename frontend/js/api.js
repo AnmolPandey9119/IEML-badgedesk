@@ -86,11 +86,16 @@
        * typing does — no separate scanner integration needed.
        *
        * Always includes the current event mode (Other Events / Mart
-       * Days) from window.EventGate, so search only ever looks in
-       * the right table — see routers/registration.py's ?event= param.
+       * Days) from window.Auth.getEvent() — set once at login, not
+       * chosen in-app anymore — so search only ever looks in the
+       * right table. This is just a courtesy/default now: the
+       * backend independently trusts the login token's own event
+       * claim over this param (see routers/registration.py), so a
+       * badge desk operator can never actually search the wrong
+       * event's data even if this value were ever wrong or tampered.
        */
       searchVisitor(query) {
-        const event = (window.EventGate && window.EventGate.getCurrentEvent()) || "other";
+        const event = (window.Auth && window.Auth.getEvent()) || "other";
         const params = new URLSearchParams({ q: query, event });
         return request(`/api/visitors/search?${params.toString()}`, {
           method: "GET",

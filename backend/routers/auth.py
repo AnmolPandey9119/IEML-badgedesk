@@ -12,13 +12,22 @@ it is completely untouched — same username/password/hash comparison
 as before, same role="operator" behavior. Both login.html (operator)
 and the new master-login.html (master) point at this one endpoint;
 which set of credentials you type in decides which role you get.
+
+FIXED (badge desk Mart Days login): the counter now has TWO operator
+logins — ADMIN_USERNAME (Other Events) and ADMIN_MARTDAYS_USERNAME
+(Mart Days) — instead of one operator login plus a second in-app gate
+password. Whichever one matches decides the token's event="other" /
+event="mart_days" claim; the badge desk opens straight into the
+right mode at login, no extra screen. The old
+POST /verify-mart-days-access endpoint is gone — same idea, just
+moved to login time instead of a post-login gate.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 
 from config import settings
-from models.auth import LoginRequest, LoginResponse, MartDaysGateRequest, MartDaysGateResponse
-from utils.auth import create_access_token, get_current_staff, verify_password
+from models.auth import LoginRequest, LoginResponse
+from utils.auth import create_access_token, verify_password
 
 router = APIRouter()
 
@@ -63,7 +72,30 @@ async def login(payload: LoginRequest):
             detail="Incorrect username or password",
         )
 
-    # ---- Regular operator credentials (unchanged from before) ----
+    # ---- NEW: Try MART DAYS OPERATOR credentials next ----
+    # Same guard pattern — only matches if ADMIN_MARTDAYS_USERNAME is
+    # actually configured. Issues a normal role="operator" token
+    # (same permissions as the regular operator below) but with
+    # event="mart_days" baked in, so the badge desk knows to open
+    # straight into Mart Days mode.
+    if settings.admin_martdays_username.strip() and username == settings.admin_martdays_username.strip():
+        if verify_password(payload.password, settings.admin_martdays_password_hash):
+            token = create_access_token(settings.admin_martdays_username, role="operator", event="mart_days")
+            return LoginResponse(
+                access_token=token,
+                expires_in_hours=settings.jwt_expiry_hours,
+                username=settings.admin_martdays_username,
+                role="operator",
+                event="mart_days",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+        )
+
+    # ---- Regular operator credentials (Other Events) ----
+    # Unchanged password/hash comparison from before this feature;
+    # the only addition is event="other" baked into the token now.
     valid_username = username == settings.admin_username.strip()
     valid_password = verify_password(payload.password, settings.admin_password_hash)
 
@@ -73,34 +105,11 @@ async def login(payload: LoginRequest):
             detail="Incorrect username or password",
         )
 
-    token = create_access_token(settings.admin_username, role="operator")
+    token = create_access_token(settings.admin_username, role="operator", event="other")
     return LoginResponse(
         access_token=token,
         expires_in_hours=settings.jwt_expiry_hours,
         username=settings.admin_username,
         role="operator",
+        event="other",
     )
-
-
-@router.post("/verify-mart-days-access", response_model=MartDaysGateResponse, dependencies=[Depends(get_current_staff)])
-async def verify_mart_days_access(payload: MartDaysGateRequest):
-    """
-    Second gate, only reachable by someone who's ALREADY logged in as
-    operator/master (get_current_staff) — this is not a login by
-    itself, it just unlocks the counter app's "Mart Days" mode for
-    this browser session. A blank MART_DAYS_GATE_PASSWORD in .env
-    means this can never succeed (fails safe), matching the same
-    "empty config = refuse everything" behavior as verify_password().
-    """
-    configured = settings.mart_days_gate_password
-    if not configured or payload.password != configured:
-        # 403, not 401 — this must NOT trigger api.js's auto-logout-on-401
-        # handling (that's reserved for an expired/invalid session token).
-        # A wrong Mart Days gate password just means "not authorized for
-        # this specific mode", exactly like get_current_master's 403 for
-        # a valid-but-wrong-role token.
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Incorrect Mart Days password",
-        )
-    return MartDaysGateResponse(ok=True)

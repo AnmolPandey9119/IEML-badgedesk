@@ -3,15 +3,28 @@
    Two responsibilities:
    1) Shared token helpers (window.Auth) used by api.js (attach
       token to requests) and app.js (guard the dashboard page).
-      Token lives in sessionStorage — cleared automatically when
-      the browser/tab closes, so a shared counter laptop doesn't
-      stay logged in overnight.
+      Token + event live in sessionStorage — cleared automatically
+      when the browser/tab closes, so a shared counter laptop
+      doesn't stay logged in overnight.
    2) Login FORM handling — only runs if #login-form exists on
       the current page (i.e. we're on login.html).
+
+   FIXED (Mart Days separation): the badge desk no longer asks the
+   operator to pick "Other Events" vs "Mart Days" after logging in
+   (that was js/event-gate.js — removed). There are now TWO separate
+   badge desk logins on the backend (ADMIN_USERNAME for Other Events,
+   ADMIN_MARTDAYS_USERNAME for Mart Days) — see backend/routers/auth.py.
+   The login response now includes which event that account is
+   scoped to, so this file just remembers it (EVENT_KEY below) and
+   app.js applies the right UI on page load. No overlay, no second
+   password, and — because the event now comes from the backend's
+   signed token rather than a client-side toggle — an operator can
+   never end up looking at the wrong event's data.
    ========================================================== */
 
    const Auth = (() => {
     const TOKEN_KEY = "ieml_badge_token";
+    const EVENT_KEY = "ieml_badge_event"; // "other" | "mart_days", set at login
   
     return {
       getToken() {
@@ -23,19 +36,26 @@
       clearToken() {
         sessionStorage.removeItem(TOKEN_KEY);
       },
+      /** "other" or "mart_days" — whichever login the operator used. */
+      getEvent() {
+        return sessionStorage.getItem(EVENT_KEY) || "other";
+      },
+      isMartDays() {
+        return this.getEvent() === "mart_days";
+      },
+      setEvent(event) {
+        sessionStorage.setItem(EVENT_KEY, event || "other");
+      },
+      clearEvent() {
+        sessionStorage.removeItem(EVENT_KEY);
+      },
       isLoggedIn() {
         return !!this.getToken();
       },
       /** Call when the backend returns 401 anywhere — session is dead. */
       logout(redirect = true) {
         this.clearToken();
-        // Also forget the Other Events / Mart Days choice — a fresh
-        // login (even in the same tab, right after logging out) must
-        // always show the event-gate overlay again, not silently
-        // reuse whatever mode the previous operator picked.
-        if (window.EventGate) {
-          window.EventGate._clearCurrentEvent();
-        }
+        this.clearEvent();
         if (redirect) {
           window.location.href = "login.html";
         }
@@ -81,6 +101,9 @@
       }
   
       Auth.setToken(result.data.access_token);
+      // NEW — remembers which event this login is scoped to, so
+      // index.html opens straight into the right mode.
+      Auth.setEvent(result.data.event);
       window.location.href = "index.html";
     });
   });
