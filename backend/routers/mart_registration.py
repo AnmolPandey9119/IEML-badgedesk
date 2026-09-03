@@ -85,7 +85,7 @@ async def register_mart_days_visitor(payload: MartDaysRegisterRequest, backgroun
         "name": payload.full_name,
         "org": payload.company_name,
         "city": payload.district,
-        "category": payload.to_category_slug(),
+        "category": payload.buyer_type,
         "status": None,
         "email": payload.email,
         "mobile": payload.phone_number,
