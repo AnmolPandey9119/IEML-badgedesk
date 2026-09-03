@@ -8,11 +8,10 @@ by any visitor filling the public form, with no login. Every other
 router (registration.py, master.py, sync.py, export.py) stays exactly
 as it was; this file doesn't import or touch any of them.
 
-Data still lands in the SAME `visitors` table, via the SAME
-master_store.insert_visitor()/generate_urn() that onsite counter
-registration and the Google Sheet sync already use — so a Mart Days
-registrant shows up correctly in search, print, and the master
-console, no separate table or code path needed there.
+Writes go to the mart_days_registrations table only, via
+master_store.insert_mart_days_visitor() — kept separate from the
+`visitors` table so Mart Days registrants don't get mixed into
+regular event visitor data.
 
 source="mart_days" tags every row this endpoint creates, so it's
 always possible to tell "who came in through this public form" apart
@@ -76,22 +75,6 @@ async def register_mart_days_visitor(payload: MartDaysRegisterRequest, backgroun
 
     urn = generate_urn()
 
-    # Kept minimal on purpose — this is ONLY what the shared onsite
-    # print/scan/master console apps need to find and print this
-    # person's badge by URN, exactly like every other event's
-    # registrants. Every Mart-Days-specific field now lives solely in
-    # mart_days_registrations (below), not duplicated in here.
-    visitor_data = {
-        "name": payload.full_name,
-        "org": payload.company_name,
-        "city": payload.district,
-        "category": payload.buyer_type,
-        "status": None,
-        "email": payload.email,
-        "mobile": payload.phone_number,
-        "event": "IEML Mart Sourcing Days",
-    }
-
     # The full public-form submission — every field sir asked for,
     # each its own real column (see master_store.py's
     # mart_days_registrations table). This is the table to query/
@@ -112,7 +95,7 @@ async def register_mart_days_visitor(payload: MartDaysRegisterRequest, backgroun
     }
 
     try:
-        master_store.insert_mart_days_visitor(urn, visitor_data, mart_days_data)
+        master_store.insert_mart_days_visitor(urn, mart_days_data)
     except Exception:
         logger.exception("Failed to save Mart Days registration for %s", payload.email)
         raise HTTPException(
