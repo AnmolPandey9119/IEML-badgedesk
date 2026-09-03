@@ -14,11 +14,11 @@ and the new master-login.html (master) point at this one endpoint;
 which set of credentials you type in decides which role you get.
 """
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from config import settings
-from models.auth import LoginRequest, LoginResponse
-from utils.auth import create_access_token, verify_password
+from models.auth import LoginRequest, LoginResponse, MartDaysGateRequest, MartDaysGateResponse
+from utils.auth import create_access_token, get_current_staff, verify_password
 
 router = APIRouter()
 
@@ -80,3 +80,22 @@ async def login(payload: LoginRequest):
         username=settings.admin_username,
         role="operator",
     )
+
+
+@router.post("/verify-mart-days-access", response_model=MartDaysGateResponse, dependencies=[Depends(get_current_staff)])
+async def verify_mart_days_access(payload: MartDaysGateRequest):
+    """
+    Second gate, only reachable by someone who's ALREADY logged in as
+    operator/master (get_current_staff) — this is not a login by
+    itself, it just unlocks the counter app's "Mart Days" mode for
+    this browser session. A blank MART_DAYS_GATE_PASSWORD in .env
+    means this can never succeed (fails safe), matching the same
+    "empty config = refuse everything" behavior as verify_password().
+    """
+    configured = settings.mart_days_gate_password
+    if not configured or payload.password != configured:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect Mart Days password",
+        )
+    return MartDaysGateResponse(ok=True)

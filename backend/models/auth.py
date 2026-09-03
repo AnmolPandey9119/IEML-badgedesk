@@ -27,3 +27,13 @@ class LoginResponse(BaseModel):
     expires_in_hours: int
     username: str
     role: str = "operator"
+
+
+class MartDaysGateRequest(BaseModel):
+    """Body for POST /api/auth/verify-mart-days-access."""
+    password: str = Field(..., min_length=1)
+
+
+class MartDaysGateResponse(BaseModel):
+    """Returned by POST /api/auth/verify-mart-days-access on success."""
+    ok: bool = True

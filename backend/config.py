@@ -107,6 +107,16 @@ class Settings(BaseSettings):
     scanner_username: str = ""
     scanner_password_hash: str = ""
 
+    # ---------- Mart Days counter gate (frontend/ only) ----------
+    # A SECOND, lightweight password — checked on top of the normal
+    # operator/master login above — that unlocks the "Mart Days" mode
+    # in the counter app. Plain string compare (not bcrypt-hashed like
+    # the logins above) since this is a soft extra gate for an
+    # already-authenticated staff member, not a full login system; a
+    # blank value here means the Mart Days option is simply never
+    # unlockable, so it fails safe by default.
+    mart_days_gate_password: str = ""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
