@@ -950,6 +950,40 @@ def clear_history() -> dict:
     }
 
 
+def get_all_mart_days() -> list[dict]:
+    """
+    NEW — powers the master console's Mart Days Home tab table.
+    Mirrors get_all() above exactly, just scoped to
+    mart_days_registrations instead of visitors — every column comes
+    back as-is (buyer_type, company_name, phone_number, address,
+    district, state, country, pincode, registered_at, print_count,
+    ...), oldest-first, same as the other-events table view.
+    """
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT * FROM mart_days_registrations ORDER BY registered_at ASC")
+        return [dict(row) for row in cur.fetchall()]
+
+
+def mart_days_home_stats() -> dict:
+    """
+    NEW — powers the two stat cards on the master console's Mart Days
+    Home tab. No per-device/per-gate breakdown here on purpose — Mart
+    Days doesn't keep a print_log/scan_log of its own (see
+    log_mart_days_print/log_mart_days_scan above), it only ever
+    increments the count directly on mart_days_registrations, so a
+    breakdown by counter simply isn't data that exists to show.
+      total_registered = COUNT(*) of every Mart Days registrant so far
+      total_prints      = SUM(print_count) across all of them
+    """
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT COUNT(*) AS registered, COALESCE(SUM(print_count), 0) AS prints "
+            "FROM mart_days_registrations"
+        )
+        row = cur.fetchone()
+        return {"total_registered": row["registered"], "total_prints": row["prints"]}
+
+
 def purge_everything(scope: str = "both") -> dict:
     """
     NEW — master console's hidden "Danger Zone" full wipe (routers/

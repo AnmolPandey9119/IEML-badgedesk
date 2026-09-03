@@ -309,6 +309,47 @@ class PurgeAllResponse(BaseModel):
 
 
 # ----------------------------------------------------------------
+# NEW — Mart Days master console (Home tab only — no print/scan
+# breakdown, no scan monitoring, no unscanned entries: Mart Days
+# genuinely doesn't track any of that, by design)
+# ----------------------------------------------------------------
+
+class MartDaysVisitor(BaseModel):
+    """
+    Full Mart Days registrant record for the master console's Home
+    tab table. extra="allow" so every mart_days_registrations column
+    (buyer_type, company_name, phone_number, address, district,
+    state, country, pincode, registered_at, ...) rides along as-is,
+    same "allow everything" style as MasterVisitor above.
+    """
+    model_config = ConfigDict(extra="allow")
+
+    urn: str
+    full_name: str
+    print_count: int = 0
+
+
+class MartDaysVisitorListResponse(BaseModel):
+    """Returned by GET /api/master/mart-days/visitors — every Mart Days registrant on file."""
+    visitors: list[MartDaysVisitor] = Field(default_factory=list)
+    total: int
+
+
+class MartDaysHomeStatsResponse(BaseModel):
+    """
+    Returned by GET /api/master/mart-days/stats — powers the two stat
+    cards on the master console's Mart Days Home tab.
+    total_registered = every row in mart_days_registrations, regardless
+    of whether they've been printed yet (came in via the public form
+    or onsite registration). total_prints = sum of print_count across
+    all of them (a badge reprinted 2x counts as 2 here, same
+    overall_total convention as PrintStatsResponse above).
+    """
+    total_registered: int
+    total_prints: int
+
+
+# ----------------------------------------------------------------
 # NEW — External portal push sync (POST /api/external/save-data)
 # ----------------------------------------------------------------
 # The IEML registration portal pushes data INTO this backend, instead

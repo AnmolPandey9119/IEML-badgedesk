@@ -29,6 +29,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from models.visitor import (
     ClearHistoryResponse,
     DeviceCount,
+    MartDaysHomeStatsResponse,
+    MartDaysVisitor,
+    MartDaysVisitorListResponse,
     MasterVisitor,
     MasterVisitorListResponse,
     PrintStatsResponse,
@@ -119,6 +122,26 @@ async def get_unscanned_entries(limit: int = Query(5000, ge=1, le=20000)):
     rows = master_store.unscanned_entries(limit=limit)
     entries = [UnscannedEntry(**row) for row in rows]
     return UnscannedListResponse(entries=entries, total=len(entries))
+
+
+@router.get("/mart-days/visitors", response_model=MartDaysVisitorListResponse)
+async def list_mart_days_visitors():
+    """
+    NEW — powers the master console's Mart Days Home tab table. Every
+    Mart Days registrant on file (public form + onsite alike), full
+    details, oldest-first — same read-only style as list_all_visitors()
+    above, just pointed at mart_days_registrations instead.
+    """
+    rows = master_store.get_all_mart_days()
+    visitors = [MartDaysVisitor(**r) for r in rows]
+    return MartDaysVisitorListResponse(visitors=visitors, total=len(visitors))
+
+
+@router.get("/mart-days/stats", response_model=MartDaysHomeStatsResponse)
+async def get_mart_days_stats():
+    """NEW — the two stat cards (Total Registered, Total Prints) on the master console's Mart Days Home tab."""
+    stats = master_store.mart_days_home_stats()
+    return MartDaysHomeStatsResponse(**stats)
 
 
 @router.post("/clear-history", response_model=ClearHistoryResponse)
