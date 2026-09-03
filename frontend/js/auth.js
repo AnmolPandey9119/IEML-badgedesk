@@ -29,6 +29,13 @@
       /** Call when the backend returns 401 anywhere — session is dead. */
       logout(redirect = true) {
         this.clearToken();
+        // Also forget the Other Events / Mart Days choice — a fresh
+        // login (even in the same tab, right after logging out) must
+        // always show the event-gate overlay again, not silently
+        // reuse whatever mode the previous operator picked.
+        if (window.EventGate) {
+          window.EventGate._clearCurrentEvent();
+        }
         if (redirect) {
           window.location.href = "login.html";
         }
