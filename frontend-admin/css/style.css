@@ -474,4 +474,39 @@
     background: var(--border-strong);
     border-radius: 3px;
   }
+
+  /* ---------------- Master Event Gate (Other Events / Mart Days) ----------------
+     Same visual language as the counter app's event gate, adapted for
+     the master console — no password step here (see index.html /
+     js/mart-days.js), just a two-button choice right after login, and
+     reopenable any time via the topbar's "🔁 Switch Event" button. */
+  .btn-large { padding: 16px 28px; font-size: 16px; }
+
+  .event-gate-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 14, 22, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .event-gate-box {
+    background: var(--card-bg);
+    border: 1px solid var(--border-strong);
+    border-radius: 14px;
+    padding: 36px 40px;
+    max-width: 420px;
+    width: calc(100% - 40px);
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  }
+
+  .event-gate-box h2 { margin: 0 0 8px; }
+  .event-gate-subtitle { color: var(--text-muted); margin: 0 0 22px; font-size: 14px; }
+  .event-gate-choice-buttons { display: flex; flex-direction: column; gap: 12px; }
+
+  /* Small pill in the topbar showing which mode is currently active. */
+  #master-mode-badge.status { background: var(--accent-soft, var(--card-bg)); border: 1px solid var(--border-strong); font-weight: 600; }
   .table-scroll, .table-scroll-spaced, .tabs-nav { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }

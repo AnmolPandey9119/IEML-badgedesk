@@ -143,6 +143,37 @@
         });
       },
   
+      /**
+       * NEW — Mart Days search, scoped to mart_days_registrations via
+       * ?event=mart_days. Same /api/visitors/search endpoint the
+       * counter app's Mart Days mode uses; searchVisitor() above is
+       * untouched and keeps defaulting to "other" for Other Events.
+       */
+      searchMartDaysVisitor(query) {
+        const params = new URLSearchParams({ q: query, event: "mart_days" });
+        return request(`/api/visitors/search?${params.toString()}`, {
+          method: "GET",
+        });
+      },
+
+      /** NEW — new Mart Days registration, same endpoint the counter app's Mart Days mode uses. */
+      registerMartDaysVisitor(payload) {
+        return request("/api/visitors/register-mart-days", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+      },
+
+      /** NEW — every Mart Days registrant on file, full details + print_count. Master-only endpoint. */
+      listMartDaysVisitors() {
+        return request("/api/master/mart-days/visitors", { method: "GET" });
+      },
+
+      /** NEW — { total_registered, total_prints } for the Mart Days Home tab's stat cards. Master-only endpoint. */
+      getMartDaysStats() {
+        return request("/api/master/mart-days/stats", { method: "GET" });
+      },
+
       /** New registration — same endpoint the counter app uses. */
       registerVisitor(payload) {
         return request("/api/visitors/register", {
