@@ -91,8 +91,18 @@
        org server / master_store — this is just a local operator-
        facing convenience log/counter. */
     const MAX_ACTIVITY_ROWS = 30;
-    const ACTIVITY_STORAGE_KEY = "ieml_badgedesk_activity_log";
-    const PRINT_COUNT_STORAGE_KEY = "ieml_badgedesk_print_count";
+    // FIXED: these used to be one plain key shared by every login on this
+    // browser, so the "Other Events" desk and the "Mart Days" desk (two
+    // separate credentials, same laptop) were reading/writing the exact
+    // same localStorage entry — delete/print on one instantly showed up
+    // on the other. Suffixing with the logged-in event isolates them:
+    // each login now only ever sees its own Recent Activity / Print
+    // Count / Print Log. DEVICE_NAME stays un-suffixed on purpose — it's
+    // just a "which laptop is this" label, not entries data, and should
+    // stay the same no matter which desk is logged in on it.
+    const CURRENT_EVENT = (window.Auth && window.Auth.getEvent && window.Auth.getEvent()) || "other";
+    const ACTIVITY_STORAGE_KEY = `ieml_badgedesk_activity_log_${CURRENT_EVENT}`;
+    const PRINT_COUNT_STORAGE_KEY = `ieml_badgedesk_print_count_${CURRENT_EVENT}`;
     const DEVICE_NAME_STORAGE_KEY = "ieml_badgedesk_device_name";
     let activityLog = loadActivityLog();
     let printsCount = loadPrintCount();
@@ -161,7 +171,7 @@
        together) — this is the FULL, uncapped record of every successful
        print only, so the export always has everyone who actually got a
        badge, however many other actions happened around it. */
-    const PRINT_LOG_STORAGE_KEY = "ieml_badgedesk_print_log";
+    const PRINT_LOG_STORAGE_KEY = `ieml_badgedesk_print_log_${CURRENT_EVENT}`;
     let printLog = loadPrintLog();
 
     function loadPrintLog() {
