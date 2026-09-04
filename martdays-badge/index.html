@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#a30f57" />
+  <title>Download Your e-Badge — IEML Mart Sourcing Days</title>
+  <link rel="icon" type="image/png" href="assets/ieml-logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/badge-download.css" />
+</head>
+<body>
+
+  <div class="shell">
+
+    <!-- IDENTITY PANEL (same brand identity as the registration platform) -->
+    <aside class="identity">
+      <div class="identity-dots" aria-hidden="true"></div>
+
+      <div class="identity-inner">
+        <img src="assets/ieml-logo.png" alt="IEML" class="identity-logo" onerror="this.style.display='none'" />
+
+        <p class="identity-kicker">India Exposition Mart Limited</p>
+
+        <span class="identity-badge">29th Edition · Mega Mart</span>
+
+        <h1 class="identity-title">e-Badge Download</h1>
+        <p class="identity-tagline">Already registered? Get your e-badge instantly — same badge that will be scanned at entry.</p>
+
+        <div class="identity-chips">
+          <span class="chip chip-fill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            16&ndash;17 Sep 2026
+          </span>
+          <span class="chip chip-fill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+            11 AM&ndash;5 PM
+          </span>
+        </div>
+
+        <p class="identity-venue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+          India Expo Centre &amp; Mart, Greater Noida, Uttar Pradesh
+        </p>
+
+        <ol class="identity-steps">
+          <li><span>1</span>Enter your URN, email or phone number</li>
+          <li><span>2</span>We'll find your registration instantly</li>
+          <li><span>3</span>Download &amp; save your e-badge</li>
+        </ol>
+
+        <p class="identity-footer">Free entry &amp; parking · Entry from Gate No. 1 → Mart 2</p>
+
+        <div class="identity-contact">
+          <a href="tel:+919350013305">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            +91 93500 13305
+          </a>
+          <a href="mailto:mart@indiaexpocentre.com">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg>
+            mart@indiaexpocentre.com
+          </a>
+        </div>
+      </div>
+    </aside>
+
+
+    <!-- LOOKUP PANEL -->
+    <main class="panel">
+
+      <!-- LOOKUP FORM -->
+      <section class="card" id="lookup-section">
+        <div class="badge-hero-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="3"/><circle cx="12" cy="9" r="3"/><path d="M8 21v-2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </div>
+        <h2>Download Your e-Badge</h2>
+        <p class="hint">Enter the URN, email, or phone number you registered with — your e-badge will be generated and downloaded instantly.</p>
+
+        <form id="lookup-form" novalidate>
+          <label for="lookup-value">URN / Email / Phone Number <span class="req">*</span></label>
+          <input type="text" id="lookup-value" name="value" required placeholder="e.g. FQ8K2R, you@company.com, or 98XXXXXXXX" autocomplete="off" autocapitalize="off" />
+
+          <div id="lookup-error" class="form-error hidden"></div>
+
+          <button type="submit" id="lookup-btn" class="btn btn-primary btn-full">
+            <span class="btn-label">Find &amp; Download My Badge</span>
+            <span class="btn-spinner hidden" aria-hidden="true"></span>
+          </button>
+        </form>
+      </section>
+
+      <!-- SUCCESS / PREVIEW -->
+      <section class="card hidden" id="success-section">
+        <div class="success-icon">✅</div>
+        <h2>Your e-Badge is Ready</h2>
+        <p>Badge for URN <strong id="success-urn"></strong> has been downloaded to your device.</p>
+
+        <div class="badge-preview-frame">
+          <img id="badge-preview-img" alt="Your e-badge" />
+        </div>
+
+        <button type="button" id="download-again-btn" class="btn btn-primary btn-full">Download Again</button>
+        <button type="button" id="search-again-btn" class="btn btn-link btn-full">Look up a different URN / Email / Phone</button>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/badge-download.js"></script>
+</body>
+</html>

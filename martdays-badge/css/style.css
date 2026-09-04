@@ -1,0 +1,558 @@
+/* ==========================================================
+   IEML Mart Sourcing Days — Public Registration Form
+   Identity: IEML's own brand blue (from the India Exposition
+   Mart Ltd. logo) + warm gold accent, paired with a bold
+   rounded display face for the event identity and a clean
+   sans for the working form itself.
+   ========================================================== */
+
+   :root {
+    --blue: #e11876;
+    --blue-dark: #a30f57;
+    --blue-deep: #620a38;
+    --blue-mid: #c4126a;
+    --gold: #e6a418;
+    --gold-soft: #f6cf7a;
+    --success: #1a7a4c;
+    --danger: #c0293f;
+  
+    --paper: #f5f7fb;
+    --card-bg: #ffffff;
+    --border: #e2e6ee;
+    --ink: #16202e;
+    --ink-muted: #66738a;
+  
+    --radius: 10px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(163, 15, 87, 0.06), 0 10px 28px rgba(163, 15, 87, 0.08);
+  
+    --display: "Poppins", "Segoe UI", sans-serif;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  
+  body {
+    margin: 0;
+    width: 100%;
+    overflow-x: hidden;
+    font-family: var(--sans);
+    background: var(--paper);
+    color: var(--ink);
+  }
+  
+  /* ---------------- Shell / two-panel layout ---------------- */
+  
+  .shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  
+  .identity {
+    position: relative;
+    overflow: hidden;
+    background: var(--blue-dark);
+    /* Real gate photo, only lightly darkened this time — just enough
+       blue tint for text contrast, photo stays clearly visible.
+       Local asset, scoped to .identity only. */
+    background-image:
+      linear-gradient(165deg, rgba(163, 15, 87, 0.90) 0%, rgba(98, 10, 56, 0.76) 100%),
+      url("../assets/expo-mart-gate.png");
+    background-size: cover;
+    background-position: center;
+    color: #fff;
+    padding: 28px 20px calc(28px + env(safe-area-inset-bottom));
+    padding-top: calc(28px + env(safe-area-inset-top));
+  }
+  
+  /* Soft decorative dot grid in the top-right corner. Purely
+     ambient — never sits over text. */
+  .identity-dots {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 140px;
+    height: 140px;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.3) 1.6px, transparent 1.6px);
+    background-size: 16px 16px;
+    -webkit-mask-image: radial-gradient(circle at top right, #000 40%, transparent 75%);
+    mask-image: radial-gradient(circle at top right, #000 40%, transparent 75%);
+    pointer-events: none;
+  }
+  
+  .identity-inner {
+    position: relative;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  
+  .identity-logo {
+    height: 32px;
+    width: auto;
+    margin-bottom: 16px;
+    filter: brightness(0) invert(1);
+    opacity: 0.95;
+  }
+  
+  .identity-kicker {
+    margin: 0 0 10px;
+    font-size: 0.76rem;
+    letter-spacing: 0.03em;
+    color: rgba(255, 255, 255, 0.82);
+    font-weight: 500;
+    text-shadow: 0 1px 4px rgba(98, 10, 56, 0.5);
+  }
+  
+  .identity-badge {
+    display: inline-block;
+    margin-bottom: 10px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--gold) 0%, var(--gold-soft) 100%);
+    color: var(--blue-deep);
+    font-family: var(--display);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+  
+  .identity-title {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 2.3rem;
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    margin: 0 0 10px;
+    text-shadow: 0 2px 10px rgba(98, 10, 56, 0.45);
+  }
+  
+  .identity-tagline {
+    margin: 0 0 16px;
+    max-width: 40ch;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.88);
+    text-shadow: 0 1px 6px rgba(98, 10, 56, 0.4);
+  }
+  
+  /* Small framed photo — a genuine venue shot, kept at its own
+     natural size and cropped into a wide card rather than
+     stretched full-bleed (it's a small source image; blowing it
+     up any further would look soft/pixelated). */
+  
+  .identity-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.8rem;
+    padding: 7px 12px;
+    border-radius: 999px;
+  }
+  
+  .chip svg { width: 14px; height: 14px; flex-shrink: 0; }
+  
+  .chip-fill {
+    background: rgba(163, 15, 87, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+  }
+  
+  .identity-venue {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0 0 18px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.22);
+    font-size: 0.86rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 1px 6px rgba(98, 10, 56, 0.4);
+  }
+  
+  .identity-venue svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--gold-soft);
+  }
+  
+  .identity-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  
+  .identity-categories .tag {
+    font-size: 0.72rem;
+    font-weight: 500;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: rgba(163, 15, 87, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    color: rgba(255, 255, 255, 0.88);
+  }
+  
+  .identity-steps {
+    list-style: none;
+    margin: 0 0 18px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .identity-steps li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.86rem;
+    color: #fff;
+    text-shadow: 0 1px 6px rgba(98, 10, 56, 0.4);
+  }
+  
+  .identity-steps span {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: var(--blue-deep);
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 0.74rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .identity-footer {
+    margin: 0 0 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.22);
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.85);
+    text-shadow: 0 1px 6px rgba(98, 10, 56, 0.4);
+  }
+
+  .identity-categories-block {
+    margin-bottom: 16px;
+  }
+
+  .identity-categories-label {
+    margin: 0 0 8px;
+    font-family: var(--display);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--gold-soft);
+  }
+
+  .identity-contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.22);
+  }
+
+  .identity-contact a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.88);
+    text-decoration: none;
+  }
+
+  .identity-contact a:hover { color: #fff; }
+
+  .identity-contact svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: var(--gold-soft);
+  }
+
+  .panel {
+    flex: 1;
+    padding: 20px 16px calc(40px + env(safe-area-inset-bottom));
+    padding-left: calc(16px + env(safe-area-inset-left));
+    padding-right: calc(16px + env(safe-area-inset-right));
+  }
+  
+  /* ---------------- Card / form ---------------- */
+  
+  .card {
+    position: relative;
+    max-width: 560px;
+    margin: 0 auto;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px 20px;
+    overflow: hidden;
+  }
+  
+  .card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--blue) 0%, var(--gold) 100%);
+  }
+  
+  .card h2 {
+    margin: 0 0 6px;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1.35rem;
+    color: var(--blue-dark);
+  }
+  
+  .hint {
+    color: var(--ink-muted);
+    font-size: 0.86rem;
+    line-height: 1.5;
+    margin: 0 0 4px;
+  }
+  
+  .fieldset {
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  
+  .fieldset:first-of-type {
+    border-top: none;
+    padding-top: 0;
+  }
+  
+  .fieldset-title {
+    margin: 0 0 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--blue-mid);
+  }
+  
+  label {
+    display: block;
+    margin: 14px 0 6px;
+    font-size: 0.86rem;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  
+  .req { color: var(--danger); }
+  
+  input, select {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 16px; /* keeps iOS Safari from auto-zooming on focus */
+    font-family: inherit;
+    background: #fff;
+    color: var(--ink);
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  
+  select {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2366738a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 34px;
+  }
+  
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--blue-mid);
+    box-shadow: 0 0 0 3px rgba(20, 72, 140, 0.1);
+  }
+  
+  input:disabled, select:disabled {
+    background: var(--paper);
+    color: var(--ink-muted);
+    cursor: not-allowed;
+  }
+  
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  
+  .btn {
+    cursor: pointer;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 13px 20px;
+    min-height: 48px;
+    font-size: 0.96rem;
+    font-weight: 700;
+    font-family: var(--display);
+    touch-action: manipulation;
+    transition: filter 0.15s ease, transform 0.05s ease;
+  }
+  
+  .btn-primary {
+    background: linear-gradient(90deg, var(--blue) 0%, var(--blue-dark) 100%);
+    color: #fff;
+  }
+  
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-primary:active { transform: translateY(1px); }
+  
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .btn-full {
+    width: 100%;
+    margin-top: 24px;
+  }
+  
+  .form-error {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: #fdecee;
+    border: 1px solid #f3c2c9;
+    color: var(--danger);
+    font-size: 0.88rem;
+  }
+  
+  .hidden { display: none !important; }
+  
+  /* ---------------- Success ---------------- */
+  
+  .success-icon {
+    font-size: 2.2rem;
+    text-align: center;
+  }
+  
+  #success-section h2 { text-align: center; }
+  #success-section p { text-align: center; }
+  
+  .urn-box {
+    margin: 20px 0;
+    padding: 18px;
+    border-radius: var(--radius);
+    background: var(--paper);
+    border: 1px dashed var(--gold);
+    text-align: center;
+  }
+  
+  .urn-label {
+    display: block;
+    font-size: 0.76rem;
+    letter-spacing: 0.03em;
+    color: var(--ink-muted);
+    margin-bottom: 8px;
+  }
+  
+  .urn-value {
+    display: block;
+    font-family: var(--display);
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--blue-dark);
+  }
+  
+  /* ---------------- Responsive ---------------- */
+  
+  @media (max-width: 899px) {
+    /* Hero-style identity band: shorter, rounded bottom corners,
+       photo cropped a touch higher so faces/logos in the source
+       photo aren't cut off on a narrow strip. */
+    .identity {
+      padding: 24px 20px 44px;
+      padding-top: calc(24px + env(safe-area-inset-top));
+      border-radius: 0 0 22px 22px;
+      background-position: center 30%;
+    }
+  
+    .identity-title { font-size: 1.7rem; }
+    .identity-tagline { display: none; }
+    .identity-photo { display: none; }
+    .identity-categories-block { display: none; }
+    .identity-contact { display: none; }
+  
+    .identity-venue { margin-bottom: 16px; }
+  
+    .identity-steps { gap: 8px; margin-bottom: 14px; }
+    .identity-steps li { font-size: 0.82rem; }
+    .identity-steps span { width: 20px; height: 20px; font-size: 0.72rem; }
+  
+    .identity-footer { font-size: 0.74rem; }
+  
+    /* Card floats up over the rounded identity band, like a bottom
+       sheet — reads as one deliberate composition on a phone instead
+       of two flat stacked blocks. */
+    .panel {
+      margin-top: -26px;
+      padding-top: 0;
+    }
+  
+    .card {
+      border-radius: 16px;
+      box-shadow: 0 4px 10px rgba(163, 15, 87, 0.1), 0 16px 32px rgba(163, 15, 87, 0.14);
+      padding: 22px 18px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .form-row { grid-template-columns: 1fr; }
+    .identity { padding-bottom: 38px; }
+    .identity-chips { gap: 6px; }
+    .chip { font-size: 0.76rem; padding: 6px 10px; }
+  }
+  
+  @media (min-width: 900px) {
+    .shell {
+      flex-direction: row;
+      align-items: stretch;
+    }
+  
+    .identity {
+      width: 42%;
+      max-width: 460px;
+      display: flex;
+      align-items: center;
+      padding: 48px 40px;
+    }
+  
+    .identity-inner { max-width: none; }
+  
+    .panel {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 40px;
+    }
+  
+    .card { padding: 32px 36px; }
+  }

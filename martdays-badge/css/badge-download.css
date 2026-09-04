@@ -1,0 +1,91 @@
+/* ==========================================================
+   badge-download.css
+   Additive ONLY — every class here is new (badge-hero-icon,
+   btn-spinner, btn-link, badge-preview-frame). Nothing in
+   css/style.css is overridden or touched; this file just adds
+   the few extra pieces badge-download.html needs on top of the
+   shared .shell/.identity/.card/.btn system already in place.
+   ========================================================== */
+
+   .badge-hero-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 14px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--blue) 0%, var(--blue-dark) 100%);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(163, 15, 87, 0.28);
+  }
+  
+  .badge-hero-icon svg { width: 28px; height: 28px; }
+  
+  #lookup-section h2,
+  #lookup-section .hint {
+    text-align: center;
+  }
+  
+  #lookup-section .hint { margin-bottom: 4px; }
+  
+  /* ---------------- Button spinner ---------------- */
+  
+  .btn-primary {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  
+  .btn-spinner {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2.5px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #fff;
+    animation: badge-spin 0.7s linear infinite;
+  }
+  
+  @keyframes badge-spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  .btn[disabled] { opacity: 0.75; cursor: not-allowed; }
+  
+  /* ---------------- Secondary "link" button ---------------- */
+  
+  .btn-link {
+    background: transparent;
+    color: var(--blue-mid);
+    margin-top: 10px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  
+  .btn-link:hover { color: var(--blue-dark); }
+  
+  /* ---------------- Badge preview ---------------- */
+  
+  .badge-preview-frame {
+    margin: 20px 0;
+    padding: 14px;
+    border-radius: var(--radius);
+    background: var(--paper);
+    border: 1px dashed var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .badge-preview-frame img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(22, 32, 46, 0.14);
+  }
+  
+  @media (max-width: 480px) {
+    .badge-preview-frame { padding: 10px; }
+  }
