@@ -44,15 +44,20 @@ NAME_Y_FRAC = 0.1901
 COMPANY_Y_FRAC = 0.2057
 QR_TOP_FRAC = 0.2183
 QR_SIZE_FRAC = 0.2538          # relative to width (QR box is square)
-URN_GAP_FRAC = 0.0125          # extra gap below QR before URN line
+URN_GAP_FRAC = 0.003         # tiny gap -- just enough to not touch/overlap the QR
 CENTER_X_FRAC = 0.5
 
-NAME_FONT_FRAC = 0.0288        # relative to width
-COMPANY_FONT_FRAC = 0.0220
+# Name/Company bumped up one size and rendered bold (see _font() below).
+NAME_FONT_FRAC = 0.0288 * 1.15     # relative to width -- 1 size larger
+COMPANY_FONT_FRAC = 0.0220 * 1.15  # relative to width -- 1 size larger
 URN_FONT_FRAC = 0.0237
 
 TEXT_COLOR = (20, 20, 20)
 SUBTEXT_COLOR = (40, 40, 40)
+
+_ASSETS_FONTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "fonts")
+BOLD_FONT_PATH = os.path.join(_ASSETS_FONTS_DIR, "DejaVuSans-Bold.ttf")
+REGULAR_FONT_PATH = os.path.join(_ASSETS_FONTS_DIR, "DejaVuSans.ttf")
 
 _template_cache: Optional[Image.Image] = None
 
@@ -72,13 +77,20 @@ def _load_template() -> Image.Image:
     return _template_cache
 
 
-def _font(size_px: float) -> ImageFont.ImageFont:
+def _font(size_px: float, bold: bool = False) -> ImageFont.ImageFont:
     size_px = max(int(size_px), 1)
+    font_path = BOLD_FONT_PATH if bold else REGULAR_FONT_PATH
     try:
-        return ImageFont.load_default(size=size_px)
-    except TypeError:
-        # Older Pillow without the `size` kwarg on load_default().
-        return ImageFont.load_default()
+        return ImageFont.truetype(font_path, size_px)
+    except (OSError, IOError):
+        # Bundled DejaVu font missing for some reason -- fall back to
+        # the old default bitmap font rather than crashing badge
+        # generation (it just won't render bold in that edge case).
+        logger.warning("Could not load font %s, falling back to default", font_path)
+        try:
+            return ImageFont.load_default(size=size_px)
+        except TypeError:
+            return ImageFont.load_default()
 
 
 def build_ebadge_png(urn: str, name: str, company: str, mobile: Optional[str] = None, email: Optional[str] = None) -> bytes:
@@ -98,9 +110,9 @@ def build_ebadge_png(urn: str, name: str, company: str, mobile: Optional[str] = 
     display_name = (name or "").strip().upper()
     display_company = (company or "").strip().upper()
 
-    draw.text((cx, int(H * NAME_Y_FRAC)), display_name, font=_font(W * NAME_FONT_FRAC), fill=TEXT_COLOR, anchor="mm")
+    draw.text((cx, int(H * NAME_Y_FRAC)), display_name, font=_font(W * NAME_FONT_FRAC, bold=True), fill=TEXT_COLOR, anchor="mm")
     if display_company:
-        draw.text((cx, int(H * COMPANY_Y_FRAC)), display_company, font=_font(W * COMPANY_FONT_FRAC), fill=SUBTEXT_COLOR, anchor="mm")
+        draw.text((cx, int(H * COMPANY_Y_FRAC)), display_company, font=_font(W * COMPANY_FONT_FRAC, bold=True), fill=SUBTEXT_COLOR, anchor="mm")
 
     qr_lines = [f"URN: {urn}"]
     if name:
@@ -116,9 +128,13 @@ def build_ebadge_png(urn: str, name: str, company: str, mobile: Optional[str] = 
     qr_img = qrcode.make(qr_text).convert("RGB").resize((qr_size, qr_size))
     template.paste(qr_img, (cx - qr_size // 2, qr_top))
 
+    # Just the URN number right under the QR, no "URN:" label and
+    # (practically) no gap between the QR image and this line.
+    # anchor="ma" = horizontally centered, top of text at urn_y, so the
+    # text starts right where the QR ends instead of straddling it.
     urn_y = qr_top + qr_size + int(H * URN_GAP_FRAC)
-    draw.text((cx, urn_y), f"URN: {urn}", font=_font(W * URN_FONT_FRAC), fill=TEXT_COLOR, anchor="mm")
+    draw.text((cx, urn_y), urn, font=_font(W * URN_FONT_FRAC), fill=TEXT_COLOR, anchor="ma")
 
     buffer = BytesIO()
-    template.save(buffer, format="PNG", optimize=True)
+    template.save(buffer, format="PDF", optimize=True)
     return buffer.getvalue()
