@@ -44,7 +44,7 @@ NAME_Y_FRAC = 0.1901
 COMPANY_Y_FRAC = 0.2057
 QR_TOP_FRAC = 0.2183
 QR_SIZE_FRAC = 0.2538          # relative to width (QR box is square)
-URN_GAP_FRAC = 0.0004         # tiny gap -- just enough to not touch/overlap the QR
+URN_GAP_FRAC = 0.000004         # tiny gap -- just enough to not touch/overlap the QR
 CENTER_X_FRAC = 0.5
 
 # Name/Company bumped up one size and rendered bold (see _font() below).
