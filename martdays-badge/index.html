@@ -94,15 +94,25 @@
 
       <!-- SUCCESS / PREVIEW -->
       <section class="card hidden" id="success-section">
-        <div class="success-icon">✅</div>
+        <div class="success-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
         <h2>Your e-Badge is Ready</h2>
-        <p>Badge for URN <strong id="success-urn"></strong> has been downloaded to your device.</p>
+        <p class="success-sub">This is the same badge that will be scanned at entry — for URN <strong id="success-urn"></strong>.</p>
 
-        <div class="badge-preview-frame">
-          <img id="badge-preview-img" alt="Your e-badge" />
+        <div class="badge-ticket">
+          <div class="badge-ticket-notch badge-ticket-notch-left" aria-hidden="true"></div>
+          <div class="badge-ticket-notch badge-ticket-notch-right" aria-hidden="true"></div>
+          <div class="badge-preview-frame">
+            <img id="badge-preview-img" alt="Your e-badge" />
+          </div>
         </div>
 
-        <button type="button" id="download-again-btn" class="btn btn-primary btn-full">Download Again</button>
+        <button type="button" id="download-again-btn" class="btn btn-primary btn-full">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Save / Share Badge</span>
+        </button>
+        <p class="ios-hint">On iPhone: if nothing opens, just long-press the badge image above and tap <strong>Add to Photos</strong>.</p>
         <button type="button" id="search-again-btn" class="btn btn-link btn-full">Look up a different URN / Email / Phone</button>
       </section>
 

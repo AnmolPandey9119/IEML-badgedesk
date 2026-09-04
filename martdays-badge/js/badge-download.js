@@ -25,6 +25,7 @@
     const searchAgainBtn = document.getElementById("search-again-btn");
   
     let lastBlobUrl = null;
+    let lastBlob = null;
     let lastFilename = "IEML-MartDays-Badge.png";
   
     function setLoading(isLoading) {
@@ -65,6 +66,36 @@
       a.click();
       a.remove();
     }
+
+    // iOS Safari (and some in-app browsers, e.g. from a Gmail/WhatsApp
+    // link) silently ignore the `download` attribute — the file just
+    // opens instead of saving. The Web Share API's native share sheet
+    // is the reliable cross-platform fix: it lets the person pick
+    // "Save Image" / "Save to Files" straight from iOS or Android.
+    // This MUST run inside a direct user-gesture handler (a click), or
+    // Safari will silently refuse it — so it's only ever called from
+    // the Save/Share button's own click listener below, never from
+    // inside the async fetch flow.
+    async function shareOrDownloadBadge(blob, filename) {
+      try {
+        const file = new File([blob], filename, { type: blob.type || "image/png" });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: "IEML Mart Sourcing Days e-Badge",
+            text: "My e-Badge for IEML Mart Sourcing Days",
+          });
+          return;
+        }
+      } catch (err) {
+        // AbortError just means the person closed the share sheet —
+        // that's a normal cancel, not a failure, so don't fall back.
+        if (err && err.name === "AbortError") return;
+      }
+      // No Web Share support (most desktop browsers) — plain anchor
+      // download works fine there.
+      triggerDownload(URL.createObjectURL(blob), filename);
+    }
   
     async function fetchBadge(value) {
       const base = (window.APP_CONFIG && window.APP_CONFIG.API_BASE_URL) || "";
@@ -91,11 +122,17 @@
     function showSuccess(blob, filename) {
       if (lastBlobUrl) URL.revokeObjectURL(lastBlobUrl);
       lastBlobUrl = URL.createObjectURL(blob);
+      lastBlob = blob;
       lastFilename = filename;
   
       previewImg.src = lastBlobUrl;
       successUrn.textContent = extractUrnFromFilename(filename) || "—";
   
+      // Best-effort auto-download: works on desktop and most Android
+      // browsers. On iOS Safari it silently no-ops — that's fine,
+      // the Save/Share button (a real user gesture) is the reliable
+      // path there, and the image preview always supports a
+      // long-press "Save Image" as a last resort.
       triggerDownload(lastBlobUrl, filename);
   
       lookupSection.classList.add("hidden");
@@ -124,7 +161,7 @@
     });
   
     downloadAgainBtn.addEventListener("click", function () {
-      if (lastBlobUrl) triggerDownload(lastBlobUrl, lastFilename);
+      if (lastBlob) shareOrDownloadBadge(lastBlob, lastFilename);
     });
   
     searchAgainBtn.addEventListener("click", function () {

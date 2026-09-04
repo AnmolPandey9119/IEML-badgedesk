@@ -66,14 +66,80 @@
   
   .btn-link:hover { color: var(--blue-dark); }
   
+  /* ---------------- Success header ---------------- */
+
+  .success-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--success) 0%, #12603c 100%);
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(26, 122, 76, 0.32);
+    animation: badge-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  .success-icon svg { width: 28px; height: 28px; }
+
+  @keyframes badge-pop {
+    0% { transform: scale(0.4); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .success-sub {
+    color: var(--ink-muted);
+    font-size: 0.88rem;
+    line-height: 1.5;
+    max-width: 38ch;
+    margin: 0 auto 4px;
+  }
+
+  /* ---------------- Badge "ticket" wrapper ---------------- */
+  /* Gives the preview a boarding-pass feel: gradient edge + a
+     perforated notch cut into each side, so it visually reads
+     as "your pass" rather than a plain bordered box. */
+
+  .badge-ticket {
+    position: relative;
+    margin: 22px auto 18px;
+    max-width: 340px;
+    border-radius: 18px;
+    padding: 3px;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--blue) 55%, var(--blue-dark) 100%);
+    box-shadow: 0 14px 32px rgba(163, 15, 87, 0.22);
+    animation: badge-rise 0.5s ease-out both;
+    animation-delay: 0.1s;
+  }
+
+  @keyframes badge-rise {
+    0% { transform: translateY(10px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+
+  .badge-ticket-notch {
+    position: absolute;
+    top: 50%;
+    width: 20px;
+    height: 20px;
+    background: var(--card-bg);
+    border-radius: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+  }
+
+  .badge-ticket-notch-left { left: -10px; }
+  .badge-ticket-notch-right { right: -10px; }
+
   /* ---------------- Badge preview ---------------- */
   
   .badge-preview-frame {
-    margin: 20px 0;
+    margin: 0;
     padding: 14px;
-    border-radius: var(--radius);
+    border-radius: 15px;
     background: var(--paper);
-    border: 1px dashed var(--gold);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -82,10 +148,30 @@
   .badge-preview-frame img {
     max-width: 100%;
     height: auto;
-    border-radius: 6px;
+    border-radius: 8px;
     box-shadow: 0 6px 18px rgba(22, 32, 46, 0.14);
+    -webkit-touch-callout: default;
   }
+
+  /* ---------------- Save/Share button icon + iOS hint ---------------- */
+
+  .btn-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  .ios-hint {
+    margin: 12px 0 0;
+    text-align: center;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--ink-muted);
+  }
+
+  .ios-hint strong { color: var(--ink); }
   
   @media (max-width: 480px) {
     .badge-preview-frame { padding: 10px; }
+    .badge-ticket { max-width: 100%; }
   }
