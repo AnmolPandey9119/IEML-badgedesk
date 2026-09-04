@@ -44,7 +44,7 @@ NAME_Y_FRAC = 0.1901
 COMPANY_Y_FRAC = 0.2057
 QR_TOP_FRAC = 0.2183
 QR_SIZE_FRAC = 0.2538          # relative to width (QR box is square)
-URN_GAP_FRAC = 0.0000        # tiny gap -- just enough to not touch/overlap the QR
+URN_GAP_FRAC = 0.0           # zero gap -- URN sits flush against the QR's bottom edge
 CENTER_X_FRAC = 0.5
 
 # Name/Company bumped up one size and rendered bold (see _font() below).
@@ -128,15 +128,29 @@ def _compose_ebadge_image(urn: str, name: str, company: str, mobile: Optional[st
 
     qr_size = int(W * QR_SIZE_FRAC)
     qr_top = int(H * QR_TOP_FRAC)
-    qr_img = qrcode.make(qr_text).convert("RGB").resize((qr_size, qr_size))
+    # border=2 instead of the qrcode library's default border=4 --
+    # that default bakes in a fat white "quiet zone" margin inside the
+    # QR's own image, which is what was making the QR->URN gap look
+    # large no matter how tight we packed the text underneath it.
+    # border=2 is still a safe quiet zone for scanning, just slimmer.
+    qr_box = qrcode.QRCode(border=2)
+    qr_box.add_data(qr_text)
+    qr_box.make(fit=True)
+    qr_img = qr_box.make_image().convert("RGB").resize((qr_size, qr_size))
     template.paste(qr_img, (cx - qr_size // 2, qr_top))
 
-    # Just the URN number right under the QR, no "URN:" label and
-    # (practically) no gap between the QR image and this line.
-    # anchor="ma" = horizontally centered, top of text at urn_y, so the
-    # text starts right where the QR ends instead of straddling it.
-    urn_y = qr_top + qr_size + int(H * URN_GAP_FRAC)
-    draw.text((cx, urn_y), urn, font=_font(W * URN_FONT_FRAC), fill=TEXT_COLOR, anchor="ma")
+    # Just the URN number right under the QR, no "URN:" label. anchor="ma"
+    # normally means "top of text sits at urn_y", but every font has a
+    # bit of built-in padding above the actual glyph ink (for accents
+    # etc.), so a naive anchor="ma" still leaves a visible sliver of
+    # gap above the digits. We measure that per-font padding with
+    # textbbox() and shift up to cancel it out, so the text is flush
+    # against the QR's bottom edge with zero visible gap.
+    urn_font = _font(W * URN_FONT_FRAC)
+    target_y = qr_top + qr_size + int(H * URN_GAP_FRAC)
+    measured_top = draw.textbbox((cx, target_y), urn, font=urn_font, anchor="ma")[1]
+    urn_y = target_y - (measured_top - target_y)
+    draw.text((cx, urn_y), urn, font=urn_font, fill=TEXT_COLOR, anchor="ma")
 
     return template
 
