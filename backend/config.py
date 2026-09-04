@@ -72,6 +72,19 @@ class Settings(BaseSettings):
     mailchimp_sender_email: str = ""
     mailchimp_sender_name: str = "IEML Sourcing Mart Days"
 
+    # ---------- Gmail SMTP (Mart Days confirmation -- REPLACES Mailchimp) ----------
+    # Switched to this because Mailchimp Transactional needed its own paid
+    # activation separate from the regular Mailchimp Marketing plan, which
+    # wasn't set up. Sends via smtp.gmail.com using an APP PASSWORD, not
+    # the normal Gmail login password -- generate one at
+    # https://myaccount.google.com/apppasswords (requires 2-Step
+    # Verification to be turned on for the Gmail account first). Left
+    # blank by default so a backend that hasn't set this up yet just
+    # skips sending (logs a warning) instead of failing registration.
+    gmail_sender_email: str = ""
+    gmail_app_password: str = ""
+    gmail_sender_name: str = "IEML Sourcing Mart Days"
+
     # ---------- Event Info ----------
     # Reused across every IEML event — this is the one thing that
     # changes between events, everything else stays generic.
