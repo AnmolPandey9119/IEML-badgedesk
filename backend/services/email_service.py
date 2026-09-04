@@ -58,11 +58,16 @@ async def send_mart_days_confirmation(
     value, since this always runs as a background task after the
     registration response has already gone out.
     """
-    if not settings.mailchimp_transactional_api_key or not settings.mailchimp_sender_email:
+    missing = []
+    if not settings.mailchimp_transactional_api_key:
+        missing.append("MAILCHIMP_TRANSACTIONAL_API_KEY")
+    if not settings.mailchimp_sender_email:
+        missing.append("MAILCHIMP_SENDER_EMAIL")
+    if missing:
         logger.warning(
-            "MAILCHIMP_TRANSACTIONAL_API_KEY / MAILCHIMP_SENDER_EMAIL not set in "
-            ".env -- skipping email to %s (URN %s). Registration itself is unaffected.",
-            email, urn,
+            "%s not set (check Render env vars, not just local .env) -- "
+            "skipping email to %s (URN %s). Registration itself is unaffected.",
+            " and ".join(missing), email, urn,
         )
         return False
 
