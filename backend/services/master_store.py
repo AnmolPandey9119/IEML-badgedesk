@@ -246,6 +246,15 @@ def init_db() -> None:
             cur.execute(
                 "ALTER TABLE mart_days_registrations ADD COLUMN IF NOT EXISTS last_scanned_at TIMESTAMPTZ"
             )
+            # NEW: how many times this registrant has downloaded their
+            # own e-badge from the public /badge-download page (self-
+            # service, no counter/login involved). Kept completely
+            # separate from print_count (which only counts physical
+            # counter prints) so the master console can show both
+            # numbers side by side without conflating them.
+            cur.execute(
+                "ALTER TABLE mart_days_registrations ADD COLUMN IF NOT EXISTS badge_download_count INTEGER NOT NULL DEFAULT 0"
+            )
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_mart_days_email ON mart_days_registrations(LOWER(email))"
             )
@@ -387,6 +396,7 @@ def _mart_days_row_to_visitor_shape(row: dict) -> dict:
         "print_count": row.get("print_count", 0) or 0,
         "scan_count": row.get("scan_count", 0) or 0,
         "last_scanned_at": row.get("last_scanned_at"),
+        "badge_download_count": row.get("badge_download_count", 0) or 0,
     }
 
 
@@ -486,6 +496,27 @@ def log_mart_days_scan(urn: str, scanner_name: str) -> Optional[dict]:
             SET scan_count = scan_count + 1, last_scanned_at = NOW()
             WHERE urn = %s
             """,
+            (urn,),
+        )
+        if cur.rowcount == 0:
+            return None
+
+    return get_mart_days_by_urn(urn)
+
+
+def log_mart_days_badge_download(urn: str) -> Optional[dict]:
+    """
+    NEW — called from the public /api/mart-days/badge-download
+    endpoint every time someone successfully downloads their own
+    e-badge (URN/email/phone lookup on frontend-martdays). Mirrors
+    log_mart_days_print()/log_mart_days_scan()'s shape: just a
+    running total on the row itself, no per-request log table (this
+    is a self-service download, not a counter/device action, so
+    there's no "which device" dimension to track here).
+    """
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE mart_days_registrations SET badge_download_count = badge_download_count + 1 WHERE urn = %s",
             (urn,),
         )
         if cur.rowcount == 0:
@@ -1005,14 +1036,22 @@ def mart_days_home_stats() -> dict:
     breakdown by counter simply isn't data that exists to show.
       total_registered = COUNT(*) of every Mart Days registrant so far
       total_prints      = SUM(print_count) across all of them
+      total_badge_downloads = SUM(badge_download_count) across all of
+                              them — NEW, powers the master console's
+                              "E-Badge Downloads" counter card.
     """
     with _connection() as conn, conn.cursor() as cur:
         cur.execute(
-            "SELECT COUNT(*) AS registered, COALESCE(SUM(print_count), 0) AS prints "
+            "SELECT COUNT(*) AS registered, COALESCE(SUM(print_count), 0) AS prints, "
+            "COALESCE(SUM(badge_download_count), 0) AS downloads "
             "FROM mart_days_registrations"
         )
         row = cur.fetchone()
-        return {"total_registered": row["registered"], "total_prints": row["prints"]}
+        return {
+            "total_registered": row["registered"],
+            "total_prints": row["prints"],
+            "total_badge_downloads": row["downloads"],
+        }
 
 
 def purge_everything(scope: str = "both") -> dict:

@@ -25,20 +25,37 @@ AFTER the response is built, so a slow/failed email never delays or
 breaks the registration itself. The URN is also still returned
 directly in the response, so the on-screen confirmation never
 depends on the email succeeding.
+
+BADGE DOWNLOAD (Step 3 — NEW):
+GET /badge-download is the "enter your URN / email / phone, get your
+e-badge" self-service endpoint — the same idea as Bharat Tex's public
+badge-download page, just for Mart Days. It reuses:
+  - master_store.get_mart_days_by_urn() / find_mart_days_by_email() /
+    find_mart_days_by_mobile()  (existing lookups, untouched)
+  - services/badge_image.build_ebadge_png()  (the SAME badge builder
+    already used for the confirmation email attachment, so the
+    downloaded badge is pixel-identical to the emailed one)
+No new tables, no new badge design — just a public lookup + the
+existing PNG builder, wired together. Also public on purpose, same
+as /register above.
 """
 
 import logging
+import re
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
+from fastapi.responses import Response
 
 from models.mart_registration import MartDaysRegisterRequest, MartDaysRegisterResponse
-from services import email_service, master_store
+from services import badge_image, email_service, master_store
 from utils.urn import generate_urn
 
 logger = logging.getLogger("mart_registration")
 
 # No Depends() here on purpose — this router is intentionally public.
 router = APIRouter()
+
+_URN_PATTERN = re.compile(r"^[A-Z0-9]{6}$")
 
 
 @router.post("/register", response_model=MartDaysRegisterResponse)
@@ -121,4 +138,85 @@ async def register_mart_days_visitor(payload: MartDaysRegisterRequest, backgroun
         full_name=payload.full_name,
         buyer_type=payload.buyer_type,
         email=payload.email,
+    )
+
+
+def _find_mart_days_registrant(identifier: str) -> dict | None:
+    """
+    Tries URN first (cheapest, most specific — 6-char alphanumeric,
+    matches utils/urn.py's format exactly), then email, then phone.
+    First match wins. find_mart_days_by_email()/find_mart_days_by_mobile()
+    return the RAW mart_days_registrations row, so once either finds a
+    match we re-fetch through get_mart_days_by_urn() to get back the
+    normalized visitor-shape dict (name/organization/mobile/... —
+    exactly what badge_image.build_ebadge_png() expects).
+    """
+    identifier = (identifier or "").strip()
+    if not identifier:
+        return None
+
+    urn_candidate = identifier.upper().replace(" ", "")
+    if _URN_PATTERN.fullmatch(urn_candidate):
+        record = master_store.get_mart_days_by_urn(urn_candidate)
+        if record:
+            return record
+
+    if "@" in identifier:
+        found = master_store.find_mart_days_by_email(identifier)
+        if found:
+            return master_store.get_mart_days_by_urn(found["urn"])
+
+    found = master_store.find_mart_days_by_mobile(identifier)
+    if found:
+        return master_store.get_mart_days_by_urn(found["urn"])
+
+    return None
+
+
+@router.get("/badge-download")
+async def download_mart_days_badge(
+    value: str = Query(..., description="URN, email, or phone number of the Mart Days registrant"),
+):
+    """
+    Public self-service e-badge download — GET /api/mart-days/badge-download?value=...
+    Looks the person up by URN/email/phone, builds the exact same PNG
+    badge_image.build_ebadge_png() already emails out, and returns it
+    as a direct file download. Every successful download increments
+    badge_download_count (shown on the master console).
+    """
+    record = _find_mart_days_registrant(value)
+    if not record:
+        raise HTTPException(
+            status_code=404,
+            detail="No Mart Days registration found for this URN, email, or phone number. Please double-check and try again.",
+        )
+
+    urn = record["urn"]
+
+    try:
+        png_bytes = badge_image.build_ebadge_png(
+            urn=urn,
+            name=record.get("name"),
+            company=record.get("organization"),
+            mobile=record.get("mobile"),
+            email=record.get("email"),
+        )
+    except Exception:
+        logger.exception("Failed to build e-badge PNG for URN %s", urn)
+        raise HTTPException(
+            status_code=500,
+            detail="Could not generate your e-badge right now. Please try again in a moment.",
+        )
+
+    try:
+        master_store.log_mart_days_badge_download(urn)
+    except Exception:
+        # Counter is a nice-to-have for the master console — never let
+        # a logging failure stop the person from getting their badge.
+        logger.exception("Failed to log badge download for URN %s", urn)
+
+    return Response(
+        content=png_bytes,
+        media_type="image/png",
+        headers={"Content-Disposition": f'attachment; filename="IEML-MartDays-Badge-{urn}.png"'},
     )
