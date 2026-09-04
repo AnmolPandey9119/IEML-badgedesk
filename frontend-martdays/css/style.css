@@ -345,7 +345,7 @@
   }
   
   .fieldset-title {
-    margin: 0 0 4px;
+    margin: 0 0 8px;
     font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.04em;
@@ -354,7 +354,7 @@
   
   label {
     display: block;
-    margin: 14px 0 6px;
+    margin: 16px 0 6px;
     font-size: 0.86rem;
     font-weight: 500;
     color: var(--ink);
@@ -387,7 +387,7 @@
   input:focus, select:focus {
     outline: none;
     border-color: var(--blue-mid);
-    box-shadow: 0 0 0 3px rgba(20, 72, 140, 0.1);
+    box-shadow: 0 0 0 3px rgba(225, 24, 118, 0.12);
   }
   
   input:disabled, select:disabled {
@@ -697,11 +697,30 @@
       width: 42%;
       max-width: 460px;
       display: flex;
-      align-items: center;
-      padding: 48px 40px;
+      align-items: flex-start;
+      padding: 56px 40px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      align-self: flex-start;
     }
   
-    .identity-inner { max-width: none; }
+    .identity-inner {
+      max-width: none;
+      width: 100%;
+      min-height: calc(100vh - 112px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Push the contact block to the bottom so the panel's content
+       uses the full height deliberately, top to bottom, instead of
+       clumping in the middle with dead space above and below. */
+    .identity-contact { margin-top: auto; }
+
+    .identity-title { font-size: 2.6rem; }
+    .identity-tagline { max-width: 34ch; }
   
     .panel {
       flex: 1;
