@@ -1,48 +1,51 @@
 """
 services/email_service.py
 Sends the Mart Days registration confirmation email (with the e-badge
-attached) via Gmail SMTP, using an App Password.
+attached) via Mailchimp Transactional's API
+(https://mandrillapp.com/api/1.0/messages/send.json) -- a plain HTTPS
+call, no SMTP connection held open. Chosen specifically because this
+backend runs on Render's free tier: a free-tier service can be asleep
+when a registration comes in, and a slow/blocked SMTP handshake on a
+cold-starting service is exactly the kind of thing that makes a
+registration submission hang. A single HTTPS POST doesn't have that
+problem.
 
-SWITCHED FROM Mailchimp Transactional (Mandrill) because Mandrill
-needs its OWN paid activation (separate billing block, e.g. $20 per
-25,000 emails) on top of a regular Mailchimp Marketing plan -- that
-wasn't set up, so every send was rejected with reason
-"recipient-domain-mismatch" (Mandrill's restricted/demo-mode
-behaviour: only deliver to the account's own verified domain until
-fully activated).
+NOTE: Mailchimp Transactional (formerly "Mandrill") is a SEPARATE
+product from the regular Mailchimp Marketing plan used for
+audience/campaign emails. It needs its own API key, generated from a
+Mailchimp Transactional / Mandrill account, and its own verified
+sending domain (SPF/DKIM) -- a normal Mailchimp Marketing login does
+NOT give you this key. If MAILCHIMP_TRANSACTIONAL_API_KEY isn't set,
+or the account doesn't actually have Transactional enabled, sends
+will fail -- see the "if not settings..." check below, which logs a
+warning and skips sending rather than crashing anything.
 
-GMAIL APP PASSWORD (NOT your normal Gmail login password):
-  1. Turn on 2-Step Verification on the Gmail account:
-     https://myaccount.google.com/security
-  2. Generate an App Password: https://myaccount.google.com/apppasswords
-  3. Put the sending Gmail address in GMAIL_SENDER_EMAIL and the
-     16-character app password (no spaces) in GMAIL_APP_PASSWORD.
+KNOWN ISSUE (as of this deployment): Mandrill needs its OWN paid
+activation (a separate billing block, e.g. $20 per 25,000 emails) on
+top of whatever regular Mailchimp Marketing plan is already active --
+until that's done, the account stays in a restricted/demo mode that
+only delivers to the account's OWN verified sending domain. Sending
+to any other domain (gmail.com, etc.) gets accepted by the API
+(200 OK) but then rejected with reason "recipient-domain-mismatch" --
+visible only in the Mandrill dashboard's Activity tab, not in this
+backend's own logs, since the API call itself succeeded. If mail
+stops arriving again, check Activity tab there first.
 
-GMAIL SENDING LIMITS: a regular Gmail account can send ~500
-emails/day (a Google Workspace account ~2000/day). Fine for
-onsite/Mart-Days registration volumes; if the event ever needs more
-than that in a day, this will need revisiting.
-
-Still ALWAYS called as a FastAPI BackgroundTask from the router --
-never awaited directly in the request path -- for the same reason as
-before: the registrant's screen shows their URN immediately, and if
-Gmail SMTP is briefly down/misconfigured, the registration ITSELF
-still succeeds (already saved to Neon) -- only the email silently
-fails and gets logged.
-
-smtplib is blocking (not async), so the actual send happens inside
-asyncio.to_thread() -- this keeps the SMTP handshake from blocking
-the FastAPI event loop while it runs.
+ALWAYS called as a FastAPI BackgroundTask from the router -- never
+awaited directly in the request path. That means:
+  - The registrant's screen shows their URN immediately, without
+    waiting for Mailchimp to respond.
+  - If Mailchimp Transactional is briefly down or misconfigured, the
+    registration ITSELF still succeeds (already saved to Neon) --
+    only the email silently fails and gets logged. Nobody's
+    registration is lost because an email didn't go out.
 """
 
-import asyncio
+import base64
 import logging
-import smtplib
-from email.mime.application import MIMEApplication
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.utils import formataddr
 from typing import Optional
+
+import httpx
 
 from config import settings
 from services.badge_image import build_ebadge_pdf
@@ -50,38 +53,7 @@ from services.email_templates import mart_days_confirmation_email
 
 logger = logging.getLogger("email_service")
 
-GMAIL_SMTP_HOST = "smtp.gmail.com"
-GMAIL_SMTP_PORT = 465  # SSL
-
-
-def _send_via_gmail_sync(
-    to_email: str,
-    to_name: str,
-    subject: str,
-    html_body: str,
-    ebadge_pdf: bytes,
-    urn: str,
-) -> None:
-    """
-    Blocking SMTP send -- runs inside asyncio.to_thread() from the
-    caller, never called directly on the event loop.
-    """
-    msg = MIMEMultipart("mixed")
-    msg["Subject"] = subject
-    msg["From"] = formataddr((settings.gmail_sender_name, settings.gmail_sender_email))
-    msg["To"] = formataddr((to_name, to_email))
-
-    msg.attach(MIMEText(html_body, "html"))
-
-    attachment = MIMEApplication(ebadge_pdf, _subtype="pdf")
-    attachment.add_header(
-        "Content-Disposition", "attachment", filename=f"{urn}-ebadge.pdf"
-    )
-    msg.attach(attachment)
-
-    with smtplib.SMTP_SSL(GMAIL_SMTP_HOST, GMAIL_SMTP_PORT, timeout=20) as server:
-        server.login(settings.gmail_sender_email, settings.gmail_app_password)
-        server.sendmail(settings.gmail_sender_email, [to_email], msg.as_string())
+MANDRILL_SEND_URL = "https://mandrillapp.com/api/1.0/messages/send.json"
 
 
 async def send_mart_days_confirmation(
@@ -98,10 +70,10 @@ async def send_mart_days_confirmation(
     registration response has already gone out.
     """
     missing = []
-    if not settings.gmail_sender_email:
-        missing.append("GMAIL_SENDER_EMAIL")
-    if not settings.gmail_app_password:
-        missing.append("GMAIL_APP_PASSWORD")
+    if not settings.mailchimp_transactional_api_key:
+        missing.append("MAILCHIMP_TRANSACTIONAL_API_KEY")
+    if not settings.mailchimp_sender_email:
+        missing.append("MAILCHIMP_SENDER_EMAIL")
     if missing:
         logger.warning(
             "%s not set (check Render env vars, not just local .env) -- "
@@ -120,20 +92,50 @@ async def send_mart_days_confirmation(
         )
         return False
 
+    ebadge_base64 = base64.b64encode(ebadge_pdf).decode("ascii")
+
     subject, html_body = mart_days_confirmation_email(full_name, urn)
 
+    payload = {
+        "key": settings.mailchimp_transactional_api_key,
+        "message": {
+            "subject": subject,
+            "html": html_body,
+            "from_email": settings.mailchimp_sender_email,
+            "from_name": settings.mailchimp_sender_name,
+            "to": [{"email": email, "name": full_name, "type": "to"}],
+            "attachments": [
+                {
+                    "type": "application/pdf",
+                    "name": f"{urn}-ebadge.pdf",
+                    "content": ebadge_base64,
+                }
+            ],
+        },
+    }
+
     try:
-        await asyncio.to_thread(
-            _send_via_gmail_sync, email, full_name, subject, html_body, ebadge_pdf, urn,
-        )
-        logger.info("Confirmation email sent (Gmail SMTP) for URN %s to %s", urn, email)
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            resp = await client.post(MANDRILL_SEND_URL, json=payload)
+
+        if resp.status_code >= 400:
+            logger.error("Mandrill send failed for URN %s (%s): %s", urn, resp.status_code, resp.text)
+            return False
+
+        results = resp.json()
+        # Mandrill returns 200 even for a rejected/invalid recipient --
+        # the actual per-recipient outcome is inside the response body.
+        if isinstance(results, list) and results:
+            status = results[0].get("status")
+            if status in ("rejected", "invalid"):
+                logger.error(
+                    "Mandrill accepted the request but rejected the email for URN %s: %s",
+                    urn, results[0],
+                )
+                return False
+
+        logger.info("Confirmation email sent for URN %s to %s", urn, email)
         return True
-    except smtplib.SMTPAuthenticationError:
-        logger.error(
-            "Gmail SMTP login failed for URN %s -- GMAIL_APP_PASSWORD is wrong/expired, "
-            "or it's the normal Gmail password instead of an App Password", urn,
-        )
-        return False
     except Exception:
-        logger.exception("Gmail SMTP send raised an exception for URN %s", urn)
+        logger.exception("Mandrill send raised an exception for URN %s", urn)
         return False
