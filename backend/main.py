@@ -19,6 +19,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 from services import master_store, sheet_sync
 
+# Without this, the root logger has no handler, so every logger.info()
+# call across the app (email_service, sheet_sync, etc.) is silently
+# swallowed -- only WARNING/ERROR show up via Python's default
+# "last resort" stderr handler. This makes INFO logs (like
+# "Confirmation email sent") visible in Render's log stream too.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+
 logger = logging.getLogger("main")
 
 

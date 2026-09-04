@@ -71,7 +71,15 @@ async def send_mart_days_confirmation(
         )
         return False
 
-    ebadge_pdf = build_ebadge_pdf(urn, full_name, company_name or "", mobile=mobile, email=email)
+    try:
+        ebadge_pdf = build_ebadge_pdf(urn, full_name, company_name or "", mobile=mobile, email=email)
+    except Exception:
+        logger.exception(
+            "Failed to build e-badge PDF for URN %s -- email NOT sent because of this "
+            "(check assets/badge_templates and assets/fonts are present in the deployed backend)",
+            urn,
+        )
+        return False
     ebadge_base64 = base64.b64encode(ebadge_pdf).decode("ascii")
 
     subject, html_body = mart_days_confirmation_email(full_name, urn)
