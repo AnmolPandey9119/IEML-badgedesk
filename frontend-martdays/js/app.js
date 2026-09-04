@@ -17,6 +17,61 @@
     const stateText = document.getElementById("state-text");
     const districtSelect = document.getElementById("district-select");
     const districtText = document.getElementById("district-text");
+
+    const buyerTypeRadios = document.querySelectorAll('input[name="buyer_type"]');
+    const fieldsetOverseas = document.getElementById("fieldset-overseas");
+    const fieldsetDomestic = document.getElementById("fieldset-domestic");
+    const dialCodeEl = document.getElementById("phone_dial_code");
+
+    // ------------------------------------------------------------
+    // Phone country-code dropdown: populated from DIAL_CODES,
+    // defaults to India (+91) since that's who most registrants will
+    // be, and auto-follows the Country field below — but the person
+    // can still change it manually afterwards (e.g. an overseas buyer
+    // registering with an Indian rep's mobile, or vice versa).
+    // ------------------------------------------------------------
+    (function populateDialCodes() {
+      const codes = window.DIAL_CODES || {};
+      Object.keys(codes).forEach(function (name) {
+        const opt = document.createElement("option");
+        opt.value = codes[name];
+        opt.textContent = codes[name] + " " + name;
+        opt.dataset.country = name;
+        if (name === "India") opt.selected = true;
+        dialCodeEl.appendChild(opt);
+      });
+    })();
+
+    // ------------------------------------------------------------
+    // Buyer type toggle: shows/hides the section that only applies
+    // to that buyer type. "Buying/Sourcing consultants" gets neither
+    // extra section — matches the source form exactly.
+    // ------------------------------------------------------------
+    function currentBuyerType() {
+      const checked = document.querySelector('input[name="buyer_type"]:checked');
+      return checked ? checked.value : "";
+    }
+
+    function updateBuyerTypeSections() {
+      const type = currentBuyerType();
+      fieldsetOverseas.classList.toggle("hidden", type !== "Overseas buyers");
+      fieldsetDomestic.classList.toggle("hidden", type !== "Domestic volume buyers");
+    }
+
+    buyerTypeRadios.forEach(function (radio) {
+      radio.addEventListener("change", updateBuyerTypeSections);
+    });
+    updateBuyerTypeSections();
+
+    // Reads every checked checkbox inside a .check-grid group and
+    // returns their values as an array — used for every checkbox-tile
+    // field (nature of business, known-through, products of interest).
+    function checkedValues(groupEl) {
+      if (!groupEl) return [];
+      return Array.from(groupEl.querySelectorAll('input[type="checkbox"]:checked')).map(function (el) {
+        return el.value;
+      });
+    }
   
     // ------------------------------------------------------------
     // Country dropdown: populated once from location-data.js.
@@ -97,6 +152,12 @@
         setStateMode("locked");
         setDistrictMode("locked");
       }
+
+      // Auto-follow the dial code to whichever country was just
+      // picked, when we actually have a code for it — still just a
+      // starting point, the person can pick a different one after.
+      const code = (window.DIAL_CODES || {})[countryEl.value];
+      if (code) dialCodeEl.value = code;
     });
   
     // State (India) changes -> populate District dropdown for that state.
@@ -140,21 +201,97 @@
     form.addEventListener("submit", async function (e) {
       e.preventDefault();
       clearError();
-  
+
+      const buyerType = currentBuyerType();
+      if (!buyerType) {
+        showError("Please select your buyer type at the top of the form.");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+
+      // Mandatory-field check — mirrors every field marked * on the
+      // form: Full Name, Company Name, Designation, Email, Phone,
+      // Country, State, Street, Zip/Post Code.
+      const requiredChecks = [
+        [document.getElementById("full_name").value.trim(), "Please enter your Full Name."],
+        [document.getElementById("company_name").value.trim(), "Please enter your Company Name."],
+        [document.getElementById("designation").value.trim(), "Please enter your Designation."],
+        [document.getElementById("email").value.trim(), "Please enter your Email."],
+        [document.getElementById("phone_number").value.trim(), "Please enter your Phone Number."],
+        [countryEl.value, "Please select your Country."],
+        [currentStateValue(), "Please enter/select your State."],
+        [document.getElementById("street").value.trim(), "Please enter your Street address."],
+        [document.getElementById("pincode").value.trim(), "Please enter your Zip/Post Code."],
+      ];
+      for (const [value, message] of requiredChecks) {
+        if (!value) {
+          showError(message);
+          return;
+        }
+      }
+
+      // Products of interest is common to every buyer type.
+      const productsOfInterest = checkedValues(document.getElementById("products-of-interest"));
+      if (!productsOfInterest.length) {
+        showError("Please select at least one product of interest.");
+        return;
+      }
+
       const payload = {
-        buyer_type: document.getElementById("buyer_type").value,
+        buyer_type: buyerType,
         full_name: document.getElementById("full_name").value.trim(),
         company_name: document.getElementById("company_name").value.trim(),
-        designation: document.getElementById("designation").value.trim() || null,
+        designation: document.getElementById("designation").value.trim(),
         email: document.getElementById("email").value.trim(),
-        phone_number: document.getElementById("phone_number").value.trim(),
-        address: document.getElementById("address").value.trim() || null,
+        phone_number: (dialCodeEl.value + " " + document.getElementById("phone_number").value.trim()).trim(),
+        address: document.getElementById("street").value.trim(),
         district: currentDistrictValue() || null,
-        state: currentStateValue() || null,
-        country: countryEl.value || null,
-        pincode: document.getElementById("pincode").value.trim() || null,
+        state: currentStateValue(),
+        country: countryEl.value,
+        pincode: document.getElementById("pincode").value.trim(),
+        nature_of_business: null,
+        annual_turnover: null,
+        known_through: null,
+        online_seller: null,
+        products_of_interest: productsOfInterest,
       };
-  
+
+      // Buyer-type-specific required fields — only validated for the
+      // section that's actually visible for the selected buyer type.
+      if (buyerType === "Overseas buyers") {
+        const nob = checkedValues(document.getElementById("nob-overseas"));
+        const turnover = document.getElementById("annual_turnover").value.trim();
+        if (!nob.length) {
+          showError("Please select at least one 'Nature of business' option.");
+          return;
+        }
+        if (!turnover) {
+          showError("Please enter your Annual Turnover in USD (2024).");
+          return;
+        }
+        payload.nature_of_business = nob;
+        payload.annual_turnover = turnover;
+      } else if (buyerType === "Domestic volume buyers") {
+        const known = checkedValues(document.getElementById("known-through"));
+        const nob = checkedValues(document.getElementById("nob-domestic"));
+        const onlineSellerEl = document.querySelector('input[name="online_seller"]:checked');
+        if (!known.length) {
+          showError("Please select how you came to know about the fair.");
+          return;
+        }
+        if (!nob.length) {
+          showError("Please select at least one 'Nature of business' option.");
+          return;
+        }
+        if (!onlineSellerEl) {
+          showError("Please tell us if you're an online seller on Ecommerce platforms.");
+          return;
+        }
+        payload.known_through = known;
+        payload.nature_of_business = nob;
+        payload.online_seller = onlineSellerEl.value;
+      }
+
       submitBtn.disabled = true;
       submitBtn.textContent = "Submitting...";
   

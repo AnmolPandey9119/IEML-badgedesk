@@ -11,7 +11,7 @@ Field names here match exactly what "sir" described:
   Phone Number, Address, District, State, Country, Pincode
 """
 
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
@@ -39,6 +39,29 @@ class MartDaysRegisterRequest(BaseModel):
     state: Optional[str] = Field(None, max_length=100)
     country: Optional[str] = Field(None, max_length=100)
     pincode: Optional[str] = Field(None, max_length=20)
+
+    # --- NEW: buyer-type-specific fields, all OPTIONAL on purpose ---
+    # Kept optional (not required) at the Pydantic level so the onsite
+    # counter form (routers/registration.py's /register-mart-days,
+    # which reuses this SAME model) keeps working exactly as before —
+    # it simply won't send these and they'll be None. The PUBLIC form
+    # (frontend-martdays) is the one that enforces "required per buyer
+    # type" in its own JS, since only it shows/needs these fields.
+    nature_of_business: Optional[List[str]] = Field(
+        None, description="Checkbox selections — set differs for Overseas vs Domestic buyers"
+    )
+    annual_turnover: Optional[str] = Field(
+        None, max_length=100, description="Overseas buyers only — Annual Turnover in USD (2024)"
+    )
+    known_through: Optional[List[str]] = Field(
+        None, description="Domestic volume buyers only — 'I came to know about the fair through'"
+    )
+    online_seller: Optional[str] = Field(
+        None, max_length=10, description="Domestic volume buyers only — 'Yes' or 'No'"
+    )
+    products_of_interest: Optional[List[str]] = Field(
+        None, description="Common to all buyer types — checkbox selections"
+    )
 
     @field_validator("buyer_type")
     @classmethod

@@ -109,6 +109,13 @@ async def register_mart_days_visitor(payload: MartDaysRegisterRequest, backgroun
         "state": payload.state,
         "country": payload.country,
         "pincode": payload.pincode,
+        # NEW fields from the redesigned public form — see
+        # models/mart_registration.py for why these are all Optional.
+        "nature_of_business": payload.nature_of_business,
+        "annual_turnover": payload.annual_turnover,
+        "known_through": payload.known_through,
+        "online_seller": payload.online_seller,
+        "products_of_interest": payload.products_of_interest,
     }
 
     try:

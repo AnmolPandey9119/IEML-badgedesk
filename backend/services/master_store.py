@@ -255,6 +255,30 @@ def init_db() -> None:
             cur.execute(
                 "ALTER TABLE mart_days_registrations ADD COLUMN IF NOT EXISTS badge_download_count INTEGER NOT NULL DEFAULT 0"
             )
+            # NEW: the extra buyer-type-specific fields added to the
+            # public form (nature of business, annual turnover, how
+            # they heard about the fair, online-seller yes/no, products
+            # of interest). Checkbox-group answers are stored as a
+            # JSON-encoded array in a TEXT column (see
+            # insert_mart_days_visitor's _serialize_mart_days_data) —
+            # simplest thing that works with psycopg2 without a new
+            # migration tool, and easy enough to json.loads() back out
+            # later for the master console if needed.
+            cur.execute(
+                "ALTER TABLE mart_days_registrations ADD COLUMN IF NOT EXISTS nature_of_business TEXT"
+            )
+            cur.execute(
+                "ALTER TABLE mart_days_registrations ADD COLUMN IF NOT EXISTS annual_turnover TEXT"
+            )
+            cur.execute(
+                "ALTER TABLE mart_days_registrations ADD COLUMN IF NOT EXISTS known_through TEXT"
+            )
+            cur.execute(
+                "ALTER TABLE mart_days_registrations ADD COLUMN IF NOT EXISTS online_seller TEXT"
+            )
+            cur.execute(
+                "ALTER TABLE mart_days_registrations ADD COLUMN IF NOT EXISTS products_of_interest TEXT"
+            )
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_mart_days_email ON mart_days_registrations(LOWER(email))"
             )
@@ -342,6 +366,23 @@ def insert_visitor(
     return {"urn": urn, "print_count": 0, **core, **extra}
 
 
+_MART_DAYS_LIST_FIELDS = ("nature_of_business", "known_through", "products_of_interest")
+
+
+def _serialize_mart_days_checkbox_fields(mart_days_data: dict) -> dict:
+    """
+    Checkbox-group answers arrive as Python lists (from
+    payload.model_dump()). Postgres TEXT columns need strings, so any
+    list gets JSON-encoded here; None/empty stays None so the column
+    is just NULL rather than the string "null" or "[]".
+    """
+    out = dict(mart_days_data)
+    for field in _MART_DAYS_LIST_FIELDS:
+        value = out.get(field)
+        out[field] = json.dumps(value) if value else None
+    return out
+
+
 def insert_mart_days_visitor(urn: str, mart_days_data: dict) -> dict:
     """
     Used by BOTH routers/mart_registration.py (public form) and
@@ -354,19 +395,45 @@ def insert_mart_days_visitor(urn: str, mart_days_data: dict) -> dict:
 
     `mart_days_data` should have exactly the mart_days_registrations
     columns: buyer_type, full_name, company_name, designation, email,
-    phone_number, address, district, state, country, pincode.
+    phone_number, address, district, state, country, pincode, plus the
+    newer optional ones: nature_of_business, annual_turnover,
+    known_through, online_seller, products_of_interest (any of these
+    five may be missing/None — both the public form and the onsite
+    counter form share this function, and only the public form
+    actually sends them).
     """
+    data = _serialize_mart_days_checkbox_fields(mart_days_data)
     with _connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
             INSERT INTO mart_days_registrations
                 (urn, buyer_type, full_name, company_name, designation,
-                 email, phone_number, address, district, state, country, pincode)
+                 email, phone_number, address, district, state, country, pincode,
+                 nature_of_business, annual_turnover, known_through, online_seller, products_of_interest)
             VALUES
                 (%(urn)s, %(buyer_type)s, %(full_name)s, %(company_name)s, %(designation)s,
-                 %(email)s, %(phone_number)s, %(address)s, %(district)s, %(state)s, %(country)s, %(pincode)s)
+                 %(email)s, %(phone_number)s, %(address)s, %(district)s, %(state)s, %(country)s, %(pincode)s,
+                 %(nature_of_business)s, %(annual_turnover)s, %(known_through)s, %(online_seller)s, %(products_of_interest)s)
             """,
-            {"urn": urn, **mart_days_data},
+            {
+                "urn": urn,
+                "buyer_type": data.get("buyer_type"),
+                "full_name": data.get("full_name"),
+                "company_name": data.get("company_name"),
+                "designation": data.get("designation"),
+                "email": data.get("email"),
+                "phone_number": data.get("phone_number"),
+                "address": data.get("address"),
+                "district": data.get("district"),
+                "state": data.get("state"),
+                "country": data.get("country"),
+                "pincode": data.get("pincode"),
+                "nature_of_business": data.get("nature_of_business"),
+                "annual_turnover": data.get("annual_turnover"),
+                "known_through": data.get("known_through"),
+                "online_seller": data.get("online_seller"),
+                "products_of_interest": data.get("products_of_interest"),
+            },
         )
 
     # Returned in the same Visitor-shape as search_mart_days()/

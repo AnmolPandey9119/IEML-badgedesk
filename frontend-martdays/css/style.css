@@ -401,6 +401,29 @@
     grid-template-columns: 1fr 1fr;
     gap: 12px;
   }
+
+  /* ---------------- Phone number + dial code ---------------- */
+
+  .phone-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .phone-row #phone_dial_code {
+    flex: 0 0 92px;
+    width: 92px;
+    padding-left: 8px;
+    padding-right: 26px;
+    background-position: right 6px center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .phone-row #phone_number {
+    flex: 1;
+    min-width: 0;
+  }
   
   .btn {
     cursor: pointer;
@@ -444,6 +467,134 @@
   }
   
   .hidden { display: none !important; }
+
+  .visually-hidden-label {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: -1px; padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .field-note {
+    margin: 6px 0 0;
+    font-size: 0.8rem;
+    color: var(--danger);
+  }
+
+  .fieldset-title-spaced { margin-top: 20px; }
+
+  /* ---------------- Segmented toggle (buyer type / yes-no) ---------------- */
+  /* Real radio inputs, visually hidden — labels ARE the tap targets,
+     so this stays fully keyboard/screen-reader accessible while
+     looking like the tile-style selector from the source form. */
+
+  .buyer-toggle {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .buyer-toggle input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 1px; height: 1px;
+    pointer-events: none;
+  }
+
+  .buyer-toggle-opt {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 52px;
+    padding: 10px 8px;
+    margin: 0;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.25;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .buyer-toggle input[type="radio"]:checked + .buyer-toggle-opt {
+    background: linear-gradient(135deg, var(--blue) 0%, var(--blue-dark) 100%);
+    border-color: var(--blue-dark);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(163, 15, 87, 0.28);
+  }
+
+  .buyer-toggle input[type="radio"]:focus-visible + .buyer-toggle-opt {
+    outline: 2px solid var(--blue-mid);
+    outline-offset: 2px;
+  }
+
+  .yesno-toggle {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 260px;
+  }
+
+  /* ---------------- Checkbox tile grid ---------------- */
+  /* Same visual language as .buyer-toggle, but multi-select: a real
+     checkbox per tile, label wraps the whole tile as the tap target
+     (min 44px tall, comfortably thumb-sized on mobile). */
+
+  .check-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .check-tile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 46px;
+    padding: 10px 12px;
+    margin: 0;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--paper);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.3;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .check-tile input[type="checkbox"] {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    min-height: 0;
+    margin: 0;
+    accent-color: var(--blue-dark);
+    cursor: pointer;
+  }
+
+  .check-tile:has(input:checked) {
+    background: rgba(225, 24, 118, 0.08);
+    border-color: var(--blue-mid);
+    box-shadow: 0 0 0 1px var(--blue-mid) inset;
+  }
+
+  .check-tile:has(input:focus-visible) {
+    outline: 2px solid var(--blue-mid);
+    outline-offset: 2px;
+  }
   
   /* ---------------- Success ---------------- */
   
@@ -528,6 +679,12 @@
     .identity { padding-bottom: 38px; }
     .identity-chips { gap: 6px; }
     .chip { font-size: 0.76rem; padding: 6px 10px; }
+
+    /* One column on small phones — two-up made the longer option
+       labels (ecommerce/hospitality/etc.) cramp and wrap awkwardly. */
+    .check-grid { grid-template-columns: 1fr; }
+    .buyer-toggle:not(.yesno-toggle) { grid-template-columns: 1fr; }
+    .buyer-toggle-opt { min-height: 46px; }
   }
   
   @media (min-width: 900px) {
