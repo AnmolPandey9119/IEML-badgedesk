@@ -2,7 +2,7 @@
    badge-download.js
    Self-service e-badge download: takes URN/email/phone, calls
    GET /api/mart-days/badge-download?value=..., and either
-     - triggers a real file download of the returned PNG, or
+     - triggers a real file download of the returned PDF, or
      - shows the backend's error message (not found / server error)
    No login/token involved anywhere in this file — same public,
    no-auth pattern as js/app.js's registration flow.
@@ -18,7 +18,7 @@
   
     const lookupSection = document.getElementById("lookup-section");
     const successSection = document.getElementById("success-section");
-    const previewImg = document.getElementById("badge-preview-img");
+    const confirmFilename = document.getElementById("badge-confirm-filename");
   
     const downloadAgainBtn = document.getElementById("download-again-btn");
     const searchAgainBtn = document.getElementById("search-again-btn");
@@ -41,14 +41,6 @@
     function clearError() {
       errorBox.classList.add("hidden");
       errorBox.textContent = "";
-    }
-  
-    // Pulls the URN back out of "IEML-MartDays-Badge-<URN>.pdf" so the
-    // success screen can show it without the backend needing to send
-    // any JSON metadata alongside the file bytes.
-    function extractUrnFromFilename(filename) {
-      const match = /IEML-MartDays-Badge-([A-Z0-9]+)\.pdf/i.exec(filename || "");
-      return match ? match[1].toUpperCase() : "";
     }
   
     function extractFilename(response, fallback) {
@@ -124,13 +116,12 @@
       lastBlob = blob;
       lastFilename = filename;
   
-      previewImg.src = lastBlobUrl;
+      confirmFilename.textContent = filename;
   
       // Best-effort auto-download: works on desktop and most Android
       // browsers. On iOS Safari it silently no-ops — that's fine,
-      // the Save/Share button (a real user gesture) is the reliable
-      // path there, and the image preview always supports a
-      // long-press "Save Image" as a last resort.
+      // the Share Badge button (a real user gesture) is the reliable
+      // path there via the native share sheet.
       triggerDownload(lastBlobUrl, filename);
   
       lookupSection.classList.add("hidden");

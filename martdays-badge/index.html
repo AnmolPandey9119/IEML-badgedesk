@@ -102,16 +102,26 @@
         <div class="badge-ticket">
           <div class="badge-ticket-notch badge-ticket-notch-left" aria-hidden="true"></div>
           <div class="badge-ticket-notch badge-ticket-notch-right" aria-hidden="true"></div>
-          <div class="badge-preview-frame">
-            <img id="badge-preview-img" alt="Your e-badge" />
+          <div class="badge-confirm">
+            <div class="badge-confirm-icon" aria-hidden="true">
+              <svg viewBox="0 0 44 44" fill="none">
+                <rect x="9" y="4" width="26" height="34" rx="6" fill="#fff" fill-opacity="0.16"/>
+                <rect x="9" y="4" width="26" height="34" rx="6" stroke="#fff" stroke-width="2"/>
+                <path d="M18 4h8a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" fill="#fff"/>
+                <circle cx="22" cy="21" r="7.5" fill="var(--blue-dark)" stroke="#fff" stroke-width="2"/>
+                <path d="M18.7 21.1 20.9 23.3 25.3 18.6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <p class="badge-confirm-title">Downloaded to your device</p>
+            <p class="badge-confirm-file" id="badge-confirm-filename"></p>
           </div>
         </div>
 
         <button type="button" id="download-again-btn" class="btn btn-primary btn-full">
-          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span>Save / Share Badge</span>
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg>
+          <span>Share Badge</span>
         </button>
-        <p class="ios-hint">On iPhone: if nothing opens, just long-press the badge image above and tap <strong>Add to Photos</strong>.</p>
+        <p class="ios-hint">On iPhone: if nothing opens, tap <strong>Share Badge</strong> above and choose <strong>Save to Files</strong>.</p>
         <button type="button" id="search-again-btn" class="btn btn-link btn-full">Look up a different URN / Email / Phone</button>
       </section>
 
