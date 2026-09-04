@@ -145,12 +145,14 @@
     justify-content: center;
   }
   
-  .badge-preview-frame img {
+  .badge-preview-frame iframe {
+    width: 100%;
     max-width: 100%;
-    height: auto;
+    height: 420px;
+    border: 0;
     border-radius: 8px;
     box-shadow: 0 6px 18px rgba(22, 32, 46, 0.14);
-    -webkit-touch-callout: default;
+    background: #fff;
   }
 
   /* ---------------- Save/Share button icon + iOS hint ---------------- */

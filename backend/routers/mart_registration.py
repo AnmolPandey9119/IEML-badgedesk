@@ -32,11 +32,11 @@ e-badge" self-service endpoint — the same idea as Bharat Tex's public
 badge-download page, just for Mart Days. It reuses:
   - master_store.get_mart_days_by_urn() / find_mart_days_by_email() /
     find_mart_days_by_mobile()  (existing lookups, untouched)
-  - services/badge_image.build_ebadge_png()  (the SAME badge builder
+  - services/badge_image.build_ebadge_pdf()  (the SAME badge builder
     already used for the confirmation email attachment, so the
     downloaded badge is pixel-identical to the emailed one)
 No new tables, no new badge design — just a public lookup + the
-existing PNG builder, wired together. Also public on purpose, same
+existing PDF builder, wired together. Also public on purpose, same
 as /register above.
 """
 
@@ -149,7 +149,7 @@ def _find_mart_days_registrant(identifier: str) -> dict | None:
     return the RAW mart_days_registrations row, so once either finds a
     match we re-fetch through get_mart_days_by_urn() to get back the
     normalized visitor-shape dict (name/organization/mobile/... —
-    exactly what badge_image.build_ebadge_png() expects).
+    exactly what badge_image.build_ebadge_pdf() expects).
     """
     identifier = (identifier or "").strip()
     if not identifier:
@@ -179,8 +179,8 @@ async def download_mart_days_badge(
 ):
     """
     Public self-service e-badge download — GET /api/mart-days/badge-download?value=...
-    Looks the person up by URN/email/phone, builds the exact same PNG
-    badge_image.build_ebadge_png() already emails out, and returns it
+    Looks the person up by URN/email/phone, builds the exact same PDF
+    badge_image.build_ebadge_pdf() already emails out, and returns it
     as a direct file download. Every successful download increments
     badge_download_count (shown on the master console).
     """
@@ -194,7 +194,7 @@ async def download_mart_days_badge(
     urn = record["urn"]
 
     try:
-        png_bytes = badge_image.build_ebadge_png(
+        pdf_bytes = badge_image.build_ebadge_pdf(
             urn=urn,
             name=record.get("name"),
             company=record.get("organization"),
@@ -202,7 +202,7 @@ async def download_mart_days_badge(
             email=record.get("email"),
         )
     except Exception:
-        logger.exception("Failed to build e-badge PNG for URN %s", urn)
+        logger.exception("Failed to build e-badge PDF for URN %s", urn)
         raise HTTPException(
             status_code=500,
             detail="Could not generate your e-badge right now. Please try again in a moment.",
@@ -216,7 +216,7 @@ async def download_mart_days_badge(
         logger.exception("Failed to log badge download for URN %s", urn)
 
     return Response(
-        content=png_bytes,
-        media_type="image/png",
-        headers={"Content-Disposition": f'attachment; filename="IEML-MartDays-Badge-{urn}.png"'},
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="IEML-MartDays-Badge-{urn}.pdf"'},
     )

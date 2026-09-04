@@ -26,7 +26,7 @@
   
     let lastBlobUrl = null;
     let lastBlob = null;
-    let lastFilename = "IEML-MartDays-Badge.png";
+    let lastFilename = "IEML-MartDays-Badge.pdf";
   
     function setLoading(isLoading) {
       lookupBtn.disabled = isLoading;
@@ -44,11 +44,11 @@
       errorBox.textContent = "";
     }
   
-    // Pulls the URN back out of "IEML-MartDays-Badge-<URN>.png" so the
+    // Pulls the URN back out of "IEML-MartDays-Badge-<URN>.pdf" so the
     // success screen can show it without the backend needing to send
-    // any JSON metadata alongside the image bytes.
+    // any JSON metadata alongside the file bytes.
     function extractUrnFromFilename(filename) {
-      const match = /IEML-MartDays-Badge-([A-Z0-9]+)\.png/i.exec(filename || "");
+      const match = /IEML-MartDays-Badge-([A-Z0-9]+)\.pdf/i.exec(filename || "");
       return match ? match[1].toUpperCase() : "";
     }
   
@@ -78,7 +78,7 @@
     // inside the async fetch flow.
     async function shareOrDownloadBadge(blob, filename) {
       try {
-        const file = new File([blob], filename, { type: blob.type || "image/png" });
+        const file = new File([blob], filename, { type: blob.type || "application/pdf" });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],

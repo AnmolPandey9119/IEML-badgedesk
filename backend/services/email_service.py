@@ -37,7 +37,7 @@ from typing import Optional
 import httpx
 
 from config import settings
-from services.badge_image import build_ebadge_png
+from services.badge_image import build_ebadge_pdf
 from services.email_templates import mart_days_confirmation_email
 
 logger = logging.getLogger("email_service")
@@ -66,8 +66,8 @@ async def send_mart_days_confirmation(
         )
         return False
 
-    ebadge_png = build_ebadge_png(urn, full_name, company_name or "", mobile=mobile, email=email)
-    ebadge_base64 = base64.b64encode(ebadge_png).decode("ascii")
+    ebadge_pdf = build_ebadge_pdf(urn, full_name, company_name or "", mobile=mobile, email=email)
+    ebadge_base64 = base64.b64encode(ebadge_pdf).decode("ascii")
 
     subject, html_body = mart_days_confirmation_email(full_name, urn)
 
@@ -81,8 +81,8 @@ async def send_mart_days_confirmation(
             "to": [{"email": email, "name": full_name, "type": "to"}],
             "attachments": [
                 {
-                    "type": "image/png",
-                    "name": f"{urn}-ebadge.png",
+                    "type": "application/pdf",
+                    "name": f"{urn}-ebadge.pdf",
                     "content": ebadge_base64,
                 }
             ],

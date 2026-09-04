@@ -93,14 +93,17 @@ def _font(size_px: float, bold: bool = False) -> ImageFont.ImageFont:
             return ImageFont.load_default()
 
 
-def build_ebadge_png(urn: str, name: str, company: str, mobile: Optional[str] = None, email: Optional[str] = None) -> bytes:
+def _compose_ebadge_image(urn: str, name: str, company: str, mobile: Optional[str] = None, email: Optional[str] = None) -> Image.Image:
     """
-    Returns PNG bytes of the composed e-badge: the real card template
-    with Name / Company / QR / URN overlaid in the same positions the
-    physical printer uses. QR content matches frontend/js/print.js and
-    email_service.py exactly (URN first line, then Name/Mobile/Email
-    if present) so this and a physical-counter badge always scan to
-    the identical thing.
+    Builds the composed e-badge as a Pillow Image (RGB): the real card
+    template with Name / Company / QR / URN overlaid in the same
+    positions the physical printer uses. QR content matches
+    frontend/js/print.js and email_service.py exactly (URN first line,
+    then Name/Mobile/Email if present) so this and a physical-counter
+    badge always scan to the identical thing.
+
+    Shared by build_ebadge_png() and build_ebadge_pdf() so both formats
+    are always pixel-identical -- only the final encode step differs.
     """
     template = _load_template().copy()
     draw = ImageDraw.Draw(template)
@@ -135,6 +138,30 @@ def build_ebadge_png(urn: str, name: str, company: str, mobile: Optional[str] = 
     urn_y = qr_top + qr_size + int(H * URN_GAP_FRAC)
     draw.text((cx, urn_y), urn, font=_font(W * URN_FONT_FRAC), fill=TEXT_COLOR, anchor="ma")
 
+    return template
+
+
+def build_ebadge_png(urn: str, name: str, company: str, mobile: Optional[str] = None, email: Optional[str] = None) -> bytes:
+    """Returns PNG bytes of the composed e-badge. Kept for anything that
+    still wants a raster image (e.g. an <img> preview on the download
+    page) -- the actual emailed/downloaded file is now the PDF below."""
+    template = _compose_ebadge_image(urn, name, company, mobile=mobile, email=email)
     buffer = BytesIO()
-    template.save(buffer, format="PDF", optimize=True)
+    template.save(buffer, format="PNG", optimize=True)
+    return buffer.getvalue()
+
+
+def build_ebadge_pdf(urn: str, name: str, company: str, mobile: Optional[str] = None, email: Optional[str] = None) -> bytes:
+    """
+    Returns single-page PDF bytes of the composed e-badge -- same
+    pixel-for-pixel artwork as build_ebadge_png(), just encoded as a
+    PDF instead of a PNG. This is what actually gets emailed out and
+    served by the /badge-download endpoint now.
+    """
+    template = _compose_ebadge_image(urn, name, company, mobile=mobile, email=email)
+    buffer = BytesIO()
+    # 203 dpi keeps the PDF page a sensible physical badge size (the
+    # template was exported ~4in wide at 788px) instead of Pillow's
+    # 72dpi default, which would make the "page" look oversized.
+    template.save(buffer, format="PDF", resolution=203.0)
     return buffer.getvalue()
