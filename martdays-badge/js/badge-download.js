@@ -18,7 +18,6 @@
   
     const lookupSection = document.getElementById("lookup-section");
     const successSection = document.getElementById("success-section");
-    const successUrn = document.getElementById("success-urn");
     const previewImg = document.getElementById("badge-preview-img");
   
     const downloadAgainBtn = document.getElementById("download-again-btn");
@@ -126,7 +125,6 @@
       lastFilename = filename;
   
       previewImg.src = lastBlobUrl;
-      successUrn.textContent = extractUrnFromFilename(filename) || "—";
   
       // Best-effort auto-download: works on desktop and most Android
       // browsers. On iOS Safari it silently no-ops — that's fine,
