@@ -316,7 +316,6 @@
   
         document.getElementById("success-name").textContent = data.full_name;
         document.getElementById("success-urn").textContent = data.urn;
-        document.getElementById("success-email").textContent = data.email;
   
         formSection.classList.add("hidden");
         successSection.classList.remove("hidden");
