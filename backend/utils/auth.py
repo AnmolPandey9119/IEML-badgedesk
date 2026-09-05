@@ -164,6 +164,33 @@ async def get_current_staff(
     return payload["sub"]
 
 
+async def get_current_mart_desk(
+    credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
+) -> str:
+    """
+    NEW. Add `Depends(get_current_mart_desk)` to routes that only the
+    separate Mart Days registration+print desk (routers/mart_desk.py)
+    should reach. Requires a valid token AND role="mart_desk" — an
+    operator/master/scanner token is rejected here with 403, exactly
+    the same way a mart_desk token is rejected by get_current_admin/
+    get_current_staff/get_current_master above (none of those check
+    for this role). This is what keeps the two desks' logins fully
+    separate at the token level, not just in the frontend UI.
+    """
+    if credentials is None or not credentials.credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated — please log in",
+        )
+    payload = _decode_token(credentials.credentials)
+    if payload.get("role") != "mart_desk":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Mart Days desk access only",
+        )
+    return payload["sub"]
+
+
 # REMOVED: get_current_operator_event — used to read the "event"
 # claim ("other" / "mart_days") baked into a badge desk operator's
 # token so routers/registration.py could tell which of two tables to

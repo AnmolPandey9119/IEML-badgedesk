@@ -141,7 +141,16 @@
        together) — this is the FULL, uncapped record of every successful
        print only, so the export always has everyone who actually got a
        badge, however many other actions happened around it. */
-    const PRINT_LOG_STORAGE_KEY = `ieml_badgedesk_print_log_${CURRENT_EVENT}`;
+    // FIX: this used to read `ieml_badgedesk_print_log_${CURRENT_EVENT}`,
+    // but CURRENT_EVENT was never defined anywhere in this codebase (it
+    // was leftover from the old in-app Mart Days event-toggle feature
+    // that got removed). Referencing an undefined variable here threw a
+    // ReferenceError the instant this script ran, which silently broke
+    // EVERY listener below it too (search, registration, print, edit,
+    // logout, sync) since they're all wired up inside the same
+    // DOMContentLoaded callback that this crash aborted. Plain, fixed
+    // key now that this desk only ever handles one event.
+    const PRINT_LOG_STORAGE_KEY = "ieml_badgedesk_print_log";
     let printLog = loadPrintLog();
 
     function loadPrintLog() {

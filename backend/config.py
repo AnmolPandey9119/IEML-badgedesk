@@ -105,11 +105,30 @@ class Settings(BaseSettings):
     scanner_username: str = ""
     scanner_password_hash: str = ""
 
+    # ---------- Mart Days Desk Auth (separate onsite registration+print desk) ----------
+    # NEW — replaces the old in-app "event gate" toggle idea entirely.
+    # Instead of one badge desk with two logins/events sharing the same
+    # UI (the approach that got built, didn't work reliably, and was
+    # reverted — see the removed mart_days_gate_password/
+    # admin_martdays_username below), this is a THIRD, fully separate
+    # login: its own username/password, its own JWT role ("mart_desk"),
+    # its own router (routers/mart_desk.py), reading/writing the
+    # mart_days_registrations table instead of `visitors`. Completely
+    # independent from ADMIN_USERNAME/MASTER_USERNAME/SCANNER_USERNAME
+    # above. Generate the hash the same way, using generate_password_hash.py.
+    mart_desk_username: str = ""
+    mart_desk_password_hash: str = ""
+
     # REMOVED: mart_days_gate_password, admin_martdays_username,
-    # admin_martdays_password_hash -- the badge desk's separate Mart
-    # Days operator login is gone now that Mart Days runs on its own
-    # separate portal. There's only the one operator login again
-    # (admin_username / admin_password_hash above).
+    # admin_martdays_password_hash -- this was the OLD approach: one
+    # badge desk, one login, with an in-app overlay (frontend's
+    # js/event-gate.js) letting the operator switch between "Other
+    # Events" and "Mart Days" after logging in. That overlay called a
+    # backend endpoint (verify-mart-days-access) that no longer exists,
+    # and separately, app.js referenced a CURRENT_EVENT variable that
+    # was never defined anywhere — together these silently broke the
+    # badge desk. Rather than resurrect that approach, Mart Days now
+    # gets its own separate desk entirely (see MART_DESK_* above).
 
     model_config = SettingsConfigDict(
         env_file=".env",

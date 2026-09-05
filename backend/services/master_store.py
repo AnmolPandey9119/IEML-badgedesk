@@ -195,28 +195,80 @@ def init_db() -> None:
             cur.execute("CREATE INDEX IF NOT EXISTS idx_scan_log_urn ON scan_log(urn)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_scan_log_scanner ON scan_log(scanner_name)")
 
-            # REVERTED: this used to also CREATE/ALTER a
-            # mart_days_registrations table here (Mart Days ran as a
-            # second event inside this same backend). Mart Days now
-            # runs on its own separate portal, so this backend no
-            # longer creates or migrates that table.
-            #
-            # NOTE: mart_days_registrations still physically exists in
-            # the live database with its historical data — dropping it
-            # was deliberately NOT done here to avoid any risk of data
-            # loss. It's just no longer read or written by this app.
+            # RESTORED: mart_days_registrations bootstrap. The comment
+            # that used to sit here said this table was dropped from
+            # init_db() because "Mart Days runs on its own separate
+            # portal" — but routers/mart_registration.py (public
+            # register + badge-download) and now routers/mart_desk.py
+            # (the separate onsite Mart Days desk) both read/write this
+            # exact table, in THIS backend. That comment was simply
+            # stale. CREATE TABLE IF NOT EXISTS is a no-op against the
+            # live Neon table (already exists, historical data
+            # untouched) and creates a working table from scratch on
+            # any fresh/local database.
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS mart_days_registrations (
+                    urn                  TEXT PRIMARY KEY,
+                    buyer_type           TEXT,
+                    full_name            TEXT,
+                    company_name         TEXT,
+                    designation          TEXT,
+                    email                TEXT,
+                    phone_number         TEXT,
+                    address              TEXT,
+                    district             TEXT,
+                    state                TEXT,
+                    country              TEXT,
+                    pincode              TEXT,
+                    nature_of_business   TEXT,
+                    annual_turnover      TEXT,
+                    known_through        TEXT,
+                    online_seller        TEXT,
+                    products_of_interest TEXT,
+                    print_count          INTEGER NOT NULL DEFAULT 0,
+                    scan_count           INTEGER NOT NULL DEFAULT 0,
+                    badge_download_count INTEGER NOT NULL DEFAULT 0,
+                    created_at           TIMESTAMPTZ DEFAULT NOW()
+                )
+                """
+            )
+            # Safe on an already-existing live table — no-ops if the
+            # column is already there. print_count/scan_count are what
+            # the NEW Mart Days desk (routers/mart_desk.py) needs to
+            # log prints against this table the same way the other-
+            # events desk does against `visitors`.
+            cur.execute(
+                "ALTER TABLE mart_days_registrations ADD COLUMN IF NOT EXISTS print_count INTEGER NOT NULL DEFAULT 0"
+            )
+            cur.execute(
+                "ALTER TABLE mart_days_registrations ADD COLUMN IF NOT EXISTS scan_count INTEGER NOT NULL DEFAULT 0"
+            )
+            cur.execute(
+                "ALTER TABLE mart_days_registrations ADD COLUMN IF NOT EXISTS badge_download_count INTEGER NOT NULL DEFAULT 0"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_mart_days_registrations_mobile ON mart_days_registrations(phone_number)"
+            )
 
 
 def existing_urns() -> set[str]:
     """
     All URNs currently in use — used to make sure a newly generated
-    URN is unique. REVERTED: back to checking only `visitors` — Mart
-    Days registrations (in their own, separate portal/table now) are
-    no longer part of this backend's URN space.
+    URN is unique. FIXED: this had been narrowed to check only
+    `visitors`, on the (stale, incorrect) assumption that Mart Days
+    registrations lived in a separate portal/database. They don't —
+    mart_days_registrations is a table in this same database — so a
+    URN minted here could theoretically collide with one already used
+    over there. Checking both tables restores true uniqueness across
+    the whole system, same as before that narrowing.
     """
     with _connection() as conn, conn.cursor() as cur:
         cur.execute("SELECT urn FROM visitors")
-        return {row["urn"] for row in cur.fetchall()}
+        urns = {row["urn"] for row in cur.fetchall()}
+        cur.execute("SELECT urn FROM mart_days_registrations")
+        urns.update(row["urn"] for row in cur.fetchall())
+        return urns
 
 
 def existing_source_hashes() -> set[str]:
@@ -732,6 +784,82 @@ def log_mart_days_badge_download(urn: str) -> Optional[dict]:
         if cur.rowcount == 0:
             return None
 
+    return get_mart_days_by_urn(urn)
+
+
+def search_mart_days(query: str, limit: int = 25) -> list[dict]:
+    """
+    NEW — Mart Days desk counterpart to search() above. Same idea
+    (URN / name / mobile / company / email), scoped to
+    mart_days_registrations instead of visitors, so the two desks
+    never see each other's people.
+    """
+    q = f"%{query.strip()}%"
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT * FROM mart_days_registrations
+            WHERE urn ILIKE %s OR full_name ILIKE %s OR company_name ILIKE %s
+               OR phone_number ILIKE %s OR email ILIKE %s
+            ORDER BY created_at DESC
+            LIMIT %s
+            """,
+            (q, q, q, q, q, limit),
+        )
+        return [_mart_days_row_to_visitor_shape(dict(row)) for row in cur.fetchall()]
+
+
+def update_mart_days_visitor(urn: str, data: dict) -> Optional[dict]:
+    """
+    NEW — Mart Days desk counterpart to update_visitor() above. Lets
+    the Mart Days operator fix a typo'd name/company/mobile/email
+    before printing, same as the other-events desk can. buyer_type
+    doubles as this table's "category" in the shared Visitor shape.
+    """
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE mart_days_registrations
+            SET full_name = %(full_name)s,
+                company_name = %(company_name)s,
+                designation = %(designation)s,
+                phone_number = %(phone_number)s,
+                email = %(email)s,
+                buyer_type = %(buyer_type)s
+            WHERE urn = %(urn)s
+            """,
+            {
+                "urn": urn,
+                "full_name": data.get("full_name"),
+                "company_name": data.get("company_name"),
+                "designation": data.get("designation"),
+                "phone_number": data.get("phone_number"),
+                "email": data.get("email"),
+                "buyer_type": data.get("buyer_type"),
+            },
+        )
+        if cur.rowcount == 0:
+            return None
+    return get_mart_days_by_urn(urn)
+
+
+def log_print_mart_days(urn: str, device_name: str) -> Optional[dict]:
+    """
+    NEW — Mart Days desk counterpart to log_print() above. Increments
+    this registrant's print_count directly on mart_days_registrations.
+    device_name isn't written to a per-device print_log table yet
+    (there's no such table for this side) — just accepted for
+    symmetry with the other desk's API shape. Add a
+    mart_days_print_log table later if per-device breakdowns are ever
+    needed here too.
+    """
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE mart_days_registrations SET print_count = print_count + 1 WHERE urn = %s",
+            (urn,),
+        )
+        if cur.rowcount == 0:
+            return None
     return get_mart_days_by_urn(urn)
 
 

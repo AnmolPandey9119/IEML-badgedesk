@@ -72,6 +72,24 @@ async def login(payload: LoginRequest):
             detail="Incorrect username or password",
         )
 
+    # ---- Try MART DAYS DESK credentials next ----
+    # NEW — separate login for the separate Mart Days registration+
+    # print desk (routers/mart_desk.py). Same empty-guard pattern as
+    # master/scanner above.
+    if settings.mart_desk_username.strip() and username == settings.mart_desk_username.strip():
+        if verify_password(payload.password, settings.mart_desk_password_hash):
+            token = create_access_token(settings.mart_desk_username, role="mart_desk")
+            return LoginResponse(
+                access_token=token,
+                expires_in_hours=settings.jwt_expiry_hours,
+                username=settings.mart_desk_username,
+                role="mart_desk",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+        )
+
     # ---- Regular operator credentials ----
     # Unchanged password/hash comparison from before Mart Days ever
     # existed in this backend.
