@@ -475,8 +475,53 @@
   .print-frame-hidden { position: absolute; width: 0; height: 0; border: 0; visibility: hidden; }
   
   @media (max-width: 640px) {
-    .topbar { flex-direction: column; align-items: flex-start; gap: 8px; }
-    .search-row { flex-direction: column; }
+    .topbar {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 14px 16px;
+    }
+    .topbar-right {
+      width: 100%;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .topbar-right .btn { flex: 0 0 auto; min-height: 38px; }
+    .topbar-title h1 { font-size: 15px; }
+    .event-name { font-size: 11px; }
+
+    .container {
+      margin: 16px auto;
+      padding: 0 12px 40px;
+      gap: 14px;
+    }
+
+    .card { padding: 16px 14px; }
+    .card h2 { font-size: 15px; }
+
+    .tabs-nav { padding: 0 12px; }
+    .tab-btn { padding: 12px 12px; font-size: 13px; }
+
+    .stat-strip { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-card { padding: 12px 14px; }
+    .stat-card .stat-value { font-size: 21px; }
+    .stat-card .stat-hint { display: none; }
+
+    .search-row, .print-search-row { flex-direction: column; }
+    .print-search-row .btn { width: 100%; }
+
+    .form-grid, .visitor-info-grid { grid-template-columns: 1fr; }
+
+    .action-row .btn { flex: 1 1 auto; min-width: 0; }
+
+    .activity-table { font-size: 12.5px; }
+    .activity-table th, .activity-table td { padding: 8px 6px; }
+
+    .event-gate-box { padding: 28px 22px; }
+  }
+
+  @media (max-width: 400px) {
+    .stat-strip { grid-template-columns: 1fr; }
   }
   
   /* Thin, on-brand scrollbars for horizontally-scrolling tables/tabs —

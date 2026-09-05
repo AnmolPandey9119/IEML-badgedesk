@@ -284,8 +284,39 @@
   .print-frame-hidden { position: absolute; width: 0; height: 0; border: 0; visibility: hidden; }
   
   @media (max-width: 640px) {
-    .topbar { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .topbar {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 14px 16px;
+    }
+    .topbar-right {
+      width: 100%;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .topbar-right .btn { flex: 0 0 auto; min-height: 38px; }
+    .topbar-left h1 { font-size: 16px; }
+    .event-name { font-size: 11px; }
+
+    .container {
+      margin: 16px auto;
+      padding: 0 12px 40px;
+      gap: 14px;
+    }
+
+    .card { padding: 16px 14px; }
+    .card h2 { font-size: 15px; }
+
     .search-row { flex-direction: column; }
+
+    .visitor-info-grid,
+    .form-grid { grid-template-columns: 1fr; }
+
+    .action-row .btn { flex: 1 1 auto; min-width: 0; }
+
+    .activity-table { font-size: 12.5px; }
+    .activity-table th, .activity-table td { padding: 8px 6px; }
   }
   
   .activity-table { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }

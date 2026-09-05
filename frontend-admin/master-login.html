@@ -13,10 +13,13 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
+      padding-top: calc(20px + env(safe-area-inset-top));
+      padding-bottom: calc(20px + env(safe-area-inset-bottom));
     }
     .login-card {
       width: 100%;
       max-width: 380px;
+      box-shadow: var(--shadow-md);
     }
     .login-card h1 {
       font-size: 19px;
