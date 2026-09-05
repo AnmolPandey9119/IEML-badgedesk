@@ -58,12 +58,17 @@ class Settings(BaseSettings):
     # replacement for it — both write into the same visitors table.
     external_api_key: str = ""
 
-    # REMOVED: Mailchimp Transactional / Mandrill and Gmail SMTP
-    # settings that used to live here (mailchimp_transactional_api_key,
-    # mailchimp_sender_email, mailchimp_sender_name, gmail_sender_email,
-    # gmail_app_password, gmail_sender_name) -- these only ever powered
-    # the Mart Days confirmation email (services/email_service.py),
-    # which is gone now that Mart Days runs on its own separate portal.
+    # ---------- Mailchimp Transactional / Mandrill Email (Mart Days public registration confirmation) ----------
+    # RESTORED — the public /api/mart-days/register endpoint (still
+    # live and circulating) sends its confirmation email through
+    # services/email_service.py, which reads these. Leaving the
+    # actual API key/sender EMPTY on Render is exactly how sending is
+    # currently paused — email_service.py skips sending gracefully
+    # (logs a warning) whenever either of these is blank, it never
+    # crashes registration.
+    mailchimp_transactional_api_key: str = ""
+    mailchimp_sender_email: str = ""
+    mailchimp_sender_name: str = "IEML Sourcing Mart Days"
 
     # ---------- Event Info ----------
     # Reused across every IEML event — this is the one thing that

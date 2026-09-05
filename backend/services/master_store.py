@@ -54,6 +54,7 @@ succeeds — never guessed or backfilled.
 """
 
 import json
+import re
 from contextlib import contextmanager
 from typing import Optional
 
@@ -598,6 +599,140 @@ def search(query: str, limit: int = 25) -> list[dict]:
             (q, q, q, q, q, limit),
         )
         return [_row_to_visitor(row) for row in cur.fetchall()]
+
+
+_MART_DAYS_LIST_FIELDS = ("nature_of_business", "known_through", "products_of_interest")
+
+
+def _serialize_mart_days_checkbox_fields(mart_days_data: dict) -> dict:
+    """
+    Checkbox-group answers arrive as Python lists (from
+    payload.model_dump()). Postgres TEXT columns need strings, so any
+    list gets JSON-encoded here; None/empty stays None so the column
+    is just NULL rather than the string "null" or "[]".
+    """
+    out = dict(mart_days_data)
+    for field in _MART_DAYS_LIST_FIELDS:
+        value = out.get(field)
+        out[field] = json.dumps(value) if value else None
+    return out
+
+
+def insert_mart_days_visitor(urn: str, mart_days_data: dict) -> dict:
+    """
+    RESTORED — the public Mart Days registration form
+    (routers/mart_registration.py) writes here. Mart Days now mostly
+    runs on its own separate portal, but THIS specific endpoint
+    (/api/mart-days/register, already circulating publicly) is still
+    live and must keep working, so this table + these functions stay.
+    Writes ONLY to mart_days_registrations — no matching `visitors`
+    row is created.
+    """
+    data = _serialize_mart_days_checkbox_fields(mart_days_data)
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO mart_days_registrations
+                (urn, buyer_type, full_name, company_name, designation,
+                 email, phone_number, address, district, state, country, pincode,
+                 nature_of_business, annual_turnover, known_through, online_seller, products_of_interest)
+            VALUES
+                (%(urn)s, %(buyer_type)s, %(full_name)s, %(company_name)s, %(designation)s,
+                 %(email)s, %(phone_number)s, %(address)s, %(district)s, %(state)s, %(country)s, %(pincode)s,
+                 %(nature_of_business)s, %(annual_turnover)s, %(known_through)s, %(online_seller)s, %(products_of_interest)s)
+            """,
+            {
+                "urn": urn,
+                "buyer_type": data.get("buyer_type"),
+                "full_name": data.get("full_name"),
+                "company_name": data.get("company_name"),
+                "designation": data.get("designation"),
+                "email": data.get("email"),
+                "phone_number": data.get("phone_number"),
+                "address": data.get("address"),
+                "district": data.get("district"),
+                "state": data.get("state"),
+                "country": data.get("country"),
+                "pincode": data.get("pincode"),
+                "nature_of_business": data.get("nature_of_business"),
+                "annual_turnover": data.get("annual_turnover"),
+                "known_through": data.get("known_through"),
+                "online_seller": data.get("online_seller"),
+                "products_of_interest": data.get("products_of_interest"),
+            },
+        )
+
+    return _mart_days_row_to_visitor_shape({"urn": urn, "print_count": 0, "scan_count": 0, **mart_days_data})
+
+
+def _mart_days_row_to_visitor_shape(row: dict) -> dict:
+    """Maps a mart_days_registrations row onto the same shape badge_image.build_ebadge_pdf() expects."""
+    return {
+        "urn": row["urn"],
+        "name": row["full_name"],
+        "organization": row["company_name"],
+        "designation": row.get("designation"),
+        "mobile": row["phone_number"],
+        "email": row["email"],
+        "category": row["buyer_type"],
+        "print_count": row.get("print_count", 0) or 0,
+        "scan_count": row.get("scan_count", 0) or 0,
+        "last_scanned_at": row.get("last_scanned_at"),
+        "badge_download_count": row.get("badge_download_count", 0) or 0,
+    }
+
+
+def get_mart_days_by_urn(urn: str) -> Optional[dict]:
+    """Looks up a single Mart Days registrant by URN — used by the public badge-download lookup."""
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT * FROM mart_days_registrations WHERE urn = %s", (urn,))
+        row = cur.fetchone()
+        return _mart_days_row_to_visitor_shape(dict(row)) if row else None
+
+
+def find_mart_days_by_email(email: str) -> Optional[dict]:
+    """Case-insensitive email match — used for the public form's duplicate-registration check."""
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT * FROM mart_days_registrations WHERE LOWER(email) = LOWER(%s) LIMIT 1",
+            (email.strip(),),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def find_mart_days_by_mobile(mobile: str) -> Optional[dict]:
+    """
+    Mobile match, digits-only comparison so "+91 98765 43210" and
+    "9876543210" are treated as the same number.
+    """
+    mobile_digits = re.sub(r"\D", "", mobile or "")
+    if not mobile_digits:
+        return None
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT * FROM mart_days_registrations
+            WHERE REGEXP_REPLACE(COALESCE(phone_number, ''), '\\D', '', 'g') = %s
+            LIMIT 1
+            """,
+            (mobile_digits,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def log_mart_days_badge_download(urn: str) -> Optional[dict]:
+    """Increments badge_download_count — called every time the public /badge-download endpoint succeeds."""
+    with _connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE mart_days_registrations SET badge_download_count = badge_download_count + 1 WHERE urn = %s",
+            (urn,),
+        )
+        if cur.rowcount == 0:
+            return None
+
+    return get_mart_days_by_urn(urn)
 
 
 def get_all() -> list[dict]:
