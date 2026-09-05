@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>IEML BadgeDesk — Badge Print</title>
+  <script src="js/console-guard.js"></script>
+  <link rel="stylesheet" href="css/print.css" />
+  <!-- QR code generation library (client-side, no server round trip needed) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+  <!--
+    This page is loaded INSIDE the hidden iframe from index.html
+    with visitor data passed via query params, e.g.:
+    print.html?name=ANMOL PANDEY&org=INDIA EXPO MART LTD.&urn=FQFKRQ
+
+    The badge itself is PRE-PRINTED (logo, borders, sponsor branding etc.
+    already on the physical card). We only print:
+      1. Name
+      2. Organization
+      3. URN number
+      4. QR code
+    positioned to exactly land in the blank areas of the pre-printed card.
+  -->
+
+  <div class="badge-sheet" id="badge-sheet">
+    <div class="badge-print-area">
+
+      <div class="field field-name" id="field-name">--</div>
+      <div class="field field-org" id="field-org">--</div>
+
+      <div class="qr-wrapper" id="qr-wrapper">
+        <div id="qr-code"></div>
+      </div>
+
+      <div class="field field-urn" id="field-urn">--</div>
+
+    </div>
+  </div>
+
+  <script src="js/print.js"></script>
+</body>
+</html>

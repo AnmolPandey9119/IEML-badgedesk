@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IEML Mart Days Desk</title>
+  <script src="js/console-guard.js"></script>
+  <link rel="icon" type="image/png" href="assets/ieml-logo.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="js/theme.js"></script>
+  <script>
+    // Runs immediately, before the rest of the page renders, so an
+    // unauthenticated visitor never sees a flash of the dashboard —
+    // they're bounced to login.html right away.
+    if (!sessionStorage.getItem("ieml_badge_token")) {
+      window.location.href = "login.html";
+    }
+  </script>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <img src="assets/ieml-logo.png" alt="IEML" class="topbar-logo" onerror="this.style.display='none'" />
+      <div class="topbar-title">
+        <h1>IEML Mart Days Desk</h1>
+        <span id="event-name" class="event-name">IEML Mart Sourcing Days</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span id="print-count" class="status print-count-badge" title="Badges printed this session">🖨️ Prints: 0</span>
+      <span id="connection-status" class="status status-checking">Checking connection...</span>
+      <button id="theme-toggle-btn" class="btn btn-outline btn-small" title="Toggle light/dark theme">🌙 Dark</button>
+      <button id="logout-btn" class="btn btn-outline btn-small">Logout</button>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- SEARCH SECTION -->
+    <section class="card" id="search-section">
+      <h2>Search Registered Mart Days Visitor</h2>
+      <div class="search-row">
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Scan QR / Enter URN / Name / Mobile No. / Company"
+          autofocus
+        />
+        <button id="search-btn" class="btn btn-primary">Search</button>
+      </div>
+      <div id="search-results" class="search-results"></div>
+    </section>
+
+    <!-- VISITOR DETAILS / CONFIRM PRINT -->
+    <section class="card hidden" id="visitor-details-section">
+      <h2>Registrant Details</h2>
+      <div class="visitor-info-grid">
+        <div>
+          <label>Full Name</label>
+          <p id="v-name">--</p>
+          <input id="v-name-input" class="hidden" type="text" />
+        </div>
+        <div>
+          <label>Company Name</label>
+          <p id="v-org">--</p>
+          <input id="v-org-input" class="hidden" type="text" />
+        </div>
+        <div>
+          <label>URN No.</label>
+          <p id="v-urn">--</p>
+          <!-- URN is the registrant's permanent identifier — never editable -->
+        </div>
+        <div>
+          <label>Designation</label>
+          <p id="v-designation">--</p>
+          <input id="v-designation-input" class="hidden" type="text" />
+        </div>
+        <div>
+          <label>Mobile No.</label>
+          <p id="v-mobile">--</p>
+          <input id="v-mobile-input" class="hidden" type="tel" />
+        </div>
+        <div>
+          <label>Email</label>
+          <p id="v-email">--</p>
+          <input id="v-email-input" class="hidden" type="email" />
+        </div>
+        <div>
+          <label>Buyer Type</label>
+          <p id="v-category">--</p>
+          <select id="v-category-input" class="hidden">
+            <option value="Overseas buyers">Overseas buyers</option>
+            <option value="Domestic volume buyers">Domestic volume buyers</option>
+            <option value="Buying/Sourcing consultants">Buying/Sourcing consultants</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="action-row" id="visitor-view-actions">
+        <button id="print-badge-btn" class="btn btn-success">Print Badge</button>
+        <button id="edit-visitor-btn" class="btn btn-secondary">Edit Details</button>
+        <button id="cancel-visitor-btn" class="btn btn-outline">Cancel</button>
+      </div>
+
+      <div class="action-row hidden" id="visitor-edit-actions">
+        <button id="save-visitor-btn" class="btn btn-success">Save Changes</button>
+        <button id="cancel-edit-btn" class="btn btn-outline">Cancel Edit</button>
+      </div>
+    </section>
+
+    <!-- NEW REGISTRATION SECTION -->
+    <section class="card" id="registration-section">
+      <div class="section-header-row">
+        <h2>New Mart Days Walk-in Registration</h2>
+        <button id="toggle-registration-btn" class="btn btn-outline btn-small">+ New Registration</button>
+      </div>
+
+      <div id="registration-form-wrapper" class="hidden">
+
+        <form id="registration-form-other">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="reg-name">Full Name *</label>
+              <input type="text" id="reg-name" name="name" required />
+            </div>
+            <div class="form-group">
+              <label for="reg-org">Company Name *</label>
+              <input type="text" id="reg-org" name="organization" required />
+            </div>
+            <div class="form-group">
+              <label for="reg-designation">Designation</label>
+              <input type="text" id="reg-designation" name="designation" />
+            </div>
+            <div class="form-group">
+              <label for="reg-mobile">Mobile No. *</label>
+              <input type="tel" id="reg-mobile" name="mobile" required />
+            </div>
+            <div class="form-group">
+              <label for="reg-email">Email</label>
+              <input type="email" id="reg-email" name="email" />
+            </div>
+            <div class="form-group">
+              <label for="reg-category">Buyer Type *</label>
+              <select id="reg-category" name="category" required>
+                <option value="" disabled selected>Select buyer type...</option>
+                <option value="Overseas buyers">Overseas buyers</option>
+                <option value="Domestic volume buyers">Domestic volume buyers</option>
+                <option value="Buying/Sourcing consultants">Buying/Sourcing consultants</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button type="submit" class="btn btn-success">Register & Print</button>
+            <button type="button" class="btn btn-outline cancel-registration-btn">Cancel</button>
+          </div>
+        </form>
+
+      </div>
+    </section>
+
+    <!-- ACTIVITY LOG -->
+    <section class="card" id="activity-section">
+      <div class="section-header-row">
+        <h2>Recent Activity</h2>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button id="export-print-log-btn" class="btn btn-outline btn-small">⬇️ Export Print Log</button>
+          <button id="clear-history-btn" class="btn btn-outline btn-small" title="Resets the Prints counter and clears this table on THIS laptop only">🧹 Clear History</button>
+          <span id="print-queue-status" class="queue-status">Queue: 0</span>
+        </div>
+      </div>
+      <table class="activity-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Name</th>
+            <th>URN</th>
+            <th>Action</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="activity-log-body">
+          <!-- rows injected by JS -->
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <!-- Hidden iframe target used for triggering print of print.html -->
+  <iframe id="print-frame" name="print-frame" class="print-frame-hidden"></iframe>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/print.js"></script>
+</body>
+</html>

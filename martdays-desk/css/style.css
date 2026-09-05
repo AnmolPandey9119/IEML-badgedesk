@@ -1,0 +1,325 @@
+/* ==========================================================
+   IEML BadgeDesk — Counter (Search & Print)
+   Same design system as the master console — see that file's
+   header comment for the full rationale. Kept as its own file
+   since this app is a separate deployment.
+   ========================================================== */
+
+   :root {
+    --primary: #0f2a4d;
+    --primary-dark: #081a33;
+    --primary-light: #2d5384;
+    --secondary: #c8952e;
+    --secondary-dark: #a97a1f;
+    --success: #1a8f57;
+    --success-dark: #147a48;
+    --danger: #c0392b;
+    --danger-dark: #a53025;
+  
+    --bg: #f2f3f6;
+    --card-bg: #ffffff;
+    --border: #e3e5ea;
+    --border-strong: #cfd2da;
+    --text-main: #1a1d24;
+    --text-muted: #666c7a;
+  
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06);
+    --shadow-md: 0 6px 18px rgba(16,24,40,0.10);
+  
+    --hover-bg: rgba(15, 42, 77, 0.05);
+    --queue-bg: #f8f0e0;
+    --queue-text: #93701f;
+    --error-bg: #fbeceb;
+    --error-border: #f0c9c5;
+    --tag-success-bg: #e5f5ec;
+    --tag-success-text: #146b43;
+    --tag-pending-bg: #fbf1de;
+    --tag-pending-text: #8a6206;
+    --tag-failed-bg: #fbeceb;
+    --tag-failed-text: #a13429;
+  }
+  
+  html[data-theme="dark"] {
+    --primary: #4d84c4;
+    --primary-dark: #16294a;
+    --primary-light: #6a9bd6;
+    --secondary: #e0ab4a;
+    --secondary-dark: #c8952e;
+    --success: #34b374;
+    --success-dark: #269459;
+    --danger: #e0605a;
+    --danger-dark: #c0453f;
+  
+    --bg: #12141a;
+    --card-bg: #1b1e26;
+    --border: #2c303b;
+    --border-strong: #3a3f4c;
+    --text-main: #eef0f4;
+    --text-muted: #9aa1b0;
+  
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.25);
+    --shadow-md: 0 8px 22px rgba(0,0,0,0.45);
+  
+    --hover-bg: rgba(77, 132, 196, 0.14);
+    --queue-bg: rgba(224, 171, 74, 0.14);
+    --queue-text: var(--secondary);
+    --error-bg: rgba(224, 96, 90, 0.14);
+    --error-border: rgba(224, 96, 90, 0.38);
+    --tag-success-bg: rgba(52, 179, 116, 0.16);
+    --tag-success-text: #5fdb9a;
+    --tag-pending-bg: rgba(224, 171, 74, 0.18);
+    --tag-pending-text: #f0c766;
+    --tag-failed-bg: rgba(224, 96, 90, 0.16);
+    --tag-failed-text: #f4948e;
+  }
+  
+  body, .card, .status, input, select, button {
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+  
+  * { box-sizing: border-box; }
+  
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    background: var(--bg);
+    color: var(--text-main);
+    -webkit-font-smoothing: antialiased;
+  }
+  
+  h1, h2, h3 { font-weight: 600; letter-spacing: -0.01em; }
+  
+  /* ---------------- Top Bar ---------------- */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 28px;
+    background:
+      radial-gradient(circle at 70px 0%, rgba(200, 149, 46, 0.22), transparent 55%),
+      var(--primary-dark);
+    border-bottom: 2px solid var(--secondary);
+    color: #fff;
+  }
+  
+  .topbar-left { display: flex; align-items: center; gap: 14px; }
+  .topbar-logo { height: 38px; width: auto; object-fit: contain; }
+  .topbar-title { display: flex; flex-direction: column; }
+  .topbar-left h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  .event-name { font-size: 12px; color: rgba(255,255,255,0.72); }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  
+  .status {
+    font-size: 12.5px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .status-checking { background: rgba(255,255,255,0.16); }
+  .status-online { background: var(--success); }
+  .status-offline { background: var(--danger); }
+  
+  .activity-status {
+    display: inline-block;
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+    color: #fff;
+  }
+  .activity-status-success { background: var(--success); }
+  .activity-status-failed { background: var(--danger); }
+  
+  /* ---------------- Layout ---------------- */
+  .container {
+    max-width: 1100px;
+    margin: 24px auto;
+    padding: 0 20px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+  }
+  
+  .card h2 { margin: 0 0 16px; font-size: 16px; font-weight: 600; color: var(--text-main); }
+  .section-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; flex-wrap: wrap; }
+  .section-header-row h2 { margin: 0; }
+  .hidden { display: none !important; }
+  
+  /* ---------------- Search ---------------- */
+  .search-row { display: flex; gap: 10px; }
+  #search-input {
+    flex: 1;
+    padding: 12px 14px;
+    font-size: 15px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  #search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--hover-bg); }
+  .search-results { margin-top: 14px; }
+  .search-result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .search-result-item:hover { background: var(--hover-bg); border-color: var(--primary); }
+  .search-empty { color: var(--text-muted); font-size: 14px; padding: 10px 2px; }
+  
+  /* ---------------- Visitor Details ---------------- */
+  .visitor-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+  .visitor-info-grid > div { min-width: 0; }
+  .visitor-info-grid label {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .visitor-info-grid p {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  .visitor-info-grid input, .visitor-info-grid select {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 15px;
+    font-weight: 500;
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-sm);
+    outline: none;
+    font-family: inherit;
+  }
+  
+  /* ---------------- Forms ---------------- */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+  .form-group label { display: block; font-size: 12.5px; margin-bottom: 6px; color: var(--text-muted); font-weight: 500; }
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--hover-bg); }
+  
+  /* ---------------- Buttons ---------------- */
+  .action-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn {
+    padding: 10px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, transform 0.05s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-light); }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-success:hover { background: var(--success-dark); }
+  .btn-secondary { background: var(--secondary); color: #2b1f04; }
+  .btn-secondary:hover { background: var(--secondary-dark); color: #fff; }
+  .btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border-strong); }
+  .btn-outline:hover { background: var(--hover-bg); border-color: var(--primary); }
+  .btn-small { padding: 6px 14px; font-size: 12.5px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  
+  .btn:focus-visible, #search-input:focus-visible, .search-result-item:focus-visible {
+    outline: 2px solid var(--secondary);
+    outline-offset: 2px;
+  }
+  
+  .topbar .btn-outline { color: #fff; border-color: rgba(255,255,255,0.5); background: transparent; }
+  .topbar .btn-outline:hover { border-color: #fff; background: rgba(255,255,255,0.1); }
+  
+  /* ---------------- Activity Table ---------------- */
+  .queue-status { font-size: 13px; background: var(--queue-bg); color: var(--queue-text); padding: 4px 12px; border-radius: 14px; font-weight: 600; }
+  .print-count-badge { background: rgba(255,255,255,0.14); color: #fff; }
+  
+  .activity-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .activity-table th { text-align: left; padding: 10px 8px; color: var(--text-muted); border-bottom: 1px solid var(--border-strong); font-weight: 600; font-size: 12.5px; }
+  .activity-table td { padding: 10px 8px; border-bottom: 1px solid var(--border); }
+  .activity-table tbody tr:hover { background: var(--hover-bg); }
+  
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .tag-success { background: var(--tag-success-bg); color: var(--tag-success-text); }
+  .tag-pending { background: var(--tag-pending-bg); color: var(--tag-pending-text); }
+  .tag-failed { background: var(--tag-failed-bg); color: var(--tag-failed-text); }
+  
+  /* ---------------- Misc ---------------- */
+  .print-frame-hidden { position: absolute; width: 0; height: 0; border: 0; visibility: hidden; }
+  
+  @media (max-width: 640px) {
+    .topbar {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 14px 16px;
+    }
+    .topbar-right {
+      width: 100%;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .topbar-right .btn { flex: 0 0 auto; min-height: 38px; }
+    .topbar-left h1 { font-size: 16px; }
+    .event-name { font-size: 11px; }
+
+    .container {
+      margin: 16px auto;
+      padding: 0 12px 40px;
+      gap: 14px;
+    }
+
+    .card { padding: 16px 14px; }
+    .card h2 { font-size: 15px; }
+
+    .search-row { flex-direction: column; }
+
+    .visitor-info-grid,
+    .form-grid { grid-template-columns: 1fr; }
+
+    .action-row .btn { flex: 1 1 auto; min-width: 0; }
+
+    .activity-table { font-size: 12.5px; }
+    .activity-table th, .activity-table td { padding: 8px 6px; }
+  }
+  
+  .activity-table { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+  /* NOTE: the old Event Gate overlay (Other Events / Mart Days choice
+     + second password) was removed — event mode is now decided at
+     login via two separate badge desk accounts. See js/auth.js. */
