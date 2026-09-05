@@ -247,6 +247,17 @@ def init_db() -> None:
             cur.execute(
                 "ALTER TABLE mart_days_registrations ADD COLUMN IF NOT EXISTS badge_download_count INTEGER NOT NULL DEFAULT 0"
             )
+            # FIX: created_at only existed in the CREATE TABLE clause
+            # above, which is a no-op against the live Neon table
+            # (already existed from before this feature) — so the
+            # column never actually got added there, and
+            # search_mart_days()'s "ORDER BY created_at DESC" crashed
+            # with psycopg2.errors.UndefinedColumn on every search.
+            # Same ADD-COLUMN-IF-NOT-EXISTS pattern as the other
+            # columns above fixes it for both existing and fresh DBs.
+            cur.execute(
+                "ALTER TABLE mart_days_registrations ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()"
+            )
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_mart_days_registrations_mobile ON mart_days_registrations(phone_number)"
             )
