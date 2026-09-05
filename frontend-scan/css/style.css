@@ -59,6 +59,8 @@
     align-items: center;
     justify-content: center;
     padding: 20px;
+    padding-top: calc(20px + env(safe-area-inset-top));
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
   }
   
   .login-card {
@@ -138,6 +140,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 14px 20px;
+    padding-top: calc(14px + env(safe-area-inset-top));
     background:
       radial-gradient(circle at 60px 0%, rgba(200, 149, 46, 0.22), transparent 55%),
       var(--primary-dark);
@@ -161,6 +164,7 @@
   
   .btn-topbar {
     padding: 8px 16px;
+    min-height: 38px;
     font-size: 13px;
     font-weight: 600;
     border-radius: var(--radius-sm);
@@ -176,8 +180,9 @@
   .scanner-name-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 20px;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    padding: 10px 16px;
     background: var(--card-bg);
     border-bottom: 1px solid var(--border);
     font-size: 13px;
@@ -340,4 +345,8 @@
     .topbar-logo { height: 28px; }
     .topbar-title h1 { font-size: 15px; }
     .event-name { font-size: 11px; }
+    .scanner-name-row { padding: 10px 14px; }
+    .gate-counter-chip { margin-left: 0; }
+    .scanner-name-edit { padding: 5px 12px; font-size: 12.5px; }
+    .scan-container { padding: 0 12px 32px; }
   }
