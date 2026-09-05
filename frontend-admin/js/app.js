@@ -25,6 +25,7 @@
      wireLogout();
      startHealthCheck();
      loadPrintStats();
+     loadStatsBySource();
      loadVisitors();
      wireForm();
      wireAddToggle();
@@ -83,12 +84,7 @@
        if (result.ok) {
          statusEl.textContent = "Online";
          statusEl.className = "status status-online";
-         // CHANGED: Mart Days always shows a fixed label, regardless of
-       // whatever settings.event_name the backend is currently set to
-       // — that backend value is "Other Events" only from here on.
-       // See mart-days.js's window.MasterEventGate + applyMasterMode().
-       const isMartDays = window.MasterEventGate && window.MasterEventGate.isMartDays && window.MasterEventGate.isMartDays();
-       if (eventEl) eventEl.textContent = isMartDays ? "IEML Mart Days" : (result.data.event || "");
+         if (eventEl) eventEl.textContent = result.data.event || "";
        } else {
          statusEl.textContent = "Offline";
          statusEl.className = "status status-offline";
@@ -127,6 +123,32 @@
      bodyEl.innerHTML = byDevice
        .map((d) => `<tr><td>${escapeHtml(d.device_name)}</td><td>${d.count}</td></tr>`)
        .join("");
+   }
+
+   /* ---------------- Data Sources (NEW — sheet+onsite vs portal) ----------------
+      Powers the Home tab's "Data Sources" card. Separate fetch from
+      loadPrintStats()/loadVisitors() above — this is grouped by the
+      `source` column instead of a flat total, so sheet/onsite
+      registrations and sir's portal-pushed data can be read on their
+      own instead of only ever as one merged number. */
+   async function loadStatsBySource() {
+     const result = await API.getStatsBySource();
+     if (!result.ok) return;
+
+     const { sheet_and_onsite: sheet, portal } = result.data;
+
+     const setText = (id, value) => {
+       const el = document.getElementById(id);
+       if (el) el.textContent = value;
+     };
+
+     setText("source-sheet-registered", sheet.registered);
+     setText("source-sheet-print", sheet.print_total);
+     setText("source-sheet-scan", sheet.scan_total);
+
+     setText("source-portal-registered", portal.registered);
+     setText("source-portal-print", portal.print_total);
+     setText("source-portal-scan", portal.scan_total);
    }
    
    /* ---------------- Scan Monitoring (Entrance Scan Monitoring tab) ----------------
@@ -279,7 +301,7 @@
        btn.disabled = true;
        btn.textContent = "Clearing...";
 
-       const result = await API.clearHistory("other_events");
+       const result = await API.clearHistory();
 
        btn.disabled = false;
        btn.textContent = "Clear Print/Scan History";
@@ -303,26 +325,17 @@
      });
    }
 
-   /* ---------------- Secret unlock for the "Delete Everything" section(s) ----------------
+   /* ---------------- Secret unlock for the "Delete Everything" section ----------------
       Click the topbar logo 5 times within 3 seconds to reveal the
       hidden Purge-All danger zone. Deliberately not a visible/labeled
       button — this is the whole point (see index.html's comment on
       #purge-all-section): nobody should ever land on this by
       accident. Clicks older than 3 seconds fall off the window, so a
-      slow/accidental sequence of clicks never accumulates to 5.
-
-      CHANGED: reveals BOTH #purge-all-section (Other Events) and
-      #md-purge-all-section (Mart Days) with the same gesture — same
-      topbar logo, same session, no reason to make a master remember
-      two different unlock sequences. Only the section for whichever
-      mode is currently visible gets scrolled into view; the other
-      stays revealed-but-offscreen so switching event mode afterward
-      doesn't need a second unlock. */
+      slow/accidental sequence of clicks never accumulates to 5. */
    function wireSecretPurgeUnlock() {
      const logo = document.getElementById("topbar-logo");
-     const otherSection = document.getElementById("purge-all-section");
-     const martSection = document.getElementById("md-purge-all-section");
-     if (!logo || (!otherSection && !martSection)) return;
+     const section = document.getElementById("purge-all-section");
+     if (!logo || !section) return;
 
      let clickTimes = [];
      logo.addEventListener("click", () => {
@@ -332,12 +345,8 @@
 
        if (clickTimes.length >= 2) {
          clickTimes = [];
-         if (otherSection) otherSection.classList.remove("hidden");
-         if (martSection) martSection.classList.remove("hidden");
-
-         const isMartDays = window.MasterEventGate && window.MasterEventGate.isMartDays();
-         const visibleSection = isMartDays ? martSection : otherSection;
-         (visibleSection || otherSection || martSection)?.scrollIntoView({ behavior: "smooth", block: "center" });
+         section.classList.remove("hidden");
+         section.scrollIntoView({ behavior: "smooth", block: "center" });
        }
      });
    }
@@ -376,7 +385,7 @@
        btn.disabled = true;
        btn.textContent = "Deleting...";
 
-       const result = await API.purgeAll(input.value, "other_events");
+       const result = await API.purgeAll(input.value);
 
        btn.textContent = "Delete Everything";
        input.value = "";

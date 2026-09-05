@@ -20,10 +20,7 @@
 </head>
 <body>
 
-  <!-- Which event this counter is scoped to (Other Events / Mart
-       Days) is now decided at LOGIN — see js/auth.js. No in-app
-       gate/overlay needed anymore: sections tagged data-event-scope
-       below are shown/hidden once, right after login, by app.js. -->
+  <!-- Login is now scoped to just the one event again — see js/auth.js. -->
 
   <header class="topbar">
     <div class="topbar-left">
@@ -36,7 +33,7 @@
     <div class="topbar-right">
       <span id="print-count" class="status print-count-badge" title="Badges printed this session">🖨️ Prints: 0</span>
       <span id="connection-status" class="status status-checking">Checking connection...</span>
-      <button id="sync-now-btn" class="btn btn-outline btn-small" data-event-scope="other" title="Fetch new registrations from the Google Sheet right now">🔄 Sync Now</button>
+      <button id="sync-now-btn" class="btn btn-outline btn-small" title="Fetch new registrations from the Google Sheet right now">🔄 Sync Now</button>
       <button id="theme-toggle-btn" class="btn btn-outline btn-small" title="Toggle light/dark theme">🌙 Dark</button>
       <button id="logout-btn" class="btn btn-outline btn-small">Logout</button>
     </div>
@@ -127,8 +124,7 @@
 
       <div id="registration-form-wrapper" class="hidden">
 
-        <!-- OTHER EVENTS registration form (unchanged fields) -->
-        <form id="registration-form-other" data-event-scope="other">
+        <form id="registration-form-other">
           <div class="form-grid">
             <div class="form-group">
               <label for="reg-name">Full Name *</label>
@@ -159,65 +155,6 @@
                 <option value="media">Media</option>
                 <option value="vip">VIP</option>
               </select>
-            </div>
-          </div>
-
-          <div class="action-row">
-            <button type="submit" class="btn btn-success">Register & Print</button>
-            <button type="button" class="btn btn-outline cancel-registration-btn">Cancel</button>
-          </div>
-        </form>
-
-        <!-- MART DAYS registration form (same fields as the public form) -->
-        <form id="registration-form-martdays" data-event-scope="mart_days" class="hidden">
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="md-buyer-type">Type of Buyer *</label>
-              <select id="md-buyer-type" name="buyer_type" required>
-                <option value="Overseas buyers">Overseas buyers</option>
-                <option value="Domestic volume buyers">Domestic volume buyers</option>
-                <option value="Buying/Sourcing consultants">Buying/Sourcing consultants</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="md-full-name">Full Name *</label>
-              <input type="text" id="md-full-name" name="full_name" required />
-            </div>
-            <div class="form-group">
-              <label for="md-company-name">Company Name *</label>
-              <input type="text" id="md-company-name" name="company_name" required />
-            </div>
-            <div class="form-group">
-              <label for="md-designation">Designation</label>
-              <input type="text" id="md-designation" name="designation" />
-            </div>
-            <div class="form-group">
-              <label for="md-email">Email *</label>
-              <input type="email" id="md-email" name="email" required />
-            </div>
-            <div class="form-group">
-              <label for="md-phone">Phone Number *</label>
-              <input type="tel" id="md-phone" name="phone_number" required />
-            </div>
-            <div class="form-group">
-              <label for="md-address">Address</label>
-              <input type="text" id="md-address" name="address" />
-            </div>
-            <div class="form-group">
-              <label for="md-district">District</label>
-              <input type="text" id="md-district" name="district" />
-            </div>
-            <div class="form-group">
-              <label for="md-state">State</label>
-              <input type="text" id="md-state" name="state" />
-            </div>
-            <div class="form-group">
-              <label for="md-country">Country</label>
-              <input type="text" id="md-country" name="country" />
-            </div>
-            <div class="form-group">
-              <label for="md-pincode">Pincode</label>
-              <input type="text" id="md-pincode" name="pincode" />
             </div>
           </div>
 

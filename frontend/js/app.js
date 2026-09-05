@@ -46,7 +46,6 @@
       toggleRegistrationBtn: document.getElementById("toggle-registration-btn"),
       registrationFormWrapper: document.getElementById("registration-form-wrapper"),
       registrationFormOther: document.getElementById("registration-form-other"),
-      registrationFormMartDays: document.getElementById("registration-form-martdays"),
       cancelRegistrationBtns: document.querySelectorAll(".cancel-registration-btn"),
   
       printQueueStatus: document.getElementById("print-queue-status"),
@@ -58,30 +57,6 @@
     let currentVisitor = null;
     let printQueueCount = 0;
 
-    /* ---------------- Event Mode (Other Events / Mart Days) ----------------
-       FIXED: this used to be an in-app overlay (js/event-gate.js) asking
-       the operator to choose, with a second password for Mart Days.
-       Now the event is decided at LOGIN (two separate badge desk
-       accounts — see js/auth.js) and applied once here, on page load:
-       sections tagged data-event-scope="other" / "mart_days" in
-       index.html are shown/hidden to match, same as before, just
-       driven by Auth.getEvent() instead of a runtime choice. */
-    (function applyEventMode() {
-      const isMartDays = window.Auth && window.Auth.isMartDays && window.Auth.isMartDays();
-      document.querySelectorAll("[data-event-scope='other']").forEach((el) => el.classList.toggle("hidden", isMartDays));
-      document.querySelectorAll("[data-event-scope='mart_days']").forEach((el) => el.classList.toggle("hidden", !isMartDays));
-
-      // Mart Days always shows this fixed label on the topbar — it
-      // never comes from the backend. "Other Events" keeps showing
-      // whatever settings.event_name currently is (set per-event in
-      // the backend .env), which checkConnection() below refreshes
-      // on its own poll.
-      if (isMartDays) {
-        const eventNameEl = document.getElementById("event-name");
-        if (eventNameEl) eventNameEl.textContent = "IEML Mart Days";
-      }
-    })();
-
     /* ---------------- Recent Activity + Print Count ----------------
        Both persist across page refreshes/reopens via localStorage
        (per-browser, this counter's own running total) — so a reload
@@ -91,18 +66,13 @@
        org server / master_store — this is just a local operator-
        facing convenience log/counter. */
     const MAX_ACTIVITY_ROWS = 30;
-    // FIXED: these used to be one plain key shared by every login on this
-    // browser, so the "Other Events" desk and the "Mart Days" desk (two
-    // separate credentials, same laptop) were reading/writing the exact
-    // same localStorage entry — delete/print on one instantly showed up
-    // on the other. Suffixing with the logged-in event isolates them:
-    // each login now only ever sees its own Recent Activity / Print
-    // Count / Print Log. DEVICE_NAME stays un-suffixed on purpose — it's
-    // just a "which laptop is this" label, not entries data, and should
-    // stay the same no matter which desk is logged in on it.
-    const CURRENT_EVENT = (window.Auth && window.Auth.getEvent && window.Auth.getEvent()) || "other";
-    const ACTIVITY_STORAGE_KEY = `ieml_badgedesk_activity_log_${CURRENT_EVENT}`;
-    const PRINT_COUNT_STORAGE_KEY = `ieml_badgedesk_print_count_${CURRENT_EVENT}`;
+    // REVERTED: these used to be suffixed per logged-in event
+    // (_other / _mart_days) back when this same badge desk had two
+    // separate logins sharing one browser. There's only the one
+    // login again now that Mart Days runs on its own separate
+    // portal, so these are back to plain, unsuffixed keys.
+    const ACTIVITY_STORAGE_KEY = "ieml_badgedesk_activity_log";
+    const PRINT_COUNT_STORAGE_KEY = "ieml_badgedesk_print_count";
     const DEVICE_NAME_STORAGE_KEY = "ieml_badgedesk_device_name";
     let activityLog = loadActivityLog();
     let printsCount = loadPrintCount();
@@ -312,15 +282,7 @@
       if (result.ok) {
         els.connectionStatus.textContent = "Online";
         els.connectionStatus.className = "status status-online";
-        // Mart Days always shows a fixed label, regardless of
-        // whatever settings.event_name the backend is currently set
-        // to — that backend value is "Other Events" only from here on.
-        // See applyEventMode() above for the at-load version of this
-        // same check.
-        const isMartDays = window.Auth && window.Auth.isMartDays && window.Auth.isMartDays();
-        if (isMartDays) {
-          els.eventName.textContent = "IEML Mart Days";
-        } else if (result.data.event) {
+        if (result.data.event) {
           els.eventName.textContent = result.data.event;
         }
       } else {
@@ -560,11 +522,7 @@
       addActivity({ name: currentVisitor.name, urn: currentVisitor.urn, action: "Update Details", status: "success" });
     });
 
-    /* ---------------- Registration Form ----------------
-       Two separate <form> elements share this section — which one
-       is visible is controlled by applyEventMode() above (data-event-
-       scope toggling based on Other Events / Mart Days login). Both
-       share the same "+ New Registration" toggle and Cancel buttons. */
+    /* ---------------- Registration Form ---------------- */
     els.toggleRegistrationBtn.addEventListener("click", () => {
       els.registrationFormWrapper.classList.toggle("hidden");
     });
@@ -572,7 +530,6 @@
     els.cancelRegistrationBtns.forEach((btn) => {
       btn.addEventListener("click", () => {
         els.registrationFormOther.reset();
-        els.registrationFormMartDays.reset();
         els.registrationFormWrapper.classList.add("hidden");
         focusSearchInput();
       });
@@ -611,11 +568,6 @@
     els.registrationFormOther.addEventListener("submit", (e) => {
       e.preventDefault();
       submitRegistration(els.registrationFormOther, API.registerVisitor);
-    });
-
-    els.registrationFormMartDays.addEventListener("submit", (e) => {
-      e.preventDefault();
-      submitRegistration(els.registrationFormMartDays, API.registerMartDaysVisitor);
     });
   
     /* ---------------- Print Trigger ---------------- */

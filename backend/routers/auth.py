@@ -13,14 +13,14 @@ as before, same role="operator" behavior. Both login.html (operator)
 and the new master-login.html (master) point at this one endpoint;
 which set of credentials you type in decides which role you get.
 
-FIXED (badge desk Mart Days login): the counter now has TWO operator
-logins — ADMIN_USERNAME (Other Events) and ADMIN_MARTDAYS_USERNAME
-(Mart Days) — instead of one operator login plus a second in-app gate
-password. Whichever one matches decides the token's event="other" /
-event="mart_days" claim; the badge desk opens straight into the
-right mode at login, no extra screen. The old
-POST /verify-mart-days-access endpoint is gone — same idea, just
-moved to login time instead of a post-login gate.
+REVERTED (Mart Days operator login removed): this backend used to
+also carry a THIRD operator login (ADMIN_MARTDAYS_USERNAME), issuing
+a token with an event="mart_days" claim so the badge desk knew which
+of two tables to search/register into. Now that Mart Days runs on
+its own separate portal, there's only ever one event again — so the
+event claim is gone entirely and this is back to just two logins:
+regular operator (ADMIN_USERNAME) and master (MASTER_USERNAME), plus
+the separate scanner login below.
 """
 
 from fastapi import APIRouter, HTTPException, status
@@ -72,30 +72,9 @@ async def login(payload: LoginRequest):
             detail="Incorrect username or password",
         )
 
-    # ---- NEW: Try MART DAYS OPERATOR credentials next ----
-    # Same guard pattern — only matches if ADMIN_MARTDAYS_USERNAME is
-    # actually configured. Issues a normal role="operator" token
-    # (same permissions as the regular operator below) but with
-    # event="mart_days" baked in, so the badge desk knows to open
-    # straight into Mart Days mode.
-    if settings.admin_martdays_username.strip() and username == settings.admin_martdays_username.strip():
-        if verify_password(payload.password, settings.admin_martdays_password_hash):
-            token = create_access_token(settings.admin_martdays_username, role="operator", event="mart_days")
-            return LoginResponse(
-                access_token=token,
-                expires_in_hours=settings.jwt_expiry_hours,
-                username=settings.admin_martdays_username,
-                role="operator",
-                event="mart_days",
-            )
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-        )
-
-    # ---- Regular operator credentials (Other Events) ----
-    # Unchanged password/hash comparison from before this feature;
-    # the only addition is event="other" baked into the token now.
+    # ---- Regular operator credentials ----
+    # Unchanged password/hash comparison from before Mart Days ever
+    # existed in this backend.
     valid_username = username == settings.admin_username.strip()
     valid_password = verify_password(payload.password, settings.admin_password_hash)
 
@@ -105,11 +84,10 @@ async def login(payload: LoginRequest):
             detail="Incorrect username or password",
         )
 
-    token = create_access_token(settings.admin_username, role="operator", event="other")
+    token = create_access_token(settings.admin_username, role="operator")
     return LoginResponse(
         access_token=token,
         expires_in_hours=settings.jwt_expiry_hours,
         username=settings.admin_username,
         role="operator",
-        event="other",
     )

@@ -58,32 +58,12 @@ class Settings(BaseSettings):
     # replacement for it — both write into the same visitors table.
     external_api_key: str = ""
 
-    # ---------- Mailchimp Transactional / Mandrill Email (Mart Days confirmation) ----------
-    # MAILCHIMP_TRANSACTIONAL_API_KEY comes from a Mailchimp TRANSACTIONAL
-    # account (mandrillapp.com), NOT the regular Mailchimp Marketing login
-    # used for audience/campaign emails -- those are two separate products
-    # with separate billing, even under the same Mailchimp company account.
-    # Left blank by default so a backend that hasn't set this up yet just
-    # skips sending (logs a warning, never crashes) instead of failing
-    # registration.
-    mailchimp_transactional_api_key: str = ""
-    # Must be a sender EMAIL on a domain verified (SPF/DKIM) in the
-    # Mailchimp Transactional account before it can send.
-    mailchimp_sender_email: str = ""
-    mailchimp_sender_name: str = "IEML Sourcing Mart Days"
-
-    # ---------- Gmail SMTP (Mart Days confirmation -- REPLACES Mailchimp) ----------
-    # Switched to this because Mailchimp Transactional needed its own paid
-    # activation separate from the regular Mailchimp Marketing plan, which
-    # wasn't set up. Sends via smtp.gmail.com using an APP PASSWORD, not
-    # the normal Gmail login password -- generate one at
-    # https://myaccount.google.com/apppasswords (requires 2-Step
-    # Verification to be turned on for the Gmail account first). Left
-    # blank by default so a backend that hasn't set this up yet just
-    # skips sending (logs a warning) instead of failing registration.
-    gmail_sender_email: str = ""
-    gmail_app_password: str = ""
-    gmail_sender_name: str = "IEML Sourcing Mart Days"
+    # REMOVED: Mailchimp Transactional / Mandrill and Gmail SMTP
+    # settings that used to live here (mailchimp_transactional_api_key,
+    # mailchimp_sender_email, mailchimp_sender_name, gmail_sender_email,
+    # gmail_app_password, gmail_sender_name) -- these only ever powered
+    # the Mart Days confirmation email (services/email_service.py),
+    # which is gone now that Mart Days runs on its own separate portal.
 
     # ---------- Event Info ----------
     # Reused across every IEML event — this is the one thing that
@@ -120,34 +100,25 @@ class Settings(BaseSettings):
     scanner_username: str = ""
     scanner_password_hash: str = ""
 
-    # ---------- Mart Days counter gate (frontend/ only) ----------
-    # DEPRECATED — replaced by ADMIN_MARTDAYS_USERNAME below (separate
-    # login instead of an in-app second password). Field kept here,
-    # unused, purely so an existing .env with this key set doesn't
-    # need to be touched during rollout; safe to delete later.
-    mart_days_gate_password: str = ""
-
-    # ---------- Mart Days Operator Auth (badge desk — separate login) ----------
-    # NEW. A SEPARATE operator account for the badge desk (frontend/
-    # only), permanently scoped to Mart Days — completely independent
-    # credentials from ADMIN_USERNAME above, generated the same way
-    # (generate_password_hash.py). Logging in with these issues a
-    # role="operator" token exactly like the regular admin login, but
-    # with an extra event="mart_days" claim baked into the JWT itself
-    # — so this operator's badge desk opens straight into Mart Days
-    # mode, no separate in-app gate/password step needed, and the
-    # backend trusts the TOKEN (not a query param) for which table an
-    # operator's search/register/print calls should touch. Left blank
-    # by default, so until this is configured the Mart Days operator
-    # login simply doesn't exist yet (fails safe, same convention as
-    # every other credential pair in this file).
-    admin_martdays_username: str = ""
-    admin_martdays_password_hash: str = ""
+    # REMOVED: mart_days_gate_password, admin_martdays_username,
+    # admin_martdays_password_hash -- the badge desk's separate Mart
+    # Days operator login is gone now that Mart Days runs on its own
+    # separate portal. There's only the one operator login again
+    # (admin_username / admin_password_hash above).
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        # extra="ignore" -- IMPORTANT after removing the Mart Days /
+        # Mailchimp / Gmail settings above: Render's saved environment
+        # variables (GMAIL_*, MAILCHIMP_*, ADMIN_MARTDAYS_*, etc.) will
+        # still be sitting there until manually deleted. Without this,
+        # pydantic-settings REJECTS any env var it doesn't recognize
+        # and the whole app fails to start. "ignore" means an old,
+        # now-unused env var is just harmlessly skipped instead of
+        # crashing the server on next deploy.
+        extra="ignore",
     )
 
     @property

@@ -21,7 +21,6 @@ Nothing outside this file should touch jwt/bcrypt directly — same
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 
 import bcrypt
 import jwt
@@ -56,18 +55,18 @@ def hash_password(plain_password: str) -> str:
     return bcrypt.hashpw(plain_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
-def create_access_token(username: str, role: str = "operator", event: Optional[str] = None) -> str:
+def create_access_token(username: str, role: str = "operator") -> str:
     """
     Issues a JWT valid for settings.jwt_expiry_hours, signed with
     settings.jwt_secret. `role` is "operator" (regular counter login,
     the default), "master" (master console login), or "scanner"
     (entrance-scanning app login).
 
-    `event` is NEW — "other" or "mart_days" for the badge desk's two
-    operator logins; omitted (None) for master/scanner logins, which
-    aren't scoped to a single event. Only added to the JWT payload
-    when actually provided, so tokens without an event claim decode
-    exactly as before this change.
+    REVERTED: this used to also take an `event` param ("other" /
+    "mart_days") baked into the JWT for the badge desk's two operator
+    logins. That's gone now that Mart Days runs on its own separate
+    portal — there's only ever one event again, so tokens don't need
+    to say which one they're scoped to.
     """
     now = datetime.now(timezone.utc)
     payload = {
@@ -76,8 +75,6 @@ def create_access_token(username: str, role: str = "operator", event: Optional[s
         "iat": now,
         "exp": now + timedelta(hours=settings.jwt_expiry_hours),
     }
-    if event is not None:
-        payload["event"] = event
     return jwt.encode(payload, settings.jwt_secret, algorithm=_JWT_ALGORITHM)
 
 
@@ -167,28 +164,9 @@ async def get_current_staff(
     return payload["sub"]
 
 
-async def get_current_operator_event(
-    credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
-) -> Optional[str]:
-    """
-    NEW. Returns the "event" claim baked into this token at login
-    ("other" / "mart_days" for the badge desk's two operator logins),
-    or None if the token has no such claim (master/scanner logins,
-    or an operator token issued before this feature existed).
-
-    Add `event_claim: Optional[str] = Depends(get_current_operator_event)`
-    to any route that needs to know which event an operator is
-    scoped to. This does NOT gate access by itself (no exception
-    raised for a missing claim) — routers/registration.py's search
-    endpoint uses the returned value to override the ?event= query
-    param when present, so a badge desk operator's token is always
-    the source of truth for their own event, not whatever the
-    frontend happened to send.
-    """
-    if credentials is None or not credentials.credentials:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated — please log in",
-        )
-    payload = _decode_token(credentials.credentials)
-    return payload.get("event")
+# REMOVED: get_current_operator_event — used to read the "event"
+# claim ("other" / "mart_days") baked into a badge desk operator's
+# token so routers/registration.py could tell which of two tables to
+# search/register into. There's only one event/table again now that
+# Mart Days runs on its own separate portal, so this claim and the
+# dependency that read it are both gone.

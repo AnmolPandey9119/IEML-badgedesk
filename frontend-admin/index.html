@@ -17,26 +17,6 @@
 </head>
 <body>
 
-  <!-- MASTER EVENT GATE OVERLAY — shown once per login session until
-       "sir" picks which event's data to view: "Other Events" (the
-       full console, unchanged) or "Mart Days" (a small, simplified
-       Home-only view). Unlike the counter app's version, there's no
-       password step here — this is master console, already behind
-       its own login. The choice is remembered in sessionStorage (same
-       lifetime as the master login token) and can be reopened any
-       time via the "🔁 Switch Event" button in the topbar. See
-       js/mart-days.js. -->
-  <div id="event-gate-overlay" class="event-gate-overlay hidden">
-    <div class="event-gate-box">
-      <h2>Choose Event</h2>
-      <p class="event-gate-subtitle">Pick which event's data you want to view right now.</p>
-      <div class="event-gate-choice-buttons">
-        <button id="event-gate-other-btn" class="btn btn-primary btn-large">Other Events</button>
-        <button id="event-gate-martdays-btn" class="btn btn-secondary btn-large">Mart Days</button>
-      </div>
-    </div>
-  </div>
-
   <header class="topbar">
     <div class="topbar-left">
       <img src="assets/ieml-logo.png" alt="IEML" class="topbar-logo" id="topbar-logo" onerror="this.style.display='none'" />
@@ -47,7 +27,6 @@
     </div>
     <div class="topbar-right">
       <span id="master-mode-badge" class="status count-badge hidden"></span>
-      <button id="switch-event-btn" class="btn btn-outline btn-small" title="Switch between Mart Days and Other Events">🔁 Switch Event</button>
       <span id="connection-status" class="status status-checking">Checking connection...</span>
       <button id="sync-now-btn" class="btn btn-outline btn-small" title="Fetch new registrations from the Google Sheet right now">🔄 Sync Now</button>
       <button id="export-excel-btn" class="btn btn-outline btn-small" title="Download the URN-first master Excel file">⬇️ Export Excel</button>
@@ -85,6 +64,31 @@
           <div class="stat-hint">Manual walk-in registrations</div>
         </div>
       </div>
+
+      <!-- NEW — separate fetching of sheet+onsite vs sir's portal-pushed
+           data (GET /api/master/stats-by-source), so the two sources
+           feeding this one visitors table can be read on their own
+           instead of only ever as one merged total. -->
+      <section class="card" id="source-stats-section">
+        <h2>Data Sources</h2>
+        <p class="section-caption">Registered / printed / scanned counts, broken down by where the data came from.</p>
+        <div class="stat-strip">
+          <div class="stat-card">
+            <div class="stat-label">Sheet + Onsite</div>
+            <div class="stat-value" id="source-sheet-registered">—</div>
+            <div class="stat-hint">
+              Registered — <span id="source-sheet-print">—</span> printed, <span id="source-sheet-scan">—</span> scanned
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Portal (pushed by sir)</div>
+            <div class="stat-value" id="source-portal-registered">—</div>
+            <div class="stat-hint">
+              Registered — <span id="source-portal-print">—</span> printed, <span id="source-portal-scan">—</span> scanned
+            </div>
+          </div>
+        </div>
+      </section>
 
       <!-- FIND & PRINT -->
       <section class="card" id="print-section">
@@ -366,192 +370,6 @@
       </section>
     </div>
 
-    <!-- ================= MART DAYS HOME (only panel shown in Mart Days mode) =================
-         Deliberately just ONE panel — Mart Days has no Print Count /
-         Scan Monitoring / Unscanned Entries tabs, because it doesn't
-         track per-device print breakdown or any scanning at all (see
-         js/mart-days.js). Just: how many registered so far, how many
-         badges printed, find & print, and the full registrant list. -->
-    <div class="tab-panel hidden" id="panel-martdays-home">
-
-      <div class="stat-strip">
-        <div class="stat-card">
-          <div class="stat-label">Total Registered</div>
-          <div class="stat-value" id="md-home-registered-total">—</div>
-          <div class="stat-hint">Mart Days registrations so far</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Total Prints</div>
-          <div class="stat-value" id="md-home-print-total">—</div>
-          <div class="stat-hint">Badges printed at the Mart Days entrance</div>
-        </div>
-      </div>
-
-      <!-- FIND & PRINT -->
-      <section class="card" id="md-print-section">
-        <h2>Find &amp; Print a Badge</h2>
-        <p class="section-caption">Search by URN, name, mobile, or company — visitor shows their e-badge/URN, you print their physical badge.</p>
-        <div class="print-search-row">
-          <input type="text" id="md-print-search-input" class="table-search print-search-input" placeholder="Search URN, name, mobile, company..." />
-          <button id="md-print-search-btn" class="btn btn-primary btn-small">Search</button>
-        </div>
-        <div id="md-print-search-results" class="search-results"></div>
-      </section>
-
-      <!-- REGISTRATION DETAILS / ADD / EDIT -->
-      <section class="card hidden" id="md-detail-panel-section">
-        <form id="md-registration-form">
-          <input type="hidden" id="md-form-urn" value="" />
-          <h3 id="md-panel-form-title" style="margin: 0 0 14px; font-size: 15px;">Add New Mart Days Registration</h3>
-          <div id="md-form-error" class="error-box hidden"></div>
-
-          <div id="md-form-meta-row" class="form-meta-row hidden">
-            <span><strong>URN:</strong> <span id="md-meta-urn">—</span></span>
-            <span><strong>Prints so far:</strong> <span id="md-meta-print-count">—</span></span>
-          </div>
-
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="md-form-buyer-type">Type of Buyer *</label>
-              <select id="md-form-buyer-type" required>
-                <option value="Overseas buyers">Overseas buyers</option>
-                <option value="Domestic volume buyers">Domestic volume buyers</option>
-                <option value="Buying/Sourcing consultants">Buying/Sourcing consultants</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="md-form-full-name">Full Name *</label>
-              <input type="text" id="md-form-full-name" required />
-            </div>
-            <div class="form-group">
-              <label for="md-form-company-name">Company Name *</label>
-              <input type="text" id="md-form-company-name" required />
-            </div>
-            <div class="form-group">
-              <label for="md-form-designation">Designation</label>
-              <input type="text" id="md-form-designation" />
-            </div>
-            <div class="form-group">
-              <label for="md-form-email">Email *</label>
-              <input type="email" id="md-form-email" required />
-            </div>
-            <div class="form-group">
-              <label for="md-form-phone">Phone Number *</label>
-              <input type="tel" id="md-form-phone" required />
-            </div>
-            <div class="form-group">
-              <label for="md-form-address">Address</label>
-              <input type="text" id="md-form-address" />
-            </div>
-            <div class="form-group">
-              <label for="md-form-district">District</label>
-              <input type="text" id="md-form-district" />
-            </div>
-            <div class="form-group">
-              <label for="md-form-state">State</label>
-              <input type="text" id="md-form-state" />
-            </div>
-            <div class="form-group">
-              <label for="md-form-country">Country</label>
-              <input type="text" id="md-form-country" />
-            </div>
-            <div class="form-group">
-              <label for="md-form-pincode">Pincode</label>
-              <input type="text" id="md-form-pincode" />
-            </div>
-          </div>
-          <p id="md-edit-limit-note" class="section-caption hidden">
-            Buyer Type, Address, District, State, Country and Pincode aren't editable after registration — only Full Name, Company Name, Designation, Email and Phone can be updated.
-          </p>
-
-          <div id="md-submit-actions" class="action-row">
-            <button type="submit" id="md-form-submit-btn" class="btn btn-primary">Add Registration</button>
-            <button type="button" id="md-cancel-edit-btn" class="btn btn-outline hidden">Cancel</button>
-          </div>
-
-          <div id="md-view-actions" class="action-row hidden">
-            <button type="button" id="md-view-print-btn" class="btn btn-success">Print Badge</button>
-            <button type="button" id="md-view-edit-btn" class="btn btn-secondary">Edit Details</button>
-            <button type="button" id="md-view-delete-btn" class="btn btn-outline" style="color: var(--danger); border-color: var(--danger);">Delete</button>
-            <button type="button" id="md-view-cancel-btn" class="btn btn-outline">Cancel</button>
-          </div>
-        </form>
-      </section>
-
-      <!-- MART DAYS REGISTRATIONS -->
-      <section class="card" id="md-visitors-section">
-        <div class="section-header-row">
-          <h2>Mart Days Registrations</h2>
-          <button id="md-toggle-add-form-btn" class="btn btn-outline btn-small">+ Add Registration</button>
-        </div>
-        <p class="section-caption">Everyone registered for Mart Days so far — from the public form or added here directly.</p>
-
-        <div class="section-header-row">
-          <span id="md-visitors-total" class="status count-badge">0 total</span>
-          <button id="md-export-btn" class="btn btn-outline btn-small">⬇️ Export Excel</button>
-        </div>
-        <input type="text" id="md-visitors-search" class="table-search" placeholder="Filter by URN, name, mobile, company..." />
-        <div class="table-scroll">
-          <table class="activity-table" id="md-visitors-table">
-            <thead>
-              <tr>
-                <th>URN</th><th>Full Name</th><th>Buyer Type</th><th>Company</th>
-                <th>Phone</th><th>Email</th><th>Prints</th>
-              </tr>
-            </thead>
-            <tbody id="md-visitors-table-body">
-              <tr><td colspan="7" class="search-empty">Loading...</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="pagination-bar" id="md-visitors-pagination">
-          <button type="button" id="md-visitors-prev-btn" class="btn btn-outline btn-small">← Prev</button>
-          <span class="page-info" id="md-visitors-page-info">Page 1 of 1</span>
-          <button type="button" id="md-visitors-next-btn" class="btn btn-outline btn-small">Next →</button>
-        </div>
-      </section>
-
-      <!-- MART DAYS DANGER ZONE — end-of-event reset, mirrors the
-           Other Events danger zone above (see #danger-zone-section),
-           scoped to mart_days_registrations only. -->
-      <section class="card danger-zone" id="md-danger-zone-section">
-        <h2>Danger Zone</h2>
-        <p class="section-caption">
-          Once Mart Days is fully over, clear its print history so the
-          system starts clean for the next edition. This resets the
-          print count on every Mart Days registration. It does
-          <strong>not</strong> delete any registrant's name, URN,
-          company, or other details.
-        </p>
-        <button id="md-clear-history-btn" class="btn btn-danger btn-small">Clear Print History</button>
-      </section>
-
-      <!-- HIDDEN — full Mart Days wipe. Same secret-unlock gesture as
-           the Other Events one (click the topbar logo) reveals both
-           sections at once — see wireSecretPurgeUnlock() in app.js —
-           since a master switching between the two event modes
-           shouldn't have to remember two different unlock gestures.
-           The delete button itself still stays disabled until the
-           exact confirm phrase is typed below it, independently of
-           the Other Events one. -->
-      <section class="card danger-zone hidden" id="md-purge-all-section">
-        <h2>⚠️ Delete All Mart Days Data</h2>
-        <p class="section-caption">
-          Permanently deletes <strong>every</strong> Mart Days
-          registrant — name, URN, company, print history, all of it.
-          Other Events data is completely untouched. Use this only
-          when starting a brand new Mart Days edition from a blank
-          slate. There is <strong>no undo</strong>.
-        </p>
-        <p class="section-caption">
-          Type <code>DELETE EVERYTHING</code> below to enable the button.
-        </p>
-        <input type="text" id="md-purge-confirm-input" class="table-search" placeholder="Type DELETE EVERYTHING to unlock" style="max-width: 320px; display: inline-block; margin-right: 10px;" />
-        <button id="md-purge-all-btn" class="btn btn-danger btn-small" disabled>Delete All Mart Days Data</button>
-      </section>
-
-    </div>
-
   </main>
 
   <iframe id="print-frame" name="print-frame" class="print-frame-hidden"></iframe>
@@ -562,6 +380,5 @@
   <script src="js/auth.js"></script>
   <script src="js/print.js"></script>
   <script src="js/app.js"></script>
-  <script src="js/mart-days.js"></script>
 </body>
 </html>

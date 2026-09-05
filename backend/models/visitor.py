@@ -254,16 +254,15 @@ class ClearHistoryRequest(BaseModel):
     """
     Body for POST /api/master/clear-history.
 
-    NEW: scope decides WHICH event's print/scan counters get reset —
-    same three values as PurgeAllRequest.scope below: "mart_days"
-    (only mart_days_registrations' print_count/scan_count/
-    last_scanned_at — it has no print_log/scan_log of its own to
-    delete), "other_events" (the original behaviour — print_log +
-    scan_log deleted, visitors table counters reset), or "both".
-    Required, no default, so the console's UI is always explicit
-    about which event it's resetting.
+    REVERTED: this used to carry a `scope` field ("mart_days" /
+    "other_events" / "both") to pick which of two event buckets got
+    reset. There's only one bucket again now that Mart Days runs on
+    its own separate portal, so this endpoint always resets that one
+    bucket and the body needs no fields — kept as an explicit
+    (currently empty) model so a field can be added back later
+    without a breaking contract change.
     """
-    scope: str = Field(..., description="'mart_days', 'other_events', or 'both'")
+    pass
 
 
 class ClearHistoryResponse(BaseModel):
@@ -275,15 +274,10 @@ class ClearHistoryResponse(BaseModel):
     (name/URN/org/etc.) are NEVER touched by this — only their
     print_count/scan_count/last_scanned_at get reset to zero/null,
     and the print_log/scan_log history rows are removed.
-
-    mart_days_reset: NEW — how many mart_days_registrations rows had
-    their print_count/scan_count/last_scanned_at reset. Zero when
-    scope="other_events".
     """
     visitors_reset: int
     print_logs_cleared: int
     scan_logs_cleared: int
-    mart_days_reset: int = 0
 
 
 # ----------------------------------------------------------------
@@ -310,64 +304,47 @@ class PurgeAllRequest(BaseModel):
     already requires the operator to type, so this endpoint can never
     be triggered by an empty or automated POST.
 
-    NEW: scope decides WHICH event's data gets wiped — "mart_days"
-    (only mart_days_registrations), "other_events" (only visitors +
-    its print_log/scan_log), or "both" (the old behaviour — a true
-    start-completely-fresh reset). Required now, no default, so the
-    master console's UI is forced to ask the operator explicitly
-    rather than silently assuming "both".
+    REVERTED: the `scope` field ("mart_days" / "other_events" /
+    "both") is gone along with Mart Days itself — this always wipes
+    the one visitors table (+ its print_log/scan_log) now, same as
+    before Mart Days was ever added.
     """
     confirm_phrase: str = ""
-    scope: str = Field(..., description="'mart_days', 'other_events', or 'both'")
 
 
 class PurgeAllResponse(BaseModel):
     """Returned by POST /api/master/purge-all — exactly how much was permanently deleted."""
-    mart_days_deleted: int = 0
     visitors_deleted: int
     print_logs_deleted: int
     scan_logs_deleted: int
 
 
 # ----------------------------------------------------------------
-# NEW — Mart Days master console (Home tab only — no print/scan
-# breakdown, no scan monitoring, no unscanned entries: Mart Days
-# genuinely doesn't track any of that, by design)
+# NEW — per-source stats (sheet/onsite registration vs sir's portal
+# push). Both still live in the one `visitors` table, tagged by the
+# existing `source` column ('sheet' / 'onsite' / 'portal') — this
+# just lets the master console fetch/show each bucket's numbers
+# separately instead of one merged total.
 # ----------------------------------------------------------------
 
-class MartDaysVisitor(BaseModel):
+class SourceStats(BaseModel):
+    registered: int
+    print_total: int
+    print_unique: int
+    scan_total: int
+    scan_unique: int
+
+
+class StatsBySourceResponse(BaseModel):
     """
-    Full Mart Days registrant record for the master console's Home
-    tab table. extra="allow" so every mart_days_registrations column
-    (buyer_type, company_name, phone_number, address, district,
-    state, country, pincode, registered_at, ...) rides along as-is,
-    same "allow everything" style as MasterVisitor above.
+    Returned by GET /api/master/stats-by-source.
+    sheet_and_onsite = registrations from the Google Sheet sync +
+    onsite counter walk-ins (the "event registration" data).
+    portal = registrations pushed in by sir via
+    POST /api/external/save-data (source='portal').
     """
-    model_config = ConfigDict(extra="allow")
-
-    urn: str
-    full_name: str
-    print_count: int = 0
-
-
-class MartDaysVisitorListResponse(BaseModel):
-    """Returned by GET /api/master/mart-days/visitors — every Mart Days registrant on file."""
-    visitors: list[MartDaysVisitor] = Field(default_factory=list)
-    total: int
-
-
-class MartDaysHomeStatsResponse(BaseModel):
-    """
-    Returned by GET /api/master/mart-days/stats — powers the two stat
-    cards on the master console's Mart Days Home tab.
-    total_registered = every row in mart_days_registrations, regardless
-    of whether they've been printed yet (came in via the public form
-    or onsite registration). total_prints = sum of print_count across
-    all of them (a badge reprinted 2x counts as 2 here, same
-    overall_total convention as PrintStatsResponse above).
-    """
-    total_registered: int
-    total_prints: int
+    sheet_and_onsite: SourceStats
+    portal: SourceStats
 
 
 # ----------------------------------------------------------------

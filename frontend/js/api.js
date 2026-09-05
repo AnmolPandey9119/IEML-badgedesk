@@ -84,61 +84,23 @@
        * types the scanned value into the search box and "presses"
        * Enter, so a scan lands here exactly the same way manual
        * typing does — no separate scanner integration needed.
-       *
-       * Always includes the current event mode (Other Events / Mart
-       * Days) from window.Auth.getEvent() — set once at login, not
-       * chosen in-app anymore — so search only ever looks in the
-       * right table. This is just a courtesy/default now: the
-       * backend independently trusts the login token's own event
-       * claim over this param (see routers/registration.py), so a
-       * badge desk operator can never actually search the wrong
-       * event's data even if this value were ever wrong or tampered.
        */
       searchVisitor(query) {
-        const event = (window.Auth && window.Auth.getEvent()) || "other";
-        const params = new URLSearchParams({ q: query, event });
+        const params = new URLSearchParams({ q: query });
         return request(`/api/visitors/search?${params.toString()}`, {
           method: "GET",
         });
       },
   
       /**
-       * Register a new onsite visitor for any event OTHER than Mart
-       * Days. This gets saved on the organization's real server
-       * through the backend, and the backend returns the assigned
-       * URN + visitor record back.
+       * Register a new onsite visitor. This gets saved on the
+       * organization's real server through the backend, and the
+       * backend returns the assigned URN + visitor record back.
        */
       registerVisitor(payload) {
         return request("/api/visitors/register", {
           method: "POST",
           body: JSON.stringify(payload),
-        });
-      },
-
-      /**
-       * Register a new onsite Mart Days visitor — used only when the
-       * counter is in Mart Days mode. Writes ONLY to
-       * mart_days_registrations on the backend (see
-       * routers/registration.py's /register-mart-days), never to the
-       * regular visitors table.
-       */
-      registerMartDaysVisitor(payload) {
-        return request("/api/visitors/register-mart-days", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
-      },
-
-      /**
-       * Checks the extra Mart Days gate password (on top of the
-       * already-logged-in staff token) that unlocks Mart Days mode
-       * in this counter app. See routers/auth.py's
-       * /verify-mart-days-access.
-       */
-      verifyMartDaysAccess(password) {
-        return request("/api/auth/verify-mart-days-access", {
-          method: "POST",
-          body: JSON.stringify({ password }),
         });
       },
   

@@ -120,18 +120,15 @@
       },
 
       /**
-       * NEW. End-of-event reset — clears print/scan history and
-       * counts (never touches visitor names/URNs/org details) so the
-       * system is ready for the next event. Master-only endpoint.
-       * CHANGED: scope is now required — "mart_days", "other_events",
-       * or "both" — so the caller is always explicit about which
-       * event's counters get reset.
-       * Returns { visitors_reset, print_logs_cleared, scan_logs_cleared, mart_days_reset }.
+       * End-of-event reset — clears print/scan history and counts
+       * (never touches visitor names/URNs/org details) so the system
+       * is ready for the next event. Master-only endpoint.
+       * Returns { visitors_reset, print_logs_cleared, scan_logs_cleared }.
        */
-      clearHistory(scope) {
+      clearHistory() {
         return request("/api/master/clear-history", {
           method: "POST",
-          body: JSON.stringify({ scope }),
+          body: JSON.stringify({}),
         });
       },
 
@@ -140,48 +137,27 @@
        * gone. Requires the exact confirm phrase server-side too (see
        * routers/master.py) even though the UI already gates this
        * behind a hidden unlock + typed confirmation before this is
-       * ever called. scope is required here too — "mart_days",
-       * "other_events", or "both" — deciding WHICH event's data
-       * actually gets deleted.
+       * ever called.
        */
-      purgeAll(confirmPhrase, scope) {
+      purgeAll(confirmPhrase) {
         return request("/api/master/purge-all", {
           method: "POST",
-          body: JSON.stringify({ confirm_phrase: confirmPhrase, scope }),
+          body: JSON.stringify({ confirm_phrase: confirmPhrase }),
         });
+      },
+
+      /**
+       * NEW — separate registered/print/scan numbers for sheet+onsite
+       * registrations vs sir's portal-pushed data (source='portal',
+       * via POST /api/external/save-data). Both still live in the
+       * one visitors table — this just reads them grouped instead of
+       * as one merged total. Powers the Home tab's "Data Sources"
+       * card. Master-only endpoint.
+       */
+      getStatsBySource() {
+        return request("/api/master/stats-by-source", { method: "GET" });
       },
   
-      /**
-       * NEW — Mart Days search, scoped to mart_days_registrations via
-       * ?event=mart_days. Same /api/visitors/search endpoint the
-       * counter app's Mart Days mode uses; searchVisitor() above is
-       * untouched and keeps defaulting to "other" for Other Events.
-       */
-      searchMartDaysVisitor(query) {
-        const params = new URLSearchParams({ q: query, event: "mart_days" });
-        return request(`/api/visitors/search?${params.toString()}`, {
-          method: "GET",
-        });
-      },
-
-      /** NEW — new Mart Days registration, same endpoint the counter app's Mart Days mode uses. */
-      registerMartDaysVisitor(payload) {
-        return request("/api/visitors/register-mart-days", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
-      },
-
-      /** NEW — every Mart Days registrant on file, full details + print_count. Master-only endpoint. */
-      listMartDaysVisitors() {
-        return request("/api/master/mart-days/visitors", { method: "GET" });
-      },
-
-      /** NEW — { total_registered, total_prints } for the Mart Days Home tab's stat cards. Master-only endpoint. */
-      getMartDaysStats() {
-        return request("/api/master/mart-days/stats", { method: "GET" });
-      },
-
       /** New registration — same endpoint the counter app uses. */
       registerVisitor(payload) {
         return request("/api/visitors/register", {

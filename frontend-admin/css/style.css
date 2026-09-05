@@ -533,11 +533,11 @@
     border-radius: 3px;
   }
 
-  /* ---------------- Master Event Gate (Other Events / Mart Days) ----------------
-     Same visual language as the counter app's event gate, adapted for
-     the master console — no password step here (see index.html /
-     js/mart-days.js), just a two-button choice right after login, and
-     reopenable any time via the topbar's "🔁 Switch Event" button. */
+  /* ---------------- REVERTED: unused since the Master Event Gate
+     (Other Events / Mart Days overlay) was removed along with Mart
+     Days. These classes aren't referenced by index.html anymore —
+     left in place only because .btn-large is still used elsewhere;
+     harmless to delete later if you want a cleanup pass. ---------------- */
   .btn-large { padding: 16px 28px; font-size: 16px; }
 
   .event-gate-overlay {

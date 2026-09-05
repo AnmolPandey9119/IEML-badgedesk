@@ -100,10 +100,15 @@ async def health_check():
 # Depends(get_current_admin) declared inside each router file.
 # `master` is the NEW one — its own routes are gated further, down
 # to Depends(get_current_master), declared inside routers/master.py.
-# `mart_registration` is ALSO public on purpose (no Depends at all,
-# see that file's own header comment) — it's the public Mart Days
-# registration form, meant to be reachable by anyone with the link.
-from routers import auth, export, external, mart_registration, master, registration, sync  # noqa: E402
+#
+# REMOVED: the Mart Days public registration router
+# (routers/mart_registration.py) — Mart Days now has its own separate
+# portal, so this backend goes back to handling just the one event
+# (Google Sheet sync + onsite registration + the external portal
+# push), same as before Mart Days was ever added here. `external`
+# stays — that's the POST /api/external/save-data push endpoint sir
+# uses, unrelated to Mart Days.
+from routers import auth, export, external, master, registration, sync  # noqa: E402
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(registration.router, prefix="/api/visitors", tags=["visitors"])
@@ -111,4 +116,3 @@ app.include_router(sync.router, prefix="/api/sync", tags=["sync"])
 app.include_router(export.router, prefix="/api/export", tags=["export"])
 app.include_router(master.router, prefix="/api/master", tags=["master"])
 app.include_router(external.router, prefix="/api/external", tags=["external"])
-app.include_router(mart_registration.router, prefix="/api/mart-days", tags=["mart-days"])
