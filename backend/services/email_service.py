@@ -83,7 +83,12 @@ async def send_mart_days_confirmation(
         return False
 
     try:
-        ebadge_pdf = build_ebadge_pdf(urn, full_name, company_name or "", mobile=mobile, email=email)
+        # crop_front_only=True -- email should only show the front side of
+        # the card, matching what the physical badge looks like when worn.
+        # The /badge-download endpoint (routers/mart_registration.py) does
+        # NOT pass this, so it keeps downloading the full front+back PDF
+        # exactly as it does today.
+        ebadge_pdf = build_ebadge_pdf(urn, full_name, company_name or "", mobile=mobile, email=email, crop_front_only=True)
     except Exception:
         logger.exception(
             "Failed to build e-badge PDF for URN %s -- email NOT sent because of this "

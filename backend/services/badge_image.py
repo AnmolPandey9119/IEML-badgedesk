@@ -47,6 +47,15 @@ QR_SIZE_FRAC = 0.2538          # relative to width (QR box is square)
 URN_GAP_FRAC = 0.0           # zero gap -- URN sits flush against the QR's bottom edge
 CENTER_X_FRAC = 0.5
 
+# The template PNG is the FRONT of the card stacked directly on top of
+# the BACK (rules/visitor-category panel, rotated 180 deg -- exactly how
+# the physical card is printed double-sided). FRONT_HEIGHT_FRAC is where
+# the front ends and the back begins -- measured directly against
+# mart_days_card.png (the red "BUSINESS VISITOR" band ends and the image
+# turns solid white at exactly the halfway point). Used to crop the
+# e-badge down to the front side only when crop_front_only=True.
+FRONT_HEIGHT_FRAC = 0.5
+
 # Name/Company bumped up one size and rendered bold (see _font() below).
 NAME_FONT_FRAC = 0.0288 * 1.15     # relative to width -- 1 size larger
 COMPANY_FONT_FRAC = 0.0220 * 1.15  # relative to width -- 1 size larger
@@ -93,7 +102,14 @@ def _font(size_px: float, bold: bool = False) -> ImageFont.ImageFont:
             return ImageFont.load_default()
 
 
-def _compose_ebadge_image(urn: str, name: str, company: str, mobile: Optional[str] = None, email: Optional[str] = None) -> Image.Image:
+def _compose_ebadge_image(
+    urn: str,
+    name: str,
+    company: str,
+    mobile: Optional[str] = None,
+    email: Optional[str] = None,
+    crop_front_only: bool = False,
+) -> Image.Image:
     """
     Builds the composed e-badge as a Pillow Image (RGB): the real card
     template with Name / Company / QR / URN overlaid in the same
@@ -104,6 +120,11 @@ def _compose_ebadge_image(urn: str, name: str, company: str, mobile: Optional[st
 
     Shared by build_ebadge_png() and build_ebadge_pdf() so both formats
     are always pixel-identical -- only the final encode step differs.
+
+    crop_front_only=True cuts the result down to just the front side
+    (everything above FRONT_HEIGHT_FRAC) after overlaying, instead of
+    the full front+back template. The overlay itself is unaffected --
+    only the back side gets dropped off the bottom.
     """
     template = _load_template().copy()
     draw = ImageDraw.Draw(template)
@@ -152,27 +173,46 @@ def _compose_ebadge_image(urn: str, name: str, company: str, mobile: Optional[st
     urn_y = target_y - (measured_top - target_y)
     draw.text((cx, urn_y), urn, font=urn_font, fill=TEXT_COLOR, anchor="ma")
 
+    if crop_front_only:
+        template = template.crop((0, 0, W, int(H * FRONT_HEIGHT_FRAC)))
+
     return template
 
 
-def build_ebadge_png(urn: str, name: str, company: str, mobile: Optional[str] = None, email: Optional[str] = None) -> bytes:
+def build_ebadge_png(
+    urn: str,
+    name: str,
+    company: str,
+    mobile: Optional[str] = None,
+    email: Optional[str] = None,
+    crop_front_only: bool = False,
+) -> bytes:
     """Returns PNG bytes of the composed e-badge. Kept for anything that
     still wants a raster image (e.g. an <img> preview on the download
     page) -- the actual emailed/downloaded file is now the PDF below."""
-    template = _compose_ebadge_image(urn, name, company, mobile=mobile, email=email)
+    template = _compose_ebadge_image(urn, name, company, mobile=mobile, email=email, crop_front_only=crop_front_only)
     buffer = BytesIO()
     template.save(buffer, format="PNG", optimize=True)
     return buffer.getvalue()
 
 
-def build_ebadge_pdf(urn: str, name: str, company: str, mobile: Optional[str] = None, email: Optional[str] = None) -> bytes:
+def build_ebadge_pdf(
+    urn: str,
+    name: str,
+    company: str,
+    mobile: Optional[str] = None,
+    email: Optional[str] = None,
+    crop_front_only: bool = False,
+) -> bytes:
     """
     Returns single-page PDF bytes of the composed e-badge -- same
     pixel-for-pixel artwork as build_ebadge_png(), just encoded as a
-    PDF instead of a PNG. This is what actually gets emailed out and
-    served by the /badge-download endpoint now.
+    PDF instead of a PNG. Served by the /badge-download endpoint as the
+    full front+back card (crop_front_only left False, unchanged
+    behaviour). email_service.py calls this with crop_front_only=True
+    so the emailed e-badge shows only the front side.
     """
-    template = _compose_ebadge_image(urn, name, company, mobile=mobile, email=email)
+    template = _compose_ebadge_image(urn, name, company, mobile=mobile, email=email, crop_front_only=crop_front_only)
     buffer = BytesIO()
     # 203 dpi keeps the PDF page a sensible physical badge size (the
     # template was exported ~4in wide at 788px) instead of Pillow's
