@@ -62,9 +62,11 @@
     margin-top: 10px;
     text-decoration: underline;
     text-underline-offset: 3px;
+    transition: color 0.15s;
   }
   
   .btn-link:hover { color: var(--blue-dark); }
+  .btn-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 4px; }
   
   /* ---------------- Success header ---------------- */
 
@@ -109,7 +111,7 @@
     border-radius: 18px;
     padding: 3px;
     background: linear-gradient(135deg, var(--gold) 0%, var(--blue) 55%, var(--blue-dark) 100%);
-    box-shadow: 0 14px 32px rgba(163, 15, 87, 0.22);
+    box-shadow: 0 14px 32px rgba(163, 15, 87, 0.22), 0 2px 8px rgba(163, 15, 87, 0.12);
     animation: badge-rise 0.5s ease-out both;
     animation-delay: 0.1s;
   }

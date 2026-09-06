@@ -7,6 +7,20 @@
   <script src="js/console-guard.js"></script>
   <link rel="icon" type="image/png" href="assets/ieml-logo.png" />
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* Mart Days sub-brand touch: gold accent instead of teal, so this
+       event's desk feels like its own space while sharing the same
+       design system as the main BadgeDesk. Visual only. */
+    .topbar { border-bottom: 2px solid var(--secondary); }
+    .card h2::before { background: linear-gradient(135deg, var(--secondary), var(--secondary-dark)); }
+    #search-input:focus, .form-group input:focus, .form-group select:focus,
+    .visitor-info-grid input:focus, .visitor-info-grid select:focus {
+      border-color: var(--secondary);
+      box-shadow: 0 0 0 4px rgba(200,149,46,0.16);
+    }
+    .search-result-item:hover { border-color: var(--secondary); }
+    .visitor-info-grid input, .visitor-info-grid select { border-color: var(--secondary); }
+  </style>
   <script src="js/theme.js"></script>
   <script>
     // Runs immediately, before the rest of the page renders, so an

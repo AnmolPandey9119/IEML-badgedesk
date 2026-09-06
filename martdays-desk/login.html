@@ -16,21 +16,57 @@
       padding: 20px;
       padding-top: calc(20px + env(safe-area-inset-top));
       padding-bottom: calc(20px + env(safe-area-inset-bottom));
+      background: var(--brand-gradient);
+      position: relative;
+      overflow: hidden;
+    }
+    .login-wrap::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(650px 420px at 10% 12%, rgba(255,255,255,0.10), transparent 60%),
+        radial-gradient(520px 400px at 90% 88%, rgba(200,149,46,0.30), transparent 60%),
+        radial-gradient(400px 320px at 50% 50%, rgba(31,138,140,0.18), transparent 65%);
+      pointer-events: none;
     }
     .login-card {
       width: 100%;
-      max-width: 380px;
-      box-shadow: var(--shadow-md);
+      max-width: 400px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      z-index: 1;
+      animation: login-rise 0.45s ease both;
+      border-top: 3px solid var(--secondary);
+      text-align: center;
+    }
+    @keyframes login-rise {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .mart-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, var(--secondary), var(--secondary-dark));
+      color: #fff;
+      padding: 4px 14px;
+      border-radius: 20px;
+      margin-bottom: 14px;
     }
     .login-card h1 {
-      font-size: 19px;
-      margin: 0 0 4px;
+      font-size: 20px;
+      margin: 0 0 6px;
     }
     .login-card .subtitle {
       color: var(--text-muted);
       font-size: 13px;
-      margin: 0 0 20px;
+      margin: 0 0 22px;
+      line-height: 1.6;
     }
+    .login-card form { text-align: left; }
     #login-error {
       background: var(--error-bg);
       color: var(--danger);
@@ -39,14 +75,16 @@
       padding: 10px 12px;
       font-size: 13px;
       margin-bottom: 14px;
+      text-align: left;
     }
     .login-logo {
       display: block;
-      height: 56px;
+      height: 58px;
       width: auto;
       max-width: 100%;
       object-fit: contain;
-      margin: 0 auto 16px;
+      margin: 0 auto 14px;
+      filter: drop-shadow(0 4px 10px rgba(12,45,82,0.15));
     }
   </style>
 </head>
@@ -55,6 +93,7 @@
   <div class="login-wrap">
     <section class="card login-card">
       <img src="assets/ieml-logo.png" alt="IEML" class="login-logo" onerror="this.style.display='none'" />
+      <span class="mart-badge">Mart Days</span>
       <h1>IEML Mart Days Desk</h1>
       <p class="subtitle">Mart Days registration desk login — separate from the main IEML BadgeDesk. Required before searching, registering, or printing Mart Days badges.</p>
 

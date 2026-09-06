@@ -115,9 +115,13 @@
     font-size: 2.1rem;
     line-height: 1.15;
     letter-spacing: -0.01em;
+    background: linear-gradient(100deg, #fff 30%, var(--gold-soft) 60%, #fff 90%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
     color: #fff;
     font-weight: 800;
-    text-shadow: 0 2px 10px rgba(98, 10, 56, 0.5);
+    filter: drop-shadow(0 2px 10px rgba(98, 10, 56, 0.5));
   }
   
   .identity-badge {
@@ -183,7 +187,10 @@
     color: #fff;
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
+    transition: background 0.15s, transform 0.15s;
   }
+
+  .chip-fill:hover { background: rgba(163, 15, 87, 0.55); transform: translateY(-1px); }
   
   .identity-venue {
     display: flex;
@@ -323,6 +330,12 @@
     box-shadow: var(--shadow);
     padding: 24px 20px;
     overflow: hidden;
+    animation: card-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  @keyframes card-rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
   }
   
   .card::before {
@@ -433,14 +446,21 @@
   .btn-primary {
     background: linear-gradient(90deg, var(--blue) 0%, var(--blue-dark) 100%);
     color: #fff;
+    box-shadow: 0 8px 20px rgba(163, 15, 87, 0.24);
   }
   
-  .btn-primary:hover { filter: brightness(1.1); }
-  .btn-primary:active { transform: translateY(1px); }
+  .btn-primary:hover { filter: brightness(1.1); box-shadow: 0 10px 26px rgba(163, 15, 87, 0.32); }
+  .btn-primary:active { transform: translateY(1px); box-shadow: 0 4px 12px rgba(163, 15, 87, 0.24); }
   
   .btn-primary:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .btn:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
   }
   
   .btn-full {
