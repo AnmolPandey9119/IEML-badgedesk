@@ -766,20 +766,38 @@ def find_mart_days_by_email(email: str) -> Optional[dict]:
 
 def find_mart_days_by_mobile(mobile: str) -> Optional[dict]:
     """
-    Mobile match, digits-only comparison so "+91 98765 43210" and
-    "9876543210" are treated as the same number.
+    Mobile match, digits-only and country-code-agnostic.
+
+    Registrations are stored WITH the country code (e.g. "+91 9876543210",
+    since the public form prefixes the dial code before saving). Previously
+    this compared the FULL digit string, so someone who registered with a
+    country code but later typed just their plain 10-digit number on the
+    badge-download page would get zero matches (12 digits vs 10 digits).
+
+    Fix: compare only the LAST 10 digits on both sides (an Indian mobile
+    number is always 10 digits). This way "+91 9876543210", "919876543210",
+    "09876543210", and plain "9876543210" all resolve to the same
+    registrant, regardless of whether a country code is present.
     """
     mobile_digits = re.sub(r"\D", "", mobile or "")
     if not mobile_digits:
         return None
+
+    mobile_last10 = mobile_digits[-10:]
+    if len(mobile_last10) < 10:
+        # Fewer than 10 digits typed — too short to safely match on a
+        # suffix (would risk matching the wrong registrant), so keep
+        # this case strict and return no match rather than guessing.
+        return None
+
     with _connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
             SELECT * FROM mart_days_registrations
-            WHERE REGEXP_REPLACE(COALESCE(phone_number, ''), '\\D', '', 'g') = %s
+            WHERE RIGHT(REGEXP_REPLACE(COALESCE(phone_number, ''), '\\D', '', 'g'), 10) = %s
             LIMIT 1
             """,
-            (mobile_digits,),
+            (mobile_last10,),
         )
         row = cur.fetchone()
         return dict(row) if row else None
