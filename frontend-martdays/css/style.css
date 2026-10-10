@@ -185,6 +185,16 @@
     backdrop-filter: blur(2px);
   }
   
+  .identity-colocated {
+    margin: 0 0 14px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    line-height: 1.45;
+    color: var(--gold-soft);
+  }
+
+  .identity-colocated[hidden] { display: none; }
+
   .identity-venue {
     display: flex;
     align-items: flex-start;

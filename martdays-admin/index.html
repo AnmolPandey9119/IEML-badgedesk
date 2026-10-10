@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Mart Days Admin — Edition Settings</title>
+  <link rel="icon" type="image/png" href="assets/ieml-logo.png" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ============ LOGIN ============ -->
+  <main id="login-view" class="center-wrap">
+    <form id="login-form" class="card narrow" autocomplete="on">
+      <img src="assets/ieml-logo.png" alt="IEML" class="logo" />
+      <h1>Mart Days Admin</h1>
+      <p class="muted">Sign in with the <strong>master</strong> login to change the edition and dates.</p>
+      <label for="username">Username</label>
+      <input id="username" name="username" type="text" autocomplete="username" required />
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required />
+      <p id="login-error" class="msg error" hidden></p>
+      <button class="btn primary" type="submit">Sign in</button>
+    </form>
+  </main>
+
+  <!-- ============ SETTINGS ============ -->
+  <div id="app-view" hidden>
+    <header class="topbar">
+      <div class="brand"><img src="assets/ieml-logo.png" alt="" /><span>Mart Days Admin</span></div>
+      <div class="top-right"><span id="who" class="muted"></span><button id="logout-btn" class="btn ghost small" type="button">Sign out</button></div>
+    </header>
+
+    <main class="page">
+      <section class="hero card">
+        <p class="eyebrow">Live right now</p>
+        <h2 id="live-title">—</h2>
+        <p id="live-sub" class="muted"></p>
+        <p id="live-meta" class="muted small"></p>
+      </section>
+
+      <form id="edition-form" class="card" novalidate>
+        <div class="card-head">
+          <h2>Edition details</h2>
+          <button id="next-month-btn" class="btn ghost small" type="button" title="Edition +1, clears the dates and co-located show so you can fill in the new month">Start next month's edition</button>
+        </div>
+
+        <div class="grid">
+          <div>
+            <label for="edition_number">Edition number</label>
+            <input id="edition_number" type="number" min="1" max="999" required />
+            <p class="hint" id="edition_hint"></p>
+          </div>
+          <div>
+            <label for="event_name">Event name</label>
+            <input id="event_name" type="text" maxlength="120" required />
+          </div>
+          <div>
+            <label for="start_date">First day</label>
+            <input id="start_date" type="date" required />
+          </div>
+          <div>
+            <label for="end_date">Last day</label>
+            <input id="end_date" type="date" required />
+          </div>
+          <div class="span2">
+            <p class="hint preview-line">Dates will show as: <strong id="dates_preview">—</strong></p>
+          </div>
+          <div>
+            <label for="timing">Timing</label>
+            <input id="timing" type="text" maxlength="60" placeholder="11 AM–5 PM" />
+          </div>
+          <div>
+            <label for="badge_tag">Tag next to edition</label>
+            <input id="badge_tag" type="text" maxlength="60" placeholder="Mega Mart" />
+          </div>
+          <div class="span2">
+            <label for="co_located_with">Co-located with</label>
+            <input id="co_located_with" type="text" maxlength="200" placeholder="Renewable Energy India 2026 / Battery India Expo 2026" />
+            <p class="hint">Leave empty if there is no co-located show — the line is then hidden everywhere.</p>
+          </div>
+          <div class="span2">
+            <label for="venue">Venue</label>
+            <input id="venue" type="text" maxlength="200" />
+          </div>
+          <div class="span2">
+            <label for="email_note">Extra line in the confirmation email <span class="muted">(optional)</span></label>
+            <textarea id="email_note" rows="3" maxlength="1000" placeholder="e.g. Please carry a valid photo ID. Entry from Gate No. 1."></textarea>
+          </div>
+        </div>
+
+        <p id="save-msg" class="msg" hidden></p>
+        <div class="actions">
+          <button id="save-btn" class="btn primary" type="submit">Save &amp; publish</button>
+          <span class="muted small">Registration page, e-badge page, desk and emails pick it up within ~30 seconds.</span>
+        </div>
+      </form>
+
+      <section class="card">
+        <h2>Check the email</h2>
+        <p class="muted">Uses the <strong>saved</strong> values — save first, then preview or send yourself a test.</p>
+        <div class="actions wrap">
+          <button id="preview-btn" class="btn ghost" type="button">Preview email</button>
+          <input id="test-to" type="email" placeholder="your@email.com" class="inline-input" />
+          <button id="test-btn" class="btn ghost" type="button">Send test email</button>
+        </div>
+        <p id="email-msg" class="msg" hidden></p>
+        <div id="preview-box" hidden>
+          <p class="small"><strong>Subject:</strong> <span id="preview-subject"></span></p>
+          <iframe id="preview-frame" title="Email preview" sandbox=""></iframe>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

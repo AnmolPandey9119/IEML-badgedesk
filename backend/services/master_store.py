@@ -698,11 +698,13 @@ def insert_mart_days_visitor(urn: str, mart_days_data: dict) -> dict:
             INSERT INTO mart_days_registrations
                 (urn, buyer_type, full_name, company_name, designation,
                  email, phone_number, address, district, state, country, pincode,
-                 nature_of_business, annual_turnover, known_through, online_seller, products_of_interest)
+                 nature_of_business, annual_turnover, known_through, online_seller, products_of_interest,
+                 edition_number)
             VALUES
                 (%(urn)s, %(buyer_type)s, %(full_name)s, %(company_name)s, %(designation)s,
                  %(email)s, %(phone_number)s, %(address)s, %(district)s, %(state)s, %(country)s, %(pincode)s,
-                 %(nature_of_business)s, %(annual_turnover)s, %(known_through)s, %(online_seller)s, %(products_of_interest)s)
+                 %(nature_of_business)s, %(annual_turnover)s, %(known_through)s, %(online_seller)s, %(products_of_interest)s,
+                 %(edition_number)s)
             """,
             {
                 "urn": urn,
@@ -722,6 +724,8 @@ def insert_mart_days_visitor(urn: str, mart_days_data: dict) -> dict:
                 "known_through": data.get("known_through"),
                 "online_seller": data.get("online_seller"),
                 "products_of_interest": data.get("products_of_interest"),
+                # Which monthly edition this registration is for (None = unknown/legacy).
+                "edition_number": data.get("edition_number"),
             },
         )
 
@@ -753,18 +757,28 @@ def get_mart_days_by_urn(urn: str) -> Optional[dict]:
         return _mart_days_row_to_visitor_shape(dict(row)) if row else None
 
 
-def find_mart_days_by_email(email: str) -> Optional[dict]:
-    """Case-insensitive email match — used for the public form's duplicate-registration check."""
+def find_mart_days_by_email(email: str, edition_number: Optional[int] = None) -> Optional[dict]:
+    """
+    Case-insensitive email match. With edition_number, only that edition's
+    registrations count (the duplicate check -- a buyer from last month may
+    register again). Without it, the newest registration wins (badge lookup).
+    """
     with _connection() as conn, conn.cursor() as cur:
         cur.execute(
-            "SELECT * FROM mart_days_registrations WHERE LOWER(email) = LOWER(%s) LIMIT 1",
-            (email.strip(),),
+            """
+            SELECT * FROM mart_days_registrations
+            WHERE LOWER(email) = LOWER(%s)
+              AND (%s::int IS NULL OR edition_number = %s::int)
+            ORDER BY edition_number DESC NULLS LAST, created_at DESC NULLS LAST
+            LIMIT 1
+            """,
+            (email.strip(), edition_number, edition_number),
         )
         row = cur.fetchone()
         return dict(row) if row else None
 
 
-def find_mart_days_by_mobile(mobile: str) -> Optional[dict]:
+def find_mart_days_by_mobile(mobile: str, edition_number: Optional[int] = None) -> Optional[dict]:
     """
     Mobile match, digits-only and country-code-agnostic.
 
@@ -795,9 +809,11 @@ def find_mart_days_by_mobile(mobile: str) -> Optional[dict]:
             """
             SELECT * FROM mart_days_registrations
             WHERE RIGHT(REGEXP_REPLACE(COALESCE(phone_number, ''), '\\D', '', 'g'), 10) = %s
+              AND (%s::int IS NULL OR edition_number = %s::int)
+            ORDER BY edition_number DESC NULLS LAST, created_at DESC NULLS LAST
             LIMIT 1
             """,
-            (mobile_last10,),
+            (mobile_last10, edition_number, edition_number),
         )
         row = cur.fetchone()
         return dict(row) if row else None

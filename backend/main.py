@@ -17,7 +17,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
-from services import master_store, sheet_sync
+from services import edition_store, master_store, sheet_sync
 
 # Without this, the root logger has no handler, so every logger.info()
 # call across the app (email_service, sheet_sync, etc.) is silently
@@ -55,6 +55,12 @@ async def _auto_sync_loop() -> None:
 async def lifespan(app: FastAPI):
     # ---- startup ----
     master_store.init_db()
+    # Mart Days-only settings table. Wrapped so a problem here can NEVER stop the
+    # backend from starting -- the normal IEML BadgeDesk shares this server.
+    try:
+        edition_store.init_table()
+    except Exception:
+        logger.exception("Mart Days edition table setup failed -- Mart Days will use built-in defaults")
     sync_task = asyncio.create_task(_auto_sync_loop())
 
     yield
@@ -116,6 +122,7 @@ from routers import (  # noqa: E402
     export,
     external,
     mart_desk,
+    mart_edition,
     mart_registration,
     master,
     registration,
@@ -130,3 +137,4 @@ app.include_router(master.router, prefix="/api/master", tags=["master"])
 app.include_router(external.router, prefix="/api/external", tags=["external"])
 app.include_router(mart_registration.router, prefix="/api/mart-days", tags=["mart-days"])
 app.include_router(mart_desk.router, prefix="/api/mart-desk", tags=["mart-desk"])
+app.include_router(mart_edition.router, prefix="/api/mart-edition", tags=["mart-edition"])

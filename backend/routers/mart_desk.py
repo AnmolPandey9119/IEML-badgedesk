@@ -50,7 +50,7 @@ from models.visitor import (
     VisitorUpdateRequest,
     VisitorUpdateResponse,
 )
-from services import master_store
+from services import edition_store, master_store
 from utils.auth import get_current_mart_desk
 from utils.urn import generate_urn
 
@@ -77,6 +77,13 @@ def _payload_to_mart_days_data(payload: dict) -> dict:
         "email": payload.get("email"),
         "buyer_type": payload.get("category"),
     }
+
+
+def _walkin_data(payload: dict) -> dict:
+    """Same as above, plus the current edition number, for brand-new walk-in rows only."""
+    data = _payload_to_mart_days_data(payload)
+    data["edition_number"] = edition_store.current_edition_number()
+    return data
 
 
 @router.get("/search", response_model=SearchResponse)
@@ -109,7 +116,7 @@ async def register_mart_days_walkin(payload: VisitorRegisterRequest):
             detail=f"category must be one of: {', '.join(BUYER_TYPES)}",
         )
     urn = generate_urn()
-    row = master_store.insert_mart_days_visitor(urn, _payload_to_mart_days_data(payload.model_dump()))
+    row = master_store.insert_mart_days_visitor(urn, _walkin_data(payload.model_dump()))
     return VisitorRegisterResponse(visitor=_row_to_visitor(row))
 
 

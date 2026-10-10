@@ -47,7 +47,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 from fastapi.responses import Response
 
 from models.mart_registration import MartDaysRegisterRequest, MartDaysRegisterResponse
-from services import badge_image, email_service, master_store
+from services import badge_image, edition_store, email_service, master_store
 from utils.urn import generate_urn
 
 logger = logging.getLogger("mart_registration")
@@ -68,23 +68,29 @@ async def register_mart_days_visitor(payload: MartDaysRegisterRequest, backgroun
     # public form. Email checked first (usually the more meaningful
     # identifier); mobile checked second. Scoped to source='mart_days'
     # only — see master_store.py's comment on these two functions.
-    existing = master_store.find_mart_days_by_email(payload.email)
+    # Duplicates are checked within the CURRENT edition only, so a buyer who
+    # registered for last month's Mart Days can register again this month.
+    edition = edition_store.get_edition()
+    edition_number = edition["edition_number"]
+    event_name = edition["event_name"]
+
+    existing = master_store.find_mart_days_by_email(payload.email, edition_number)
     if existing:
         raise HTTPException(
             status_code=409,
             detail=(
-                f"This email is already registered for IEML Mart Sourcing Days "
+                f"This email is already registered for {event_name} ({edition['edition_label']}) "
                 f"(URN: {existing['urn']}). Please check your inbox for the confirmation email, "
                 f"or contact the registration desk if you can't find it."
             ),
         )
 
-    existing = master_store.find_mart_days_by_mobile(payload.phone_number)
+    existing = master_store.find_mart_days_by_mobile(payload.phone_number, edition_number)
     if existing:
         raise HTTPException(
             status_code=409,
             detail=(
-                f"This phone number is already registered for IEML Mart Sourcing Days "
+                f"This phone number is already registered for {event_name} ({edition['edition_label']}) "
                 f"(URN: {existing['urn']}). Please check your inbox for the confirmation email, "
                 f"or contact the registration desk if you can't find it."
             ),
@@ -116,6 +122,7 @@ async def register_mart_days_visitor(payload: MartDaysRegisterRequest, backgroun
         "known_through": payload.known_through,
         "online_seller": payload.online_seller,
         "products_of_interest": payload.products_of_interest,
+        "edition_number": edition_number,
     }
 
     try:
