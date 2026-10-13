@@ -70,6 +70,20 @@ class Settings(BaseSettings):
     mailchimp_sender_email: str = ""
     mailchimp_sender_name: str = "IEML Sourcing Mart Days"
 
+    # ---------- Postmark (alternative to Mailchimp Transactional above) ----------
+    # Same job -- sends the Mart Days confirmation email + e-badge PDF -- through
+    # Postmark's API instead. Which one is used:
+    #   EMAIL_PROVIDER=postmark | mandrill   (explicit choice), or leave it blank
+    #   and it auto-picks Postmark whenever POSTMARK_SERVER_TOKEN is set, else
+    #   Mandrill. The sender address must be a verified Sender Signature / domain
+    #   in Postmark. Leaving the token blank (with provider=postmark) just skips
+    #   sending with a warning, same as the Mandrill path.
+    email_provider: str = ""
+    postmark_server_token: str = ""
+    postmark_sender_email: str = ""
+    postmark_sender_name: str = "IEML Sourcing Mart Days"
+    postmark_message_stream: str = "outbound"
+
     # ---------- Event Info ----------
     # Reused across every IEML event — this is the one thing that
     # changes between events, everything else stays generic.
