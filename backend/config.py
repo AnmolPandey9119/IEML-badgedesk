@@ -78,7 +78,7 @@ class Settings(BaseSettings):
     # error, registration is unaffected).
     aisensy_api_key: str = ""
     aisensy_campaign_name: str = ""
-    aisensy_api_url: str = "https://backend.aisensy.com/campaign/t1/api"
+    aisensy_api_url: str = "https://backend.aisensy.com/campaign/t1/api/v2"
     # Which values go into the template's {{1}}, {{2}}... in order. The count
     # MUST equal the number of variables in the approved template. Available:
     # name, event, edition, dates, timing, venue, co_located, urn, badge_link
