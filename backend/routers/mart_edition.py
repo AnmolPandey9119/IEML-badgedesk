@@ -19,7 +19,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, EmailStr, Field, model_validator
 
-from services import edition_store, email_service
+from services import edition_store, email_service, master_store, whatsapp_service
 from services.email_templates import mart_days_confirmation_email
 from utils.auth import get_current_master
 
@@ -85,3 +85,30 @@ async def send_test_email(payload: TestEmailRequest, _: str = Depends(get_curren
                    "MAILCHIMP_SENDER_EMAIL on the server and the server logs.",
         )
     return {"sent": True, "to": str(payload.to)}
+
+
+class TestWhatsAppRequest(BaseModel):
+    phone: str = Field(..., min_length=6, max_length=25, description="With country code, e.g. +91 9876543210")
+    urn: str = Field("", max_length=10, description="URN of a real registration, so its e-badge is attached to the test")
+
+
+@router.post("/test-whatsapp")
+async def send_test_whatsapp(payload: TestWhatsAppRequest, _: str = Depends(get_current_master)):
+    from config import settings
+    if not settings.aisensy_api_key or not settings.aisensy_campaign_name:
+        raise HTTPException(status_code=400, detail="AISENSY_API_KEY / AISENSY_CAMPAIGN_NAME are not set on the server.")
+    urn, name = "TEST01", "Test Registrant"
+    if settings.aisensy_attach_badge:
+        # The e-badge link must point at a real registration or AiSensy can't fetch the PDF.
+        record = master_store.get_mart_days_by_urn(payload.urn.strip().upper()) if payload.urn.strip() else None
+        if not record:
+            raise HTTPException(status_code=400, detail="Enter the URN of a real registration (e.g. your own test registration) so its e-badge can be attached to the test.")
+        urn, name = record["urn"], record.get("name") or name
+    ok = await whatsapp_service.send_mart_days_whatsapp(urn, name, payload.phone)
+    if not ok:
+        raise HTTPException(
+            status_code=502,
+            detail="WhatsApp test could not be sent. Check the AiSensy campaign is Live, the template "
+                   "variable count matches AISENSY_PARAMS, and the server logs.",
+        )
+    return {"sent": True, "to": whatsapp_service.normalize_phone(payload.phone)}

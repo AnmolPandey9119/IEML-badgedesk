@@ -111,6 +111,17 @@
           <iframe id="preview-frame" title="Email preview" sandbox=""></iframe>
         </div>
       </section>
+
+      <section class="card">
+        <h2>Check WhatsApp</h2>
+        <p class="muted">Sends the registration WhatsApp (message + e-badge PDF) to a number. First make a test registration with that person's details, then enter its URN here.</p>
+        <div class="actions wrap">
+          <input id="wa-to" type="tel" placeholder="+91 98765 43210" class="inline-input" />
+          <input id="wa-urn" type="text" placeholder="URN of a test registration" maxlength="10" class="inline-input" />
+          <button id="wa-btn" class="btn ghost" type="button">Send test WhatsApp</button>
+        </div>
+        <p id="wa-msg" class="msg" hidden></p>
+      </section>
     </main>
   </div>
 

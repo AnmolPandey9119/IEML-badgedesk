@@ -47,7 +47,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 from fastapi.responses import Response
 
 from models.mart_registration import MartDaysRegisterRequest, MartDaysRegisterResponse
-from services import badge_image, edition_store, email_service, master_store
+from services import badge_image, edition_store, email_service, master_store, whatsapp_service
 from utils.urn import generate_urn
 
 logger = logging.getLogger("mart_registration")
@@ -147,6 +147,15 @@ async def register_mart_days_visitor(payload: MartDaysRegisterRequest, backgroun
         payload.company_name,
     )
 
+    # WhatsApp confirmation (AiSensy) -- same idea as the email: background task,
+    # never affects the registration. Does nothing unless AISENSY_* is configured.
+    background_tasks.add_task(
+        whatsapp_service.send_mart_days_whatsapp,
+        urn,
+        payload.full_name,
+        payload.phone_number,
+    )
+
     return MartDaysRegisterResponse(
         urn=urn,
         full_name=payload.full_name,
@@ -233,4 +242,40 @@ async def download_mart_days_badge(
         content=pdf_bytes,
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="IEML-MartDays-Badge-{urn}.pdf"'},
+    )
+
+
+@router.get("/ebadge/{filename}")
+async def ebadge_file(filename: str):
+    """
+    Public direct link to one registrant's e-badge PDF (front side only -- the
+    same file that is attached to the confirmation email): GET
+    /api/mart-days/ebadge/ABC123.pdf. AiSensy fetches this URL to attach the
+    badge to the registrant's WhatsApp message, which needs a plain,
+    publicly reachable .pdf link. Unlike /badge-download this does NOT count as
+    a badge download. Same exposure as /badge-download: whoever knows the URN
+    can open the badge.
+    """
+    match = re.fullmatch(r"([A-Za-z0-9]{6})\.pdf", filename)
+    if not match:
+        raise HTTPException(status_code=404, detail="Badge not found.")
+    record = master_store.get_mart_days_by_urn(match.group(1).upper())
+    if not record:
+        raise HTTPException(status_code=404, detail="Badge not found.")
+    try:
+        pdf_bytes = badge_image.build_ebadge_pdf(
+            urn=record["urn"],
+            name=record.get("name"),
+            company=record.get("organization"),
+            mobile=record.get("mobile"),
+            email=record.get("email"),
+            crop_front_only=True,
+        )
+    except Exception:
+        logger.exception("Failed to build e-badge PDF for URN %s", record["urn"])
+        raise HTTPException(status_code=500, detail="Could not generate the e-badge right now.")
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{record["urn"]}-ebadge.pdf"'},
     )

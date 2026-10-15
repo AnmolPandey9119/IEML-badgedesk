@@ -70,6 +70,29 @@ class Settings(BaseSettings):
     mailchimp_sender_email: str = ""
     mailchimp_sender_name: str = "IEML Sourcing Mart Days"
 
+    # ---------- AiSensy WhatsApp (Mart Days registration confirmation) ----------
+    # Sends a WhatsApp template message through AiSensy's Campaign API right
+    # after a public Mart Days registration (same moment as the email). Needs a
+    # LIVE API campaign in AiSensy backed by an approved template. Leaving the
+    # key or campaign name blank = WhatsApp is simply off (logged, never an
+    # error, registration is unaffected).
+    aisensy_api_key: str = ""
+    aisensy_campaign_name: str = ""
+    aisensy_api_url: str = "https://backend.aisensy.com/campaign/t1/api"
+    # Which values go into the template's {{1}}, {{2}}... in order. The count
+    # MUST equal the number of variables in the approved template. Available:
+    # name, event, edition, dates, timing, venue, co_located, urn, badge_link
+    aisensy_params: str = "name,event,dates,venue,urn"
+    # Link to the e-badge download site (martdays-badge on Vercel) -- used for
+    # the `badge_link` param above.
+    badge_download_page_url: str = ""
+    # The WhatsApp message carries the registrant's e-badge PDF (front side, same
+    # as the email attachment). AiSensy fetches it from this backend's public URL
+    # (GET /api/mart-days/ebadge/<URN>.pdf), so the campaign's template needs a
+    # DOCUMENT header. Set AISENSY_ATTACH_BADGE=false to send text only.
+    aisensy_attach_badge: bool = True
+    backend_public_url: str = "https://ieml-badgedesk.onrender.com"
+
     # ---------- Event Info ----------
     # Reused across every IEML event — this is the one thing that
     # changes between events, everything else stays generic.
