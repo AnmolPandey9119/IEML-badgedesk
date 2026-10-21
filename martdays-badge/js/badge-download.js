@@ -1,163 +1,211 @@
 /* ==========================================================
-   badge-download.js
-   Self-service e-badge download: takes URN/email/phone, calls
-   GET /api/mart-days/badge-download?value=..., and either
-     - triggers a real file download of the returned PDF, or
-     - shows the backend's error message (not found / server error)
-   No login/token involved anywhere in this file — same public,
-   no-auth pattern as js/app.js's registration flow.
+   badge-download.css
+   Extra pieces the e-badge page needs on top of the shared
+   .shell/.identity/.card/.btn system in css/style.css.
+   Same Mart Days poster theme: cream, rust-brown, forest green
+   and gold. Class names unchanged — only the look is new.
    ========================================================== */
 
-   (function () {
-    const lookupForm = document.getElementById("lookup-form");
-    const lookupInput = document.getElementById("lookup-value");
-    const lookupBtn = document.getElementById("lookup-btn");
-    const btnLabel = lookupBtn.querySelector(".btn-label");
-    const btnSpinner = lookupBtn.querySelector(".btn-spinner");
-    const errorBox = document.getElementById("lookup-error");
+   .badge-hero-icon {
+    width: 64px;
+    height: 64px;
+    margin: 4px auto 16px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--rust) 0%, var(--rust-dark) 100%);
+    color: #fff;
+    box-shadow: 0 0 0 4px var(--gold-soft), 0 12px 24px rgba(124, 45, 20, 0.3);
+  }
   
-    const lookupSection = document.getElementById("lookup-section");
-    const successSection = document.getElementById("success-section");
-    const confirmFilename = document.getElementById("badge-confirm-filename");
+  .badge-hero-icon svg { width: 30px; height: 30px; }
   
-    const downloadAgainBtn = document.getElementById("download-again-btn");
-    const searchAgainBtn = document.getElementById("search-again-btn");
+  #lookup-section h2,
+  #lookup-section .hint {
+    text-align: center;
+  }
   
-    let lastBlobUrl = null;
-    let lastBlob = null;
-    let lastFilename = "IEML-MartDays-Badge.pdf";
+  #lookup-section .hint { margin-bottom: 4px; }
   
-    function setLoading(isLoading) {
-      lookupBtn.disabled = isLoading;
-      btnLabel.classList.toggle("hidden", isLoading);
-      btnSpinner.classList.toggle("hidden", !isLoading);
-    }
+  /* ---------------- Button spinner ---------------- */
   
-    function showError(message) {
-      errorBox.textContent = message;
-      errorBox.classList.remove("hidden");
-    }
+  .btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
   
-    function clearError() {
-      errorBox.classList.add("hidden");
-      errorBox.textContent = "";
-    }
+  .btn-label { font-size: 1.15rem; }
   
-    function extractFilename(response, fallback) {
-      const header = response.headers.get("Content-Disposition") || "";
-      const match = /filename="?([^"]+)"?/i.exec(header);
-      return match ? match[1] : fallback;
-    }
+  .btn-spinner {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.35);
+    border-top-color: var(--gold-bright);
+    animation: badge-spin 0.7s linear infinite;
+  }
   
-    function triggerDownload(blobUrl, filename) {
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    }
-
-    // iOS Safari (and some in-app browsers, e.g. from a Gmail/WhatsApp
-    // link) silently ignore the `download` attribute — the file just
-    // opens instead of saving. The Web Share API's native share sheet
-    // is the reliable cross-platform fix: it lets the person pick
-    // "Save Image" / "Save to Files" straight from iOS or Android.
-    // This MUST run inside a direct user-gesture handler (a click), or
-    // Safari will silently refuse it — so it's only ever called from
-    // the Save/Share button's own click listener below, never from
-    // inside the async fetch flow.
-    async function shareOrDownloadBadge(blob, filename) {
-      try {
-        const file = new File([blob], filename, { type: blob.type || "application/pdf" });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: "IEML Mart Sourcing Days e-Badge",
-            text: "My e-Badge for IEML Mart Sourcing Days",
-          });
-          return;
-        }
-      } catch (err) {
-        // AbortError just means the person closed the share sheet —
-        // that's a normal cancel, not a failure, so don't fall back.
-        if (err && err.name === "AbortError") return;
-      }
-      // No Web Share support (most desktop browsers) — plain anchor
-      // download works fine there.
-      triggerDownload(URL.createObjectURL(blob), filename);
-    }
+  @keyframes badge-spin {
+    to { transform: rotate(360deg); }
+  }
   
-    async function fetchBadge(value) {
-      const base = (window.APP_CONFIG && window.APP_CONFIG.API_BASE_URL) || "";
-      const url = base + "/api/mart-days/badge-download?value=" + encodeURIComponent(value);
+  .btn[disabled] { opacity: 0.8; cursor: not-allowed; }
   
-      const response = await fetch(url, { method: "GET" });
+  /* the » arrow suits "Find & Download" only; Share button keeps its icon */
+  #download-again-btn::after { display: none; }
   
-      if (!response.ok) {
-        let detail = "We couldn't find a Mart Days registration for that URN, email, or phone number.";
-        try {
-          const data = await response.json();
-          if (data && data.detail) detail = data.detail;
-        } catch (_) {
-          // response wasn't JSON — keep the generic message above
-        }
-        throw new Error(detail);
-      }
+  /* ---------------- Secondary "link" button ---------------- */
   
-      const blob = await response.blob();
-      const filename = extractFilename(response, lastFilename);
-      return { blob, filename };
-    }
+  .btn-link {
+    background: transparent;
+    box-shadow: none;
+    color: var(--rust);
+    margin-top: 12px;
+    font-family: var(--sans);
+    font-size: 0.88rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.15s;
+  }
   
-    function showSuccess(blob, filename) {
-      if (lastBlobUrl) URL.revokeObjectURL(lastBlobUrl);
-      lastBlobUrl = URL.createObjectURL(blob);
-      lastBlob = blob;
-      lastFilename = filename;
+  .btn-link:hover { color: var(--rust-dark); }
+  .btn-link:focus-visible { outline: 3px solid var(--gold-soft); outline-offset: 3px; border-radius: 6px; }
   
-      confirmFilename.textContent = filename;
+  /* ---------------- Success header ---------------- */
   
-      // Best-effort auto-download: works on desktop and most Android
-      // browsers. On iOS Safari it silently no-ops — that's fine,
-      // the Share Badge button (a real user gesture) is the reliable
-      // path there via the native share sheet.
-      triggerDownload(lastBlobUrl, filename);
+  .success-icon {
+    width: 68px;
+    height: 68px;
+    margin: 4px auto 14px;
+    color: #fff;
+    font-size: 0;
+  }
+  /* this page draws its tick with an inline SVG, so hide the CSS tick */
+  .success-icon::before { display: none; }
+  .success-icon svg { width: 32px; height: 32px; }
   
-      lookupSection.classList.add("hidden");
-      successSection.classList.remove("hidden");
-    }
+  .success-sub {
+    color: var(--ink-muted);
+    font-size: 0.88rem;
+    line-height: 1.5;
+    max-width: 38ch;
+    margin: 0 auto 4px;
+  }
   
-    lookupForm.addEventListener("submit", async function (e) {
-      e.preventDefault();
-      clearError();
+  /* ---------------- Badge "ticket" wrapper ---------------- */
+  /* Boarding-pass feel: tri-colour edge + perforated notches. */
   
-      const value = lookupInput.value.trim();
-      if (!value) {
-        showError("Please enter your URN, email, or phone number.");
-        return;
-      }
+  .badge-ticket {
+    position: relative;
+    margin: 24px auto 20px;
+    max-width: 350px;
+    border-radius: 20px;
+    padding: 3px;
+    background: linear-gradient(135deg, var(--gold-bright) 0%, var(--rust) 50%, var(--green) 100%);
+    box-shadow: 0 16px 34px rgba(90, 31, 13, 0.22), 0 2px 8px rgba(90, 31, 13, 0.12);
+    animation: badge-rise 0.5s ease-out both;
+    animation-delay: 0.1s;
+  }
   
-      setLoading(true);
-      try {
-        const { blob, filename } = await fetchBadge(value);
-        showSuccess(blob, filename);
-      } catch (err) {
-        showError(err.message || "Something went wrong. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    });
+  @keyframes badge-rise {
+    0% { transform: translateY(10px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
   
-    downloadAgainBtn.addEventListener("click", function () {
-      if (lastBlob) shareOrDownloadBadge(lastBlob, lastFilename);
-    });
+  .badge-ticket-notch {
+    position: absolute;
+    top: 50%;
+    width: 22px;
+    height: 22px;
+    background: var(--card-bg);
+    border-radius: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+  }
   
-    searchAgainBtn.addEventListener("click", function () {
-      successSection.classList.add("hidden");
-      lookupSection.classList.remove("hidden");
-      lookupInput.value = "";
-      clearError();
-      lookupInput.focus();
-    });
-  })();
+  .badge-ticket-notch-left { left: -11px; }
+  .badge-ticket-notch-right { right: -11px; }
+  
+  /* ---------------- Badge preview ---------------- */
+  
+  .badge-confirm {
+    margin: 0;
+    padding: 32px 20px 26px;
+    border-radius: 17px;
+    background:
+      radial-gradient(120% 140% at 50% -10%, rgba(228, 168, 46, 0.22) 0%, transparent 55%),
+      linear-gradient(180deg, #fffaf0 0%, var(--sand) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .badge-confirm-icon {
+    width: 68px;
+    height: 68px;
+    margin-bottom: 16px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(150deg, #266443 0%, var(--green-dark) 100%);
+    box-shadow: 0 0 0 4px var(--gold-soft), 0 12px 22px rgba(20, 55, 35, 0.3);
+    animation: pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation-delay: 0.15s;
+  }
+  
+  .badge-confirm-icon svg { width: 36px; height: 36px; }
+  
+  .badge-confirm-title {
+    margin: 0 0 10px;
+    font-family: var(--display);
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--brown);
+  }
+  
+  .badge-confirm-file {
+    margin: 0;
+    max-width: 100%;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px dashed var(--gold);
+    font-size: 0.78rem;
+    color: var(--brown-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* ---------------- Share button icon + iOS hint ---------------- */
+  
+  .btn-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+  
+  .ios-hint {
+    margin: 14px 0 0;
+    text-align: center;
+    font-size: 0.78rem;
+    line-height: 1.55;
+    color: var(--ink-muted);
+  }
+  
+  .ios-hint strong { color: var(--rust); }
+  
+  @media (max-width: 480px) {
+    .badge-confirm { padding: 26px 16px 22px; }
+    .badge-ticket { max-width: 100%; }
+  }
