@@ -22,6 +22,7 @@ BUYER_TYPES = [
     "Overseas buyers",
     "Domestic volume buyers",
     "Buying/Sourcing consultants",
+    "Mart owners",  # NEW: used by the Mart Owner consent form (martdays-owner)
 ]
 
 
