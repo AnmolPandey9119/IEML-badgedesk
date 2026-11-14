@@ -30,6 +30,11 @@ from services import edition_store
 
 logger = logging.getLogger("whatsapp_service")
 
+# Reason for the most recent failed send. Only read by the master console's
+# "test WhatsApp" endpoint so it can show AiSensy's real error instead of a
+# generic message. Registration flow ignores it.
+last_error: str = ""
+
 
 def normalize_phone(raw: Optional[str]) -> str:
     """
@@ -110,6 +115,8 @@ def build_payload(urn: str, full_name: str, phone: str, edition: Optional[dict] 
 
 
 async def send_mart_days_whatsapp(urn: str, full_name: str, phone: Optional[str]) -> bool:
+    global last_error
+    last_error = ""
     missing = []
     if not settings.aisensy_api_key:
         missing.append("AISENSY_API_KEY")
@@ -117,17 +124,20 @@ async def send_mart_days_whatsapp(urn: str, full_name: str, phone: Optional[str]
         missing.append("AISENSY_CAMPAIGN_NAME")
     if missing:
         logger.info("%s not set -- WhatsApp is off, skipping (URN %s).", " and ".join(missing), urn)
+        last_error = f"{' and '.join(missing)} not set on the server."
         return False
 
     destination = normalize_phone(phone)
     if not destination:
         logger.warning("No usable phone number for URN %s -- WhatsApp skipped.", urn)
+        last_error = "No usable phone number."
         return False
 
     try:
         payload = build_payload(urn, full_name, destination)
-    except Exception:
+    except Exception as exc:
         logger.exception("Could not build the AiSensy payload for URN %s", urn)
+        last_error = f"Could not build the payload: {exc}"
         return False
 
     try:
@@ -135,9 +145,11 @@ async def send_mart_days_whatsapp(urn: str, full_name: str, phone: Optional[str]
             resp = await client.post(settings.aisensy_api_url, json=payload)
         if resp.status_code >= 400:
             logger.error("AiSensy send failed for URN %s (HTTP %s): %s", urn, resp.status_code, resp.text[:500])
+            last_error = f"AiSensy replied HTTP {resp.status_code}: {resp.text[:300]}"
             return False
         logger.info("WhatsApp queued via AiSensy for URN %s to %s", urn, destination)
         return True
-    except Exception:
+    except Exception as exc:
         logger.exception("AiSensy send raised an exception for URN %s", urn)
+        last_error = f"Request to AiSensy failed: {type(exc).__name__}: {exc}"
         return False

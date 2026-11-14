@@ -108,7 +108,9 @@ async def send_test_whatsapp(payload: TestWhatsAppRequest, _: str = Depends(get_
     if not ok:
         raise HTTPException(
             status_code=502,
-            detail="WhatsApp test could not be sent. Check the AiSensy campaign is Live, the template "
-                   "variable count matches AISENSY_PARAMS, and the server logs.",
+            detail="WhatsApp test could not be sent. "
+                   + (f"Reason: {whatsapp_service.last_error} " if whatsapp_service.last_error else "")
+                   + "Check the AiSensy campaign is Live, the template variable count matches "
+                     "AISENSY_PARAMS, and the server logs.",
         )
     return {"sent": True, "to": whatsapp_service.normalize_phone(payload.phone)}
