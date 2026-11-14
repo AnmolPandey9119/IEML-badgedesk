@@ -74,7 +74,11 @@ async def register_mart_days_visitor(payload: MartDaysRegisterRequest, backgroun
     edition_number = edition["edition_number"]
     event_name = edition["event_name"]
 
-    existing = master_store.find_mart_days_by_email(payload.email, edition_number)
+    # Duplicate checks are kept SEPARATE for Mart owners and buyers: an owner is
+    # only checked against other owners, a buyer only against other buyers.
+    is_owner = payload.buyer_type == "Mart owners"
+
+    existing = master_store.find_mart_days_by_email(payload.email, edition_number, owners_only=is_owner)
     if existing:
         raise HTTPException(
             status_code=409,
@@ -85,7 +89,7 @@ async def register_mart_days_visitor(payload: MartDaysRegisterRequest, backgroun
             ),
         )
 
-    existing = master_store.find_mart_days_by_mobile(payload.phone_number, edition_number)
+    existing = master_store.find_mart_days_by_mobile(payload.phone_number, edition_number, owners_only=is_owner)
     if existing:
         raise HTTPException(
             status_code=409,

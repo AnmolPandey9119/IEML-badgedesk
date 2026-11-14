@@ -757,11 +757,17 @@ def get_mart_days_by_urn(urn: str) -> Optional[dict]:
         return _mart_days_row_to_visitor_shape(dict(row)) if row else None
 
 
-def find_mart_days_by_email(email: str, edition_number: Optional[int] = None) -> Optional[dict]:
+def find_mart_days_by_email(
+    email: str,
+    edition_number: Optional[int] = None,
+    owners_only: Optional[bool] = None,
+) -> Optional[dict]:
     """
     Case-insensitive email match. With edition_number, only that edition's
     registrations count (the duplicate check -- a buyer from last month may
     register again). Without it, the newest registration wins (badge lookup).
+    owners_only: True -> only "Mart owners" rows, False -> everyone EXCEPT
+    "Mart owners", None (default) -> all rows (badge lookup, unchanged).
     """
     with _connection() as conn, conn.cursor() as cur:
         cur.execute(
@@ -769,16 +775,21 @@ def find_mart_days_by_email(email: str, edition_number: Optional[int] = None) ->
             SELECT * FROM mart_days_registrations
             WHERE LOWER(email) = LOWER(%s)
               AND (%s::int IS NULL OR edition_number = %s::int)
+              AND (%s::boolean IS NULL OR (COALESCE(buyer_type, '') = 'Mart owners') = %s::boolean)
             ORDER BY edition_number DESC NULLS LAST, created_at DESC NULLS LAST
             LIMIT 1
             """,
-            (email.strip(), edition_number, edition_number),
+            (email.strip(), edition_number, edition_number, owners_only, owners_only),
         )
         row = cur.fetchone()
         return dict(row) if row else None
 
 
-def find_mart_days_by_mobile(mobile: str, edition_number: Optional[int] = None) -> Optional[dict]:
+def find_mart_days_by_mobile(
+    mobile: str,
+    edition_number: Optional[int] = None,
+    owners_only: Optional[bool] = None,
+) -> Optional[dict]:
     """
     Mobile match, digits-only and country-code-agnostic.
 
@@ -810,10 +821,11 @@ def find_mart_days_by_mobile(mobile: str, edition_number: Optional[int] = None) 
             SELECT * FROM mart_days_registrations
             WHERE RIGHT(REGEXP_REPLACE(COALESCE(phone_number, ''), '\\D', '', 'g'), 10) = %s
               AND (%s::int IS NULL OR edition_number = %s::int)
+              AND (%s::boolean IS NULL OR (COALESCE(buyer_type, '') = 'Mart owners') = %s::boolean)
             ORDER BY edition_number DESC NULLS LAST, created_at DESC NULLS LAST
             LIMIT 1
             """,
-            (mobile_last10, edition_number, edition_number),
+            (mobile_last10, edition_number, edition_number, owners_only, owners_only),
         )
         row = cur.fetchone()
         return dict(row) if row else None
