@@ -134,27 +134,30 @@ async def register_mart_days_visitor(payload: MartDaysRegisterRequest, backgroun
             detail="Registration could not be saved right now. Please try again.",
         )
 
-    # Scheduled to run AFTER this response is sent to the browser —
-    # registrant sees their URN instantly; email goes out right after,
-    # in the background. A Mailchimp Transactional failure here never
-    # touches the response the registrant already received.
-    background_tasks.add_task(
-        email_service.send_mart_days_confirmation,
-        urn,
-        payload.full_name,
-        payload.email,
-        payload.phone_number,
-        payload.company_name,
-    )
+    # Mart owner consent form is a record-keeping form only: NO confirmation
+    # email / WhatsApp / badge for owners (for now). Remove this condition to enable.
+    if payload.buyer_type != "Mart owners":
+        # Scheduled to run AFTER this response is sent to the browser —
+        # registrant sees their URN instantly; email goes out right after,
+        # in the background. A Mailchimp Transactional failure here never
+        # touches the response the registrant already received.
+        background_tasks.add_task(
+            email_service.send_mart_days_confirmation,
+            urn,
+            payload.full_name,
+            payload.email,
+            payload.phone_number,
+            payload.company_name,
+        )
 
-    # WhatsApp confirmation (AiSensy) -- same idea as the email: background task,
-    # never affects the registration. Does nothing unless AISENSY_* is configured.
-    background_tasks.add_task(
-        whatsapp_service.send_mart_days_whatsapp,
-        urn,
-        payload.full_name,
-        payload.phone_number,
-    )
+        # WhatsApp confirmation (AiSensy) -- same idea as the email: background task,
+        # never affects the registration. Does nothing unless AISENSY_* is configured.
+        background_tasks.add_task(
+            whatsapp_service.send_mart_days_whatsapp,
+            urn,
+            payload.full_name,
+            payload.phone_number,
+        )
 
     return MartDaysRegisterResponse(
         urn=urn,
