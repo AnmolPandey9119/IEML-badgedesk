@@ -81,8 +81,10 @@ class Settings(BaseSettings):
     aisensy_api_url: str = "https://backend.aisensy.com/campaign/t1/api/v2"
     # Which values go into the template's {{1}}, {{2}}... in order. The count
     # MUST equal the number of variables in the approved template. Available:
-    # name, event, edition, dates, timing, venue, co_located, urn, badge_link
-    aisensy_params: str = "name,event,dates,venue,urn"
+    # name, first_name, event, edition, dates, timing, venue, co_located, urn, badge_link
+    # Default matches the 31STMARTBADGE template (3 variables: name, edition, URN). Override with the
+    # AISENSY_PARAMS env var on Render to match the template's actual wording.
+    aisensy_params: str = "name,edition,urn"
     # Link to the e-badge download site (martdays-badge on Vercel) -- used for
     # the `badge_link` param above.
     badge_download_page_url: str = ""

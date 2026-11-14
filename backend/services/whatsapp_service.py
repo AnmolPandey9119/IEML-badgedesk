@@ -10,7 +10,8 @@ returns True/False and NEVER raises.
 
 AiSensy sends only pre-approved TEMPLATE messages, so the wording lives in the
 template you create in AiSensy/Meta, not here. This file just fills the
-template's {{1}}, {{2}}... in the order given by AISENSY_PARAMS. The number of
+template's {{1}}, {{2}}... in the order given by AISENSY_PARAMS (available names:
+name, first_name, event, edition, dates, timing, venue, co_located, urn, badge_link). The number of
 values must equal the number of variables in the template, otherwise AiSensy
 rejects the request.
 
@@ -52,9 +53,22 @@ def normalize_phone(raw: Optional[str]) -> str:
     return f"+{digits}"
 
 
+_TITLES = {"mr", "mrs", "ms", "miss", "dr", "shri", "smt", "sri", "prof", "er", "ca"}
+
+
+def first_name_of(full_name: Optional[str]) -> str:
+    """'Mr. Rajesh Kumar' -> 'Rajesh'. Used for templates that greet by first name
+    (AiSensy's $FirstName). Falls back to 'Guest' if nothing usable."""
+    for part in (full_name or "").split():
+        if part.strip(".,").lower() not in _TITLES:
+            return part.strip(".,") or "Guest"
+    return "Guest"
+
+
 def _param_values(full_name: str, urn: str, edition: dict) -> dict:
     return {
         "name": (full_name or "").strip() or "Guest",
+        "first_name": first_name_of(full_name),
         "event": f"{edition['event_name']} ({edition['edition_label']})",
         "edition": edition["edition_label"],
         "dates": edition["dates_long"],
@@ -80,7 +94,8 @@ def build_payload(urn: str, full_name: str, phone: str, edition: Optional[dict] 
     payload = {
         "apiKey": settings.aisensy_api_key,
         "campaignName": settings.aisensy_campaign_name,
-        "destination": phone,
+        # AiSensy's API takes digits with country code and no '+' (919876543210).
+        "destination": phone.lstrip("+"),
         "userName": values["name"],
         "source": "Mart Days Registration",
         "templateParams": template_params,
