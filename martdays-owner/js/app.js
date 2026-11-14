@@ -1,20 +1,8 @@
 /* ==========================================================
    app.js — Mart Owner registration form.
-   Posts to the SAME public backend endpoint the buyer form uses
-   (/api/mart-days/register) — backend + database unchanged.
-   Owner data is mapped onto the EXISTING mart_days_registrations
-   columns, so no new table/column is needed:
-
-     buyer_type          -> "Mart owners"
-     full_name           -> First Name + Last Name
-     company_name        -> Company Name
-     designation         -> "Mart Owner"
-     email / phone_number-> Email ID / "+91 " + Mobile Number
-     address             -> "Mart No. <Mart No.>"
-     country             -> "India"
-     nature_of_business  -> ["Mart Owner"]
-     known_through       -> ["Mart No: ..", "Open Mart during Mart Sourcing Days: Yes/No",
-                             "Interested in Domestic Volume Buyers: ..."]
+   Posts to its OWN backend endpoint: POST /api/mart-owners/register
+   (routers/mart_owner.py). Data is saved in the separate `mart_owners`
+   table — never mixed with buyers. No email / WhatsApp / URN / badge.
    ========================================================== */
    (function () {
     const form = document.getElementById("owner-form");
@@ -64,35 +52,22 @@
       }
   
       // Mart No. is alphanumeric and may contain special characters (A-12, B/204, C12#...) — sent as-is.
-      const martNo = val("mart_no");
       const payload = {
-        buyer_type: "Mart owners",
-        full_name: (val("first_name") + " " + val("last_name")).trim(),
+        mart_no: val("mart_no"), // alphanumeric + special characters (A-12, B/204, C12#...) — sent as-is
         company_name: val("company_name"),
-        designation: "Mart Owner",
+        first_name: val("first_name"),
+        last_name: val("last_name"),
+        mobile_number: phoneDigits,
         email: val("email").toLowerCase(),
-        phone_number: "+91 " + phoneDigits,
-        address: "Mart No. " + martNo,
-        district: null,
-        state: null,
-        country: "India",
-        pincode: null,
-        nature_of_business: ["Mart Owner"],
-        annual_turnover: null,
-        known_through: [
-          "Mart No: " + martNo,
-          "Open Mart during Mart Sourcing Days: " + openMartEl.value,
-          "Interested in Domestic Volume Buyers: " + val("domestic_interest"),
-        ],
-        online_seller: null,
-        products_of_interest: null,
+        open_mart: openMartEl.value,
+        domestic_interest: val("domestic_interest"),
       };
   
       submitBtn.disabled = true;
       submitBtn.textContent = "Submitting...";
   
       try {
-        const res = await fetch(`${window.APP_CONFIG.API_BASE_URL}/api/mart-days/register`, {
+        const res = await fetch(`${window.APP_CONFIG.API_BASE_URL}/api/mart-owners/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),

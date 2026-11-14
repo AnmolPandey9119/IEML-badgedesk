@@ -123,6 +123,7 @@ from routers import (  # noqa: E402
     external,
     mart_desk,
     mart_edition,
+    mart_owner,
     mart_registration,
     master,
     registration,
@@ -138,3 +139,4 @@ app.include_router(external.router, prefix="/api/external", tags=["external"])
 app.include_router(mart_registration.router, prefix="/api/mart-days", tags=["mart-days"])
 app.include_router(mart_desk.router, prefix="/api/mart-desk", tags=["mart-desk"])
 app.include_router(mart_edition.router, prefix="/api/mart-edition", tags=["mart-edition"])
+app.include_router(mart_owner.router, prefix="/api/mart-owners", tags=["mart-owners"])
